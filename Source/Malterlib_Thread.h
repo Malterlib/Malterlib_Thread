@@ -2185,8 +2185,6 @@ namespace NMib
 		{
 			mutable NAtomic::TCAtomic<aint> m_RefCount; // -1 means no references
 
-			TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase const &);
-			TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase const &);
 	
 		protected:
 			~TCSharedPointerIntrusiveBase();
@@ -2197,6 +2195,26 @@ namespace NMib
 			{
 			}
 
+			TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase const &)
+				: m_RefCount(0)
+			{
+			}
+
+			TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase &&)
+				: m_RefCount(0)
+			{
+			}
+			
+			TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase const &)
+			{
+				return *this;
+			}
+			
+			TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase &&)
+			{
+				return *this;
+			}
+			
 			aint f_RefCountDecrease() const
 			{
 				aint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
@@ -2224,9 +2242,6 @@ namespace NMib
 			mutable NAtomic::TCAtomic<smint> m_RefCount; // -1 means no references
 			mutable NAtomic::TCAtomic<smint> m_WeakRefCount; // -1 means no references
 
-			TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase const &);
-			TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase const &);
-	
 		protected:
 			~TCSharedPointerIntrusiveBase();
 		public:
@@ -2237,6 +2252,28 @@ namespace NMib
 			{
 			}
 
+			TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase const &)
+				: m_RefCount(0)
+				, m_WeakRefCount(0)
+			{
+			}
+
+			TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase &&)
+				: m_RefCount(0)
+				, m_WeakRefCount(0)
+			{
+			}
+			
+			TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase const &)
+			{
+				return *this;
+			}
+			
+			TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase &&)
+			{
+				return *this;
+			}
+			
 			smint f_RefCountDecrease() const
 			{
 				smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
