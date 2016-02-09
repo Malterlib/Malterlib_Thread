@@ -654,6 +654,10 @@ namespace NMib
 #ifndef DMibNoAggregateConstexpr
 			constexpr CSpinLockAggregate(EAggregateInitialization _Init)
 				: m_nLocked{0}
+#	if DMibEnableSafeCheck > 0
+				, m_ThreadID{0}
+				, m_AlternateThreadID{0}
+#	endif
 			{
 			}
 			CSpinLockAggregate()
@@ -662,6 +666,12 @@ namespace NMib
 #endif
 
 			NAtomic::CAtomicFlagAggregate m_nLocked;
+			
+#			if DMibEnableSafeCheck > 0
+				mint m_ThreadID;				// On windows this is the thread id, unix the pthread
+				mint m_AlternateThreadID;	// On windows this is also the thread id, on osx and linux this is the kernel thread id that can be used to match threads in the debugger
+#			endif
+			
 
 			void f_Construct()
 			{
@@ -676,10 +686,20 @@ namespace NMib
 			{
 				if (m_nLocked.f_TestAndSet(NAtomic::EMemoryOrder_Acquire))
 					fp_WaitForIt();
+				
+#				if DMibEnableSafeCheck > 0
+					m_ThreadID = NSys::fg_Thread_GetCurrentUID();
+					m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
+#				endif
 			}
 
 			void f_Unlock()
 			{
+#				if DMibEnableSafeCheck > 0
+					m_ThreadID = 0;
+					m_AlternateThreadID = 0;
+#				endif
+				
 				m_nLocked.f_Clear(NAtomic::EMemoryOrder_Release);
 			}
 		};
