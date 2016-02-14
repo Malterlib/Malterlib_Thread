@@ -121,6 +121,17 @@ namespace NMib
 			{
 				f_Destruct();
 			}
+			CEventAutoReset(CEventAutoReset &&_Other)
+			{
+				m_pSemaphore = _Other.m_pSemaphore;
+				_Other.m_pSemaphore = nullptr;
+			}
+			CEventAutoReset &operator =(CEventAutoReset &&_Other)
+			{
+				m_pSemaphore = _Other.m_pSemaphore;
+				_Other.m_pSemaphore = nullptr;
+				return *this;
+			}
 		};
 
 
