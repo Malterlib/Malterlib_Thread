@@ -2348,7 +2348,7 @@ namespace NMib
 
 			smint f_WeakRefCountIncrease() const
 			{
-				DMibFastCheck(m_RefCount.f_Load() >= 0);
+				DMibFastCheck(m_RefCount.f_Load() >= -1);
 				return m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
 			}
 	
