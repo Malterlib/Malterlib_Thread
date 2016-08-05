@@ -42,7 +42,31 @@ namespace NMib
 #endif
 			DMibFastCheck(m_ThreadLocal_DestroyOrder.f_IsEmpty()); // Anything else means that there are ThreadLocal classes that are still using this context
 			// Turns out that lots of threads can still be loaded when you unload an dll
-			//DMibSafeCheck(m_lPerThread.f_IsEmpty(), "Anything else means that there are threads that were incorrectly terminated");
+#if DMibEnableSafeCheck > 0
+			NContainer::TCVector<mint, NMem::CAllocator_VirtualNoTracking> SystemThreads;
+			{
+				NSys::fg_Thread_EnumOtherThreadsInProcess
+					(
+						[&](mint _ThreadID)
+						{
+							SystemThreads.f_Insert(_ThreadID);
+						}
+					)
+				;
+				SystemThreads.f_Sort();
+				NContainer::TCVector<mint, NMem::CAllocator_VirtualNoTracking> LocalThreads;
+				for (auto &PerThread : m_lPerThread)
+				{
+					DMibFastCheck(SystemThreads.f_BinarySearch(PerThread.m_ThreadID) >= 0);
+					LocalThreads.f_Insert(PerThread.m_ThreadID);
+				}
+				LocalThreads.f_Sort();
+				for (auto &SystemThread : SystemThreads)
+				{
+					DMibFastCheck(LocalThreads.f_BinarySearch(SystemThread) >= 0);
+				}
+			}
+#endif
 
 			while (auto pPerThread = m_lPerThread.f_GetRoot())
 			{

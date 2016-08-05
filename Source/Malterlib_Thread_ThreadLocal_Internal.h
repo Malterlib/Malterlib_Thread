@@ -87,7 +87,7 @@ namespace NMib
 
 				NContainer::TCMap<mint, CAllocation, CSort_Default, NMem::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
 				NContainer::TCMap<mint, CAllocation, CSort_Default, NMem::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
-				
+
 				CPerThread
 					(
 						mint _ThreadID
