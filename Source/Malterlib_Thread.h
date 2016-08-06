@@ -634,13 +634,13 @@ namespace NMib
 		{
 		public:
 
-			virtual void f_Construct(void * _pSemaphore) pure;
-			virtual void f_Construct() pure;
-			virtual void f_Destruct() pure;
-			virtual void f_Lock() pure;
-			virtual void f_Unlock() pure;
-			virtual void f_LockRead() pure;
-			virtual void f_UnlockRead() pure;
+			virtual void f_Construct(void * _pSemaphore) = 0;
+			virtual void f_Construct() = 0;
+			virtual void f_Destruct() = 0;
+			virtual void f_Lock() = 0;
+			virtual void f_Unlock() = 0;
+			virtual void f_LockRead() = 0;
+			virtual void f_UnlockRead() = 0;
 		};
 
 		class CSpinLockAggregate
@@ -2129,9 +2129,9 @@ namespace NMib
             |						function. m_EventWantQuit will be signaled once when a	|
             |						quit has been requested for the thread.					|
             \*_____________________________________________________________________________*/
-			virtual aint f_Main() pure;
+			virtual aint f_Main() = 0;
 
-			virtual NStr::CStr f_GetThreadName() pure;
+			virtual NStr::CStr f_GetThreadName() = 0;
 			virtual ch8 const *f_GetThreadNameRaw();
 
 		};
@@ -2146,8 +2146,8 @@ namespace NMib
 				virtual ~CCallerObject()
 				{
 				}
-				virtual aint f_Call(TCThreadObject *_pThread) pure;
-				virtual ch8 const * f_GetName() pure;
+				virtual aint f_Call(TCThreadObject *_pThread) = 0;
+				virtual ch8 const * f_GetName() = 0;
 			};
 
 			template <typename tf_ObjectType, typename tf_CAllocator, typename... tfp_CParams>

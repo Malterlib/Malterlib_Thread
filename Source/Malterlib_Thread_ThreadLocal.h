@@ -35,11 +35,11 @@ namespace NMib
 			virtual ~CThreadLocalInterface(){}
 			EThreadLocalInterfaceFlag m_Flags;
 
-			virtual void f_DeleteItem(void *_pItem) pure;
-			virtual void *f_CreateData(void *_pSource, bool _bMove) pure;
-			virtual void *f_CreateData(bint _bInitial) pure;
+			virtual void f_DeleteItem(void *_pItem) = 0;
+			virtual void *f_CreateData(void *_pSource, bool _bMove) = 0;
+			virtual void *f_CreateData(bint _bInitial) = 0;
 #if DMibEnableSafeCheck > 0
-			virtual ch8 const* f_GetName() pure;
+			virtual ch8 const* f_GetName() = 0;
 #endif
 		};
         /*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
