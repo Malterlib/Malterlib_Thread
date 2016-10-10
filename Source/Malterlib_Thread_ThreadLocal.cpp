@@ -155,11 +155,16 @@ namespace NMib
 			return pThreadLocal;
 		}
 
+		bool CThreadLocalContext::f_ThreadDestroyed() const
+		{
+			return (mint)NSys::fg_Thread_GetLocal(m_iPerThread) == TCLimitsInt<mint>::mc_Max;
+		}
 
 		CThreadLocalContext::CPerThread *CThreadLocalContext::fp_GetPerThread(mint _ThreadID)
 		{
 			CPerThread *pThreadLocal = (CPerThread *)NSys::fg_Thread_GetLocal(_ThreadID, m_iPerThread);
-			if (pThreadLocal)
+			DMibFastCheck(((mint)pThreadLocal != TCLimitsInt<mint>::mc_Max));
+			if (pThreadLocal && ((mint)pThreadLocal != TCLimitsInt<mint>::mc_Max))
 				return pThreadLocal;
 			else
 				return fp_GetPerThreadNew(_ThreadID);
@@ -324,6 +329,7 @@ namespace NMib
 			{
 				// Do a quick check
 				auto pAlreadyCreated = (CPerThread *)NSys::fg_Thread_GetLocal(_ThreadID, m_iPerThread);
+				DMibFastCheck((mint)pAlreadyCreated != TCLimitsInt<mint>::mc_Max);
 				if (pAlreadyCreated && pAlreadyCreated->m_bOnThreadCreated)
 					return;
 			}
@@ -398,8 +404,7 @@ namespace NMib
 				#endif
 			}
 			
-
-			if (_pPerThread)
+			if (_pPerThread && ((mint)_pPerThread != TCLimitsInt<mint>::mc_Max))
 			{
 				if (NSys::fg_Thread_GetLocal(m_iPerThread) == nullptr)
 					NSys::fg_Thread_SetLocal(m_iPerThread, _pPerThread);
@@ -457,7 +462,7 @@ namespace NMib
 
 			//#ifndef DMibPSupportThreadLocalDestructors			
 				if (NSys::fg_Thread_GetLocal(m_iPerThread) == _pPerThread)
-					NSys::fg_Thread_SetLocal(m_iPerThread, nullptr);
+					NSys::fg_Thread_SetLocal(m_iPerThread, (void *)TCLimitsInt<mint>::mc_Max);
 			//#endif
 				m_lPerThread.f_Remove(_pPerThread);
 				m_PoolPerThread.f_Delete(_pPerThread);
@@ -543,7 +548,7 @@ namespace NMib
 	{
 		NPrivate::g_ThreadLocalContext->f_ReinitForThread((NPrivate::CThreadLocalContext::CStorageIndex *)_pStorageIndex);
 	}
-
+	
 	void *CSystem::f_ThreadLocalGet(void *_pStorageIndex)
 	{
 		return NPrivate::g_ThreadLocalContext->f_Get((NPrivate::CThreadLocalContext::CStorageIndex *)_pStorageIndex);
@@ -587,6 +592,10 @@ namespace NMib
 	{
 		return NPrivate::g_ThreadLocalContext->f_EnumThreads(_EnumFunc);
 	}
-
+	
+	bool CSystem::f_ThreadDestroyed() const
+	{
+		return NPrivate::g_ThreadLocalContext->f_ThreadDestroyed();
+	}
 
 } // Namespace NMib
