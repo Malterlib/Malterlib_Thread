@@ -11,7 +11,19 @@ namespace NMib
 {
 	namespace NThread
 	{
-
+		struct CDisableLazyCheckoutReturnScope
+		{
+			CDisableLazyCheckoutReturnScope()
+			{
+				NMib::NSys::fg_Mem_DisableLazyReturnCheckout();
+			}
+			
+			~CDisableLazyCheckoutReturnScope()
+			{
+				NMib::NSys::fg_Mem_EnableLazyReturnCheckout();
+			}
+		};
+		
 		class CEventAutoResetAggregate
 		{
 		public:
@@ -734,6 +746,7 @@ namespace NMib
 		public:
 			inline_never void fp_WaitForIt()
 			{
+				CDisableLazyCheckoutReturnScope DisableLazy;				
 				m_Event.f_Wait();
 			}
 
@@ -883,6 +896,7 @@ namespace NMib
 			inline_never void fp_WaitForIt()
 			{
 				f_CreateEvent();
+				CDisableLazyCheckoutReturnScope DisableLazy;				
 				m_Event.f_Wait();
 			}
 
@@ -1016,8 +1030,11 @@ namespace NMib
 				if (nLocked > 0)
 				{
 					mint nCreate = nLockedValue >> (EAtomicBits - 2);
-					if(nCreate & 2)
+					if (nCreate & 2)
+					{
+						CDisableLazyCheckoutReturnScope DisableLazy;				
 						m_Event.f_Wait();
+					}
 					else
 						fp_WaitForIt();
 				}
@@ -1044,8 +1061,11 @@ namespace NMib
 				if (nLocked > 0)
 				{
 					mint nCreate = nLockedValue >> (EAtomicBits - 2);
-					if(nCreate & 2)
+					if (nCreate & 2)
+					{
+						CDisableLazyCheckoutReturnScope DisableLazy;				
 						m_Event.f_Wait();
+					}
 					else
 						fp_WaitForIt();
 				}
@@ -1094,8 +1114,11 @@ namespace NMib
 				if (nLocked > 0)
 				{
 					mint nCreate = nLockedValue >> (EAtomicBits - 2);
-					if(nCreate & 2)
+					if (nCreate & 2)
+					{
+						CDisableLazyCheckoutReturnScope DisableLazy;				
 						m_Event.f_Wait();
+					}
 					else
 						fp_WaitForIt();
 				}
@@ -1319,7 +1342,10 @@ namespace NMib
 					if (PrevFlags & mc_FlagReadingNotAllowed)
 					{
 						f_UnlockReadInternal();
-						m_ReadOkEvent.f_Wait();
+						{
+							CDisableLazyCheckoutReturnScope DisableLazy;				
+							m_ReadOkEvent.f_Wait();
+						}
 						goto RestartLock;
 					}
 				}
@@ -1365,7 +1391,10 @@ namespace NMib
 				{
 					mint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
 					if(nCreate & 2)
+					{
+						CDisableLazyCheckoutReturnScope DisableLazy;				
 						t_CBase::m_Event.f_Wait();
+					}
 					else
 						t_CBase::fp_WaitForIt();
 				}
@@ -1380,6 +1409,7 @@ namespace NMib
 
 						if ((nReading & mc_nReadingMask) > 0)
 						{
+							CDisableLazyCheckoutReturnScope DisableLazy;				
 							m_WriteOkEvent.f_Wait();
 						}
 						else
@@ -1587,7 +1617,10 @@ namespace NMib
 				{
 					mint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
 					if (nCreate & 2)
+					{
+						CDisableLazyCheckoutReturnScope DisableLazy;				
 						t_CBase::m_Event.f_Wait();
+					}
 					else
 						t_CBase::fp_WaitForIt();
 				}
@@ -1912,7 +1945,6 @@ namespace NMib
 			inline_small void f_Wait()
 			{
 				NSys::fg_Semaphore_Wait(m_pSemaphore);
-
 			}
 
 			inline_small bint f_WaitTimeout(fp64 _Timeout)
