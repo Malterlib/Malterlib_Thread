@@ -7,6 +7,12 @@
 #include "../../Core/Source/Malterlib_Core_PlatformInterface.h"
 #include <Mib/Atomic/Atomic>
 
+#if 0
+	#define DMibThreadAtomicsAlignment align_cacheline
+#else
+	#define DMibThreadAtomicsAlignment
+#endif
+
 namespace NMib
 {
 	namespace NThread
@@ -750,7 +756,7 @@ namespace NMib
 				m_Event.f_Wait();
 			}
 
-			NAtomic::TCAtomicAggregate<mint> m_nLocked;
+			DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nLocked;
 			t_CEvent m_Event;
 			
 #ifndef DMibNoAggregateConstexpr
@@ -836,7 +842,7 @@ namespace NMib
 				EAtomicBits = sizeof(aint) * 8
 			};
 			
-			NAtomic::TCAtomicAggregate<mint> m_nLocked;
+			DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nLocked;
 			mint m_ThreadID;				// On windows this is the thread id, unix the pthread
 #			if DMibEnableSafeCheck > 0
 				mint m_AlternateThreadID;	// On windows this is also the thread id, on osx and linux this is the kernel thread id that can be used to match threads in the debugger
@@ -847,7 +853,7 @@ namespace NMib
 			void f_PrepareFork()
 			{
 				DMibFastCheck(m_ThreadID == NSys::fg_Thread_GetCurrentUID()); // Must already be locked
-				DMibFastCheck(f_NumRecurse() == 1); // Must already be locked
+				DMibFastCheck(m_nRecurse == 1); // Must already be locked
 				
 				f_CreateEvent();				
 				m_Event.f_PrepareFork();
@@ -858,8 +864,8 @@ namespace NMib
 				m_Event.f_ForkedChild();
 				
 				// Clear out any other threads that might have been waiting for the lock
-				//f_NumRecurse() = 1; // This should be safe to keep
-				f_ThreadID() = NSys::fg_Thread_GetCurrentUID();
+				//m_nRecurse = 1; // This should be safe to keep
+				m_ThreadID = NSys::fg_Thread_GetCurrentUID();
 				m_nLocked.f_FetchAnd(~mcp_AtomicMask);
 				m_nLocked.f_FetchAdd(1);
 			}
@@ -869,15 +875,6 @@ namespace NMib
 				m_Event.f_ForkedParent();
 			}
 			
-			aint &f_NumRecurse()
-			{
-				return m_nRecurse;
-			}
-			mint &f_ThreadID()
-			{
-				return m_ThreadID;
-			}
-
 			inline_never void f_CreateEvent()
 			{
 				mint Original = m_nLocked.f_FetchOr((mint(1) << (EAtomicBits-2)), NAtomic::EMemoryOrder_Relaxed);
@@ -931,8 +928,8 @@ namespace NMib
 
 				m_Event.f_ConstructDontCreate();
 				m_nLocked.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
-				f_NumRecurse() = 0;
-				f_ThreadID() = 0;
+				m_nRecurse = 0;
+				m_ThreadID = 0;
 			}
 
 			void f_Construct(void * _pSemaphore)
@@ -941,8 +938,8 @@ namespace NMib
 					m_nLocked.f_Store(mint(3) << (EAtomicBits-2), NAtomic::EMemoryOrder_Relaxed);
 				else
 					m_nLocked.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
-				f_NumRecurse() = 0;
-				f_ThreadID() = 0;
+				m_nRecurse = 0;
+				m_ThreadID = 0;
 				m_Event.f_Construct(_pSemaphore);
 			}			
 
@@ -950,17 +947,17 @@ namespace NMib
 			{
 				
 				DMibFastCheck((m_nLocked.f_Load() & mcp_AtomicMask) == 0);
-				DMibFastCheck(f_ThreadID() == 0);
+				DMibFastCheck(m_ThreadID == 0);
 				m_Event.f_Destruct();
 			}
 
-			bint f_TryLock()
+			inline_never bint f_TryLock()
 			{
 				mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-				if (f_ThreadID() == CurrentThread)
+				if (m_ThreadID == CurrentThread)
 				{
-					++f_NumRecurse();
+					++m_nRecurse;
 					return true;
 				}
 				
@@ -972,8 +969,8 @@ namespace NMib
 
 				if (m_nLocked.f_CompareExchangeStrong(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
 				{
-					f_ThreadID() = CurrentThread;
-					f_NumRecurse() = 1;
+					m_ThreadID = CurrentThread;
+					m_nRecurse = 1;
 					return true;
 				}
 				return false;
@@ -981,17 +978,17 @@ namespace NMib
 
 			bint f_IsLocked()
 			{
-				return f_ThreadID() != 0;
+				return m_ThreadID != 0;
 			}
 
-			bint f_TryLock(aint _SpinCount)
+			inline_never bint f_TryLock(aint _SpinCount)
 			{
 				mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-				if (f_ThreadID() == CurrentThread)
+				if (m_ThreadID == CurrentThread)
 				{
 					DMibFastCheck(t_bAllowRecursive);
-					++f_NumRecurse();
+					++m_nRecurse;
 					return true;
 				}
 				
@@ -1004,22 +1001,22 @@ namespace NMib
 					}
 					if (m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
 					{
-						f_ThreadID() = CurrentThread;
-						f_NumRecurse() = 1;
+						m_ThreadID = CurrentThread;
+						m_nRecurse = 1;
 						return true;
 					}
 				}
 				return false;
 			}
 
-			void f_SetLockForThread(mint _ThreadID)
+			inline_never void f_SetLockForThread(mint _ThreadID)
 			{
 				mint CurrentThread = _ThreadID;
 
-				if (f_ThreadID() == CurrentThread)
+				if (m_ThreadID == CurrentThread)
 				{
 					DMibFastCheck(t_bAllowRecursive);
-					++f_NumRecurse();
+					++m_nRecurse;
 					return;
 				}
 				
@@ -1039,18 +1036,18 @@ namespace NMib
 						fp_WaitForIt();
 				}
 
-				f_ThreadID() = CurrentThread;
-				f_NumRecurse() = 1;
+				m_ThreadID = CurrentThread;
+				m_nRecurse = 1;
 			}
 
-			void f_Lock()
+			inline_never void f_Lock()
 			{
 				mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-				if (f_ThreadID() == CurrentThread)
+				if (m_ThreadID == CurrentThread)
 				{
 					DMibFastCheck(t_bAllowRecursive);
-					++f_NumRecurse();
+					++m_nRecurse;
 					return;
 				}
 				
@@ -1058,7 +1055,7 @@ namespace NMib
 				mint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire);
 				mint nLocked = nLockedValue & mcp_AtomicMask;
 				
-				if (nLocked > 0)
+				if (unlikely(nLocked > 0))
 				{
 					mint nCreate = nLockedValue >> (EAtomicBits - 2);
 					if (nCreate & 2)
@@ -1070,26 +1067,26 @@ namespace NMib
 						fp_WaitForIt();
 				}
 
-				f_ThreadID() = CurrentThread;
+				m_ThreadID = CurrentThread;
 #				if DMibEnableSafeCheck > 0
 					m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #				endif
 
-				f_NumRecurse() = 1;
+				m_nRecurse = 1;
 			}
 
-			void f_Lock(aint _SpinCount)
+			inline_never void f_Lock(aint _SpinCount)
 			{
 				mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-				if (f_ThreadID() == CurrentThread)
+				if (m_ThreadID == CurrentThread)
 				{
 					DMibFastCheck(t_bAllowRecursive);
-					++f_NumRecurse();
+					++m_nRecurse;
 					return;
 				}
 
-				while (_SpinCount--)
+				while (likely(_SpinCount--))
 				{
 					mint Original = m_nLocked.f_Load(NAtomic::EMemoryOrder_Relaxed);
 					if (Original & mcp_AtomicMask)
@@ -1097,10 +1094,10 @@ namespace NMib
 						yield_cpu;
 						continue;
 					}
-					if (m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
+					if (likely(m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed)))
 					{
-						f_ThreadID() = CurrentThread;
-						f_NumRecurse() = 1;
+						m_ThreadID = CurrentThread;
+						m_nRecurse = 1;
 						return;
 					}
 					yield_cpu;
@@ -1123,26 +1120,26 @@ namespace NMib
 						fp_WaitForIt();
 				}
 
-				f_ThreadID() = CurrentThread;
+				m_ThreadID = CurrentThread;
 #				if DMibEnableSafeCheck > 0
 					m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #				endif
-				f_NumRecurse() = 1;
+				m_nRecurse = 1;
 			}
 
 			bint f_OwnsLock()
 			{
 				mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
-				return f_ThreadID() == CurrentThread;
+				return m_ThreadID == CurrentThread;
 			}
 
-			void f_Unlock()
+			inline_never void f_Unlock()
 			{
-				DMibFastCheck(f_ThreadID() == NSys::fg_Thread_GetCurrentUID());
+				DMibFastCheck(m_ThreadID == NSys::fg_Thread_GetCurrentUID());
 
-				if ((--f_NumRecurse()) == 0)
+				if (likely((--m_nRecurse) == 0))
 				{
-					f_ThreadID() = 0;
+					m_ThreadID = 0;
 					mint nLockedValue = m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 					if ((nLockedValue & mcp_AtomicMask) > 1)
 					{				
@@ -1269,11 +1266,11 @@ namespace NMib
 #endif
 			
 			// Lock for write access
-			NAtomic::TCAtomicAggregate<mint> m_nReading;
+			DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nReading;
 			t_CEvent m_ReadOkEvent;
 			t_CEventAutoreset m_WriteOkEvent;
 #			if DMibEnableSafeCheck > 0
-				NAtomic::TCAtomicAggregate<mint> m_nReadingDebugCheck;
+				DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nReadingDebugCheck;
 #			endif
 
 			const static mint mc_FlagReadingNotAllowed = DMibBitTyped(sizeof(NAtomic::TCAtomicAggregate<mint>)*8-1, mint);
@@ -1377,9 +1374,9 @@ namespace NMib
 			{
 				mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
-				if (t_CBase::f_ThreadID() == CurrentThread)
+				if (t_CBase::m_ThreadID == CurrentThread)
 				{
-					++t_CBase::f_NumRecurse();
+					++t_CBase::m_nRecurse;
 					return;
 				}
 				
@@ -1416,8 +1413,8 @@ namespace NMib
 							break;
 					}
 				}
-				t_CBase::f_ThreadID() = CurrentThread;
-				t_CBase::f_NumRecurse() = 1;
+				t_CBase::m_ThreadID = CurrentThread;
+				t_CBase::m_nRecurse = 1;
 				DMibFastCheck(m_nReadingDebugCheck.f_Load() == 0);
 			}
 
@@ -1426,9 +1423,9 @@ namespace NMib
 			{
 				mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
-				if (t_CBase::f_ThreadID() == CurrentThread)
+				if (t_CBase::m_ThreadID == CurrentThread)
 				{
-					++t_CBase::f_NumRecurse();
+					++t_CBase::m_nRecurse;
 					return true;
 				}
 				
@@ -1440,8 +1437,8 @@ namespace NMib
 
 				if (t_CBase::m_nLocked.f_CompareExchangeStrong(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
 				{
-					t_CBase::f_ThreadID() = CurrentThread;
-					t_CBase::f_NumRecurse() = 1;
+					t_CBase::m_ThreadID = CurrentThread;
+					t_CBase::m_nRecurse = 1;
 				}
 				else
 					return false;
@@ -1465,11 +1462,11 @@ namespace NMib
 
 			inline_never void f_Unlock()
 			{
-				DMibFastCheck(t_CBase::f_ThreadID() == NMib::NSys::fg_Thread_GetCurrentUID());
+				DMibFastCheck(t_CBase::m_ThreadID == NMib::NSys::fg_Thread_GetCurrentUID());
 
-				if ((--t_CBase::f_NumRecurse()) == 0)
+				if ((--t_CBase::m_nRecurse) == 0)
 				{
-					t_CBase::f_ThreadID() = 0;
+					t_CBase::m_ThreadID = 0;
 					//mint Bit_Signaled = DMibBitTyped(sizeof(m_nReading)*8-2, mint);
 					mint OldReading = m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::EMemoryOrder_AcquireRelease);
 					DMibFastCheck((OldReading & mc_FlagReadingNotAllowed));
@@ -1537,9 +1534,9 @@ namespace NMib
 #endif
 			
 			// Lock for write access
-			NAtomic::TCAtomicAggregate<mint> m_nReading;
+			DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nReading;
 #			if DMibEnableSafeCheck > 0
-				NAtomic::TCAtomicAggregate<mint> m_nReadingDebugCheck;
+				DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nReadingDebugCheck;
 #			endif
 
 			const static mint mc_FlagReadingNotAllowed = DMibBitTyped(sizeof(NAtomic::TCAtomicAggregate<mint>)*8-1, mint);
@@ -1603,9 +1600,9 @@ namespace NMib
 			{
 				mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
-				if (t_CBase::f_ThreadID() == CurrentThread)
+				if (t_CBase::m_ThreadID == CurrentThread)
 				{
-					++t_CBase::f_NumRecurse();
+					++t_CBase::m_nRecurse;
 					return;
 				}
 				
@@ -1641,18 +1638,18 @@ namespace NMib
 							break;
 					}
 				}
-				t_CBase::f_ThreadID() = CurrentThread;
-				t_CBase::f_NumRecurse() = 1;
+				t_CBase::m_ThreadID = CurrentThread;
+				t_CBase::m_nRecurse = 1;
 				DMibFastCheck(m_nReadingDebugCheck.f_Load() == 0);
 			}
 
 			inline_never void f_Unlock()
 			{
-				DMibFastCheck(t_CBase::f_ThreadID() == NMib::NSys::fg_Thread_GetCurrentUID());
+				DMibFastCheck(t_CBase::m_ThreadID == NMib::NSys::fg_Thread_GetCurrentUID());
 
-				if ((--t_CBase::f_NumRecurse()) == 0)
+				if ((--t_CBase::m_nRecurse) == 0)
 				{
-					t_CBase::f_ThreadID() = 0;
+					t_CBase::m_ThreadID = 0;
 					//mint Bit_Signaled = DMibBitTyped(sizeof(m_nReading)*8-2, mint);
 					m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::EMemoryOrder_AcquireRelease);
 

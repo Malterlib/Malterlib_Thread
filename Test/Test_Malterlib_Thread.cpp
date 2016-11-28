@@ -334,10 +334,15 @@ namespace
 		}
 	};
 
-#	if defined(DEnableWin32ThreadTest)
+#ifdef DPlatformFamily_Windows
 		__declspec(thread) mint g_ThreadLocal = 0;
-		mint g_LocalArrayIndex = 11;
 		__declspec(thread) mint g_ThreadLocalArray[16] = {0};
+#else
+		__thread mint __attribute__((tls_model("local-exec"))) g_ThreadLocal = 0;
+		__thread mint __attribute__((tls_model("local-exec"))) g_ThreadLocalArray[16] = {0};
+#endif
+	mint g_LocalArrayIndex = 11;
+#	if defined(DEnableWin32ThreadTest)
 		DWORD g_TlsLocal;
 		LPVOID (WINAPI *pTlsGetValue)(DWORD dwTlsIndex);
 		DWORD g_FlsLocal;
@@ -353,44 +358,47 @@ namespace
 	{
 	public:
 		
+		static void fs_IncNative()
+		{
+			++g_ThreadLocal;
+		}
+		static void fs_IncNativeArray()
+		{
+			++g_ThreadLocalArray[g_LocalArrayIndex];
+		}
+		
 #		if defined(DEnableWin32ThreadTest)
-			static inline_never void fs_IncNative()
-			{
-				++g_ThreadLocal;
-			}
-			static inline_never void fs_IncNativeArray()
-			{
-				++g_ThreadLocalArray[g_LocalArrayIndex];
-			}
-			static inline_never void fs_IncTls()
+			static void fs_IncTls()
 			{
 				mint *pTls = (mint *)pTlsGetValue(g_TlsLocal);
 				++(*pTls);
 			}
-			static inline_never void fs_IncFls()
+			static void fs_IncFls()
 			{
 				mint *pTls = (mint *)winFlsGetValue(g_FlsLocal);
 				++(*pTls);
 			}
 #		endif
 
-		static inline_never void fs_IncMalterlib()
+		static void fs_IncMalterlib()
 		{
 			++(*g_ThreadLocalMalterlib);
 		}
 
-		static inline_never void fs_IncMalterlibFast()
+		static void fs_IncMalterlibFast()
 		{
 			++(*g_ThreadLocalMalterlibFast);
 		}
 
 
-#		if defined(DEnableWin32ThreadTest)
-			static mint fs_CurrentThreadNative()
-			{
-				return GetCurrentThreadId();
-			}
-#		endif
+		static mint fs_CurrentThreadNative()
+		{
+#ifdef DPlatformFamily_Windows
+			return GetCurrentThreadId();
+#else
+			return (mint)pthread_self();
+#endif
+		}
 
 		static mint fs_CurrentThreadMalterlib()
 		{
@@ -401,26 +409,26 @@ namespace
 			return NMib::NSys::fg_Thread_GetCurrentUID();
 		}
 
-		static inline_never void fs_IncMalterlibStorageFast()
+		static void fs_IncMalterlibStorageFast()
 		{
 			mint *pTls = (mint *)NMib::NSys::fg_Thread_GetLocalFast(g_ThreadLocalFastIndex);
 			++(*pTls);
 		}
 
-		static inline_never void fs_IncMalterlibStorage()
+		static void fs_IncMalterlibStorage()
 		{
 			mint *pTls = (mint *)NMib::NSys::fg_Thread_GetLocal(g_ThreadLocalIndex);
 			++(*pTls);
 		}
 
 		template <typename t_CFunctor>
-		static inline_never void fs_CallFunctor(t_CFunctor _Functor) 
+		static void fs_CallFunctor(t_CFunctor _Functor) 
 		{
 			_Functor();
 		}
 
 		template <typename t_CFunctor>
-		static inline_never void fs_CallFunctor2(t_CFunctor _Functor) 
+		static void fs_CallFunctor2(t_CFunctor _Functor) 
 		{
 			_Functor();
 			_Functor();
@@ -459,8 +467,8 @@ namespace
 
 			DMibTestSuite("TLS Performance")
 			{
+				g_ThreadLocal = 0;
 #				if defined(DEnableWin32ThreadTest)
-					g_ThreadLocal = 0;
 					g_TlsLocal = TlsAlloc();
 					g_FlsLocal = winFlsAlloc(nullptr);
 					TlsSetValue(g_TlsLocal, DMibNew mint);
@@ -482,13 +490,11 @@ namespace
 				const static mint nTests = 33;
 				const static mint nLoops = 100000;
 
-#				if defined(DEnableWin32ThreadTest)
 				g_LocalArrayIndex = NMib::NStr::CStr((NMib::NStr::CStr::CFormat("{}") << (12))).f_ToInt();
-#				endif
 
+				CCyclesMin NativeTime;
+				CCyclesMin NativeArrayTime;
 #				if defined(DEnableWin32ThreadTest)
-					CCyclesMin NativeTime;
-					CCyclesMin NativeArrayTime;
 					CCyclesMin TlsTime;
 					CCyclesMin FlsTime;
 #				endif
@@ -498,31 +504,42 @@ namespace
 				CCyclesMin MalterlibStorageFastTime;
 				CCyclesMin MalterlibStorageTime;
 
+				auto Native = [&] () 
+				{
+					NativeTime.f_Start();
+					[]() inline_never
+						{
+							for (mint i = 0; i < nLoops; ++i)
+							{
+								CThread_Tests::fs_IncNative();
+								asm("");
+							}
+						}()
+					;
+					NativeTime.f_Stop();
+				};
+				auto NativeArray = [&] () 
+				{
+					NativeArrayTime.f_Start();
+					[]() inline_never
+						{
+							for (mint i = 0; i < nLoops; ++i)
+							{
+								CThread_Tests::fs_IncNativeArray();
+								asm("");
+							}
+						}()
+					;
+					NativeArrayTime.f_Stop();
+				};
 #				if defined(DEnableWin32ThreadTest)
-					auto Native = [&] () 
-					{
-						NativeTime.f_Start();
-						for (mint i = 0; i < nLoops; ++i)
-						{
-							CThread_Tests::fs_IncNative();
-						}
-						NativeTime.f_Stop();
-					};
-					auto NativeArray = [&] () 
-					{
-						NativeArrayTime.f_Start();
-						for (mint i = 0; i < nLoops; ++i)
-						{
-							CThread_Tests::fs_IncNativeArray();
-						}
-						NativeArrayTime.f_Stop();
-					};
 					auto Tls = [&] () 
 					{
 						TlsTime.f_Start();
 						for (mint i = 0; i < nLoops; ++i)
 						{
 							CThread_Tests::fs_IncTls();
+							asm("");
 						}
 						TlsTime.f_Stop();
 					};
@@ -532,6 +549,7 @@ namespace
 						for (mint i = 0; i < nLoops; ++i)
 						{
 							CThread_Tests::fs_IncFls();
+							asm("");
 						}
 						FlsTime.f_Stop();
 					};
@@ -540,40 +558,60 @@ namespace
 				auto Malterlib = [&] () 
 				{
 					MalterlibTime.f_Start();
-					for (mint i = 0; i < nLoops; ++i)
-					{
-						CThread_Tests::fs_IncMalterlib();
-					}
+					[]() inline_never
+						{
+							for (mint i = 0; i < nLoops; ++i)
+							{
+								CThread_Tests::fs_IncMalterlib();
+								asm("");
+							}
+						}()
+					;
 					MalterlibTime.f_Stop();
 				};
 
 				auto MalterlibFast = [&] () 
 				{
 					MalterlibFastTime.f_Start();
-					for (mint i = 0; i < nLoops; ++i)
-					{
-						CThread_Tests::fs_IncMalterlibFast();
-					}
+					[]() inline_never
+						{
+							for (mint i = 0; i < nLoops; ++i)
+							{
+								CThread_Tests::fs_IncMalterlibFast();
+								asm("");
+							}
+						}()
+					;
 					MalterlibFastTime.f_Stop();
 				};
 
 				auto MalterlibStorageFast = [&] () 
 				{
 					MalterlibStorageFastTime.f_Start();
-					for (mint i = 0; i < nLoops; ++i)
-					{
-						CThread_Tests::fs_IncMalterlibStorageFast();
-					}
+					[]() inline_never
+						{
+							for (mint i = 0; i < nLoops; ++i)
+							{
+								CThread_Tests::fs_IncMalterlibStorageFast();
+								asm("");
+							}
+						}()
+					;
 					MalterlibStorageFastTime.f_Stop();
 				};
 				
 				auto MalterlibStorage = [&] () 
 				{
 					MalterlibStorageTime.f_Start();
-					for (mint i = 0; i < nLoops; ++i)
-					{
-						CThread_Tests::fs_IncMalterlibStorage();
-					}
+					[]() inline_never
+						{
+							for (mint i = 0; i < nLoops; ++i)
+							{
+								CThread_Tests::fs_IncMalterlibStorage();
+								asm("");
+							}
+						}()
+					;
 					MalterlibStorageTime.f_Stop();
 				};
 
@@ -597,17 +635,17 @@ namespace
 					fs_CallFunctor(MalterlibStorage);
 					fs_CallFunctor2(MalterlibStorage);
 				}
+				for (mint i = 0; i < nTests; ++i)
+				{
+					fs_CallFunctor(Native);
+					fs_CallFunctor2(Native);
+				}
+				for (mint i = 0; i < nTests; ++i)
+				{
+					fs_CallFunctor(NativeArray);
+					fs_CallFunctor2(NativeArray);
+				}
 #				if defined(DEnableWin32ThreadTest)
-					for (mint i = 0; i < nTests; ++i)
-					{
-						fs_CallFunctor(Native);
-						fs_CallFunctor2(Native);
-					}
-					for (mint i = 0; i < nTests; ++i)
-					{
-						fs_CallFunctor(NativeArray);
-						fs_CallFunctor2(NativeArray);
-					}
 					for (mint i = 0; i < nTests; ++i)
 					{
 						fs_CallFunctor(Tls);
@@ -621,9 +659,9 @@ namespace
 #				endif
 
 				
-#				if defined(DEnableWin32ThreadTest)
 					NativeTime /= nLoops;
 					NativeArrayTime /= nLoops;
+#				if defined(DEnableWin32ThreadTest)
 					TlsTime /= nLoops;
 					FlsTime /= nLoops;
 #				endif
@@ -633,12 +671,12 @@ namespace
 				MalterlibStorageFastTime /= nLoops;
 				MalterlibStorageTime /= nLoops;
 
+				DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*g_ThreadLocalMalterlib));
+				DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*g_ThreadLocalMalterlibFast));
+				DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(g_ThreadLocalArray[g_LocalArrayIndex]));
 #				if defined(DEnableWin32ThreadTest)
-					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*g_ThreadLocalMalterlib));
-					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*g_ThreadLocalMalterlibFast));
 					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)TlsGetValue(g_TlsLocal))));
 					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)winFlsGetValue(g_FlsLocal))));
-					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(g_ThreadLocalArray[g_LocalArrayIndex]));
 					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)NMib::NSys::fg_Thread_GetLocalFast(g_ThreadLocalFastIndex))));
 					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)NMib::NSys::fg_Thread_GetLocal(g_ThreadLocalIndex))));
 #				else
@@ -647,13 +685,13 @@ namespace
 					
 				if (NMib::NTest::fg_GroupActive("Performance"))
 				{
-					DMibTest(DMibExpr(MalterlibStorageFastTime) / DMibExpr(MalterlibFastTime) >= DMibExpr(1.0));
-					DMibTest(DMibExpr(MalterlibStorageTime) / DMibExpr(MalterlibTime) >= DMibExpr(1.0));
+					DMibTest(DMibExpr(MalterlibStorageFastTime) / DMibExpr(MalterlibFastTime) >= DMibExpr(0.75));
+					DMibTest(DMibExpr(MalterlibStorageTime) / DMibExpr(MalterlibTime) >= DMibExpr(0.75));
+					DMibTest(DMibExpr(NativeTime) / DMibExpr(MalterlibFastTime) >= DMibExpr(0.75));
+					DMibTest(DMibExpr(NativeArrayTime) / DMibExpr(MalterlibFastTime) >= DMibExpr(0.75));
 #					if defined(DEnableWin32ThreadTest)
-						DMibTest(DMibExpr(NativeTime) / DMibExpr(MalterlibFastTime) >= DMibExpr(1.0));
-						DMibTest(DMibExpr(NativeArrayTime) / DMibExpr(MalterlibFastTime) >= DMibExpr(1.0));
-						DMibTest(DMibExpr(TlsTime) / DMibExpr(MalterlibTime) >= DMibExpr(1.0));
-						DMibTest(DMibExpr(FlsTime) / DMibExpr(MalterlibTime) >= DMibExpr(1.0));
+						DMibTest(DMibExpr(TlsTime) / DMibExpr(MalterlibTime) >= DMibExpr(0.75));
+						DMibTest(DMibExpr(FlsTime) / DMibExpr(MalterlibTime) >= DMibExpr(0.75));
 #					endif
 				}
 
@@ -665,60 +703,65 @@ namespace
 #				endif
 
 				delete ((mint *)NMib::NSys::fg_Thread_GetLocalFast(g_ThreadLocalFastIndex));
+				NMib::NSys::fg_Thread_SetLocalFast(g_ThreadLocalFastIndex, nullptr);
 				NMib::NSys::fg_Thread_FreeLocalFast(g_ThreadLocalFastIndex);
 				delete ((mint *)NMib::NSys::fg_Thread_GetLocal(g_ThreadLocalIndex));
+				NMib::NSys::fg_Thread_SetLocal(g_ThreadLocalIndex, nullptr);
 				NMib::NSys::fg_Thread_FreeLocal(g_ThreadLocalIndex);
 			};
 
 			DMibTestSuite("Current Thread Performance")
 			{
 				const static mint nTests = 100;
-				const static mint nLoops = 100000;
-#				if defined(DEnableWin32ThreadTest)
-					CCyclesMin NativeTime;
-#				endif
+				const static mint nLoops = 1000000;
+				CCyclesMin NativeTime;
 				CCyclesMin MalterlibTime;
 
-				mint ThreadResultMalterlib = 0;
-
-#				if defined(DEnableWin32ThreadTest)
-					mint ThreadResultNative = 0;
-					for (mint i = 0; i < nTests; ++i)
-					{
-						NativeTime.f_Start();
-						for (mint i = 0; i < nLoops; ++i)
+				volatile mint ThreadResultMalterlib = 0;
+				volatile mint ThreadResultNative = 0;
+				
+				for (mint i = 0; i < nTests; ++i)
+				{
+					NativeTime.f_Start();
+					ThreadResultNative = []() inline_never
 						{
-							ThreadResultNative += fs_CurrentThreadNative();
-						}
-						NativeTime.f_Stop();
-					}
-#				endif
+							mint Results = 0;
+							for (mint i = 0; i < nLoops; ++i)
+							{
+								Results += fs_CurrentThreadNative();
+								asm("");
+							}
+							return Results;
+						}()
+					;
+					NativeTime.f_Stop();
+				}
 
 				for (mint i = 0; i < nTests; ++i)
 				{
 					MalterlibTime.f_Start();
-					for (mint i = 0; i < nLoops; ++i)
-					{
-						ThreadResultMalterlib += fs_CurrentThreadMalterlib();
-					}
+					ThreadResultMalterlib = []() inline_never
+						{
+							mint Results = 0;
+							for (mint i = 0; i < nLoops; ++i)
+							{
+								Results += fs_CurrentThreadMalterlib();
+								asm("");
+							}
+							return Results;
+						}()
+					;
 					MalterlibTime.f_Stop();
 				}
-#				if defined(DEnableWin32ThreadTest)
-					NativeTime /= nLoops;
-#				endif
 
+				NativeTime /= nLoops;
 				MalterlibTime /= nLoops;
 				
-#				if defined(DEnableWin32ThreadTest)
-					mint ThreadResultMalterlib1 = ThreadResultMalterlib;
-					mint ThreadResultNative1 = ThreadResultNative;
-					DMibTest(DMibExpr(ThreadResultMalterlib1) == DMibExpr(ThreadResultNative1));
-					if (NMib::NTest::fg_GroupActive("Performance"))
-						DMibTest(DMibExpr(NativeTime) / DMibExpr(MalterlibTime) >= DMibExpr(1.0));
-#				else
-					if (NMib::NTest::fg_GroupActive("Performance"))
-						DMibTest(DMibExpr(MalterlibTime) / DMibExpr(MalterlibTime) >= DMibExpr(1.0));
-#				endif
+				mint ThreadResultMalterlib1 = ThreadResultMalterlib;
+				mint ThreadResultNative1 = ThreadResultNative;
+				DMibTest(DMibExpr(ThreadResultMalterlib1) == DMibExpr(ThreadResultNative1));
+				if (NMib::NTest::fg_GroupActive("Performance"))
+					DMibTest(DMibExpr(NativeTime) / DMibExpr(MalterlibTime) >= DMibExpr(1.0));
 
 			};
 			DMibTestSuite("Lock Performance")
@@ -726,13 +769,13 @@ namespace
 				const static mint nTests = 101;
 				const static mint nLoops = 100000;
 
-				CTestPerformance PerfTestMutual(1.0, false);
-				CTestPerformance PerfTestMutualRecursive(1.0, false);
+				CTestPerformance PerfTestMutual(0.75, false);
+				CTestPerformance PerfTestMutualRecursive(0.75, false);
 
-				CTestPerformance PerfTestSimpleMutual(1.0, false);
+				CTestPerformance PerfTestSimpleMutual(0.75, false);
 
-				CTestPerformance PerfTestReadWriteRead(1.0, false);
-				CTestPerformance PerfTestReadWriteWrite(1.0, false);
+				CTestPerformance PerfTestReadWriteRead(0.75, false);
+				CTestPerformance PerfTestReadWriteWrite(0.75, false);
 				
 #				if defined(DEnableWin32ThreadTest)
 				{
@@ -744,11 +787,15 @@ namespace
 						for (mint i = 0; i < nTests; ++i)
 						{
 							Measure.f_Start();
-							for (mint i = 0; i < nLoops; ++i)
-							{
-								EnterCriticalSection((CRITICAL_SECTION *)&Crit);
-								LeaveCriticalSection((CRITICAL_SECTION *)&Crit);
-							}
+							[&]() inline_never
+								{
+									for (mint i = 0; i < nLoops; ++i)
+									{
+										EnterCriticalSection((CRITICAL_SECTION *)&Crit);
+										LeaveCriticalSection((CRITICAL_SECTION *)&Crit);
+									}
+								}()
+							;
 							Measure.f_Stop(nLoops);
 						}
 						
@@ -760,11 +807,15 @@ namespace
 						{
 							EnterCriticalSection((CRITICAL_SECTION *)&Crit);
 							Measure.f_Start();
-							for (mint i = 0; i < nLoops; ++i)
-							{
-								EnterCriticalSection((CRITICAL_SECTION *)&Crit);
-								LeaveCriticalSection((CRITICAL_SECTION *)&Crit);
-							}
+							[&]() inline_never
+								{
+									for (mint i = 0; i < nLoops; ++i)
+									{
+										EnterCriticalSection((CRITICAL_SECTION *)&Crit);
+										LeaveCriticalSection((CRITICAL_SECTION *)&Crit);
+									}
+								}()
+							;
 							Measure.f_Stop(nLoops);
 							LeaveCriticalSection((CRITICAL_SECTION *)&Crit);
 						}
@@ -786,11 +837,15 @@ namespace
 							for (mint i = 0; i < nTests; ++i)
 							{
 								Measure.f_Start();
-								for (mint i = 0; i < nLoops; ++i)
-								{
-									Lock.lock();
-									Lock.unlock();
-								}
+								[&]() inline_never
+									{
+										for (mint i = 0; i < nLoops; ++i)
+										{
+											Lock.lock();
+											Lock.unlock();
+										}
+									}()
+								;
 								Measure.f_Stop(nLoops);
 							}
 							PerfTestReadWriteWrite.f_AddReference(Measure);
@@ -803,11 +858,15 @@ namespace
 							for (mint i = 0; i < nTests; ++i)
 							{
 								Measure.f_Start();
-								for (mint i = 0; i < nLoops; ++i)
-								{
-									Lock.lock_read();
-									Lock.unlock();
-								}
+								[&]() inline_never
+									{
+										for (mint i = 0; i < nLoops; ++i)
+										{
+											Lock.lock_read();
+											Lock.unlock();
+										}
+									}()
+								;
 								Measure.f_Stop(nLoops);
 							}
 							PerfTestReadWriteRead.f_AddReference(Measure);
@@ -818,16 +877,18 @@ namespace
 
 #				endif
 				{
-					NMib::NThread::CMutual Lock;
 					{
 						CTestPerformanceMeasure Measure("CMutual");
 						for (mint i = 0; i < nTests; ++i)
 						{
 							Measure.f_Start();
-							for (mint i = 0; i < nLoops; ++i)
-							{
-								DMibLock(Lock);
-							}
+							[]() inline_never
+								{
+									NMib::NThread::CMutual Lock;
+									for (mint i = 0; i < nLoops; ++i)
+										DMibLock(Lock);
+								}()
+							;
 							Measure.f_Stop(nLoops);
 						}
 						PerfTestMutual.f_Add(Measure);
@@ -837,28 +898,33 @@ namespace
 						CTestPerformanceMeasure Measure("CMutual");
 						for (mint i = 0; i < nTests; ++i)
 						{
+							NMib::NThread::CMutual Lock;
 							DMibLock(Lock);
 							Measure.f_Start();
-							for (mint i = 0; i < nLoops; ++i)
-							{
-								DMibLock(Lock);
-							}
+							[&]() inline_never
+								{
+									for (mint i = 0; i < nLoops; ++i)
+										DMibLock(Lock);
+								}()
+							;
 							Measure.f_Stop(nLoops);
 						}
 						PerfTestMutualRecursive.f_Add(Measure);
 					}
 				}
 				{
-					NMib::NThread::CMutualSpin Lock;
 					{
 						CTestPerformanceMeasure Measure("CMutualSpin");
 						for (mint i = 0; i < nTests; ++i)
 						{
+							NMib::NThread::CMutualSpin Lock;
 							Measure.f_Start();
-							for (mint i = 0; i < nLoops; ++i)
-							{
-								DMibLock(Lock);
-							}
+							[&]() inline_never
+								{
+									for (mint i = 0; i < nLoops; ++i)
+										DMibLock(Lock);
+								}()
+							;
 							Measure.f_Stop(nLoops);
 						}
 						PerfTestMutual.f_Add(Measure);
@@ -868,29 +934,36 @@ namespace
 						CTestPerformanceMeasure Measure("CMutualSpin");
 						for (mint i = 0; i < nTests; ++i)
 						{
+							NMib::NThread::CMutualSpin Lock;
 							DMibLock(Lock);
 							Measure.f_Start();
-							for (mint i = 0; i < nLoops; ++i)
-							{
-								DMibLock(Lock);
-							}
+							[&]() inline_never
+								{
+									for (mint i = 0; i < nLoops; ++i)
+										DMibLock(Lock);
+								}()
+							;
 							Measure.f_Stop(nLoops);
 						}
 						PerfTestMutualRecursive.f_Add(Measure);
 					}
 				}
 				{
-					std::recursive_mutex Lock;
 					{
 						CTestPerformanceMeasure Measure("recursive_mutex");
 						for (mint i = 0; i < nTests; ++i)
 						{
+							std::recursive_mutex Lock;
 							Measure.f_Start();
-							for (mint i = 0; i < nLoops; ++i)
-							{
-								Lock.lock();
-								Lock.unlock();
-							}
+							[&]() inline_never
+								{
+									for (mint i = 0; i < nLoops; ++i)
+									{
+										Lock.lock();
+										Lock.unlock();
+									}
+								}()
+							;
 							Measure.f_Stop(nLoops);
 						}
 						PerfTestMutual.f_AddReference(Measure);
@@ -899,89 +972,106 @@ namespace
 						CTestPerformanceMeasure Measure("recursive_mutex");
 						for (mint i = 0; i < nTests; ++i)
 						{
+							std::recursive_mutex Lock;
 							Lock.lock();
 							Measure.f_Start();
-							for (mint i = 0; i < nLoops; ++i)
-							{
-								Lock.lock();
-								Lock.unlock();
-							}
-							Measure.f_Stop(nLoops);
+							[&]() inline_never
+								{
+									for (mint i = 0; i < nLoops; ++i)
+									{
+										Lock.lock();
+										Lock.unlock();
+									}
+								}()
+							;
 							Lock.unlock();
+							Measure.f_Stop(nLoops);
 						}
 						PerfTestMutualRecursive.f_AddReference(Measure);
 					}
 				}
 				{
 					CTestPerformanceMeasure Measure("CMutualSimple");
-					NMib::NThread::CMutualSimple Lock;
 					for (mint i = 0; i < nTests; ++i)
 					{
+						NMib::NThread::CMutualSimple Lock;
 						Measure.f_Start();
-						for (mint i = 0; i < nLoops; ++i)
-						{
-							DMibLock(Lock);
-						}
+						[&]() inline_never
+							{
+								for (mint i = 0; i < nLoops; ++i)
+									DMibLock(Lock);
+							}()
+						;
 						Measure.f_Stop(nLoops);
 					}
 					PerfTestSimpleMutual.f_Add(Measure);
 				}
 				{
 					CTestPerformanceMeasure Measure("CSpinLock");
-					NMib::NThread::CSpinLock Lock;
 					for (mint i = 0; i < nTests; ++i)
 					{
+						NMib::NThread::CSpinLock Lock;
 						Measure.f_Start();
-						for (mint i = 0; i < nLoops; ++i)
-						{
-							DMibLock(Lock);
-						}
+						[&]() inline_never
+							{
+								for (mint i = 0; i < nLoops; ++i)
+									DMibLock(Lock);
+							}()
+						;
 						Measure.f_Stop(nLoops);
 					}
 					PerfTestSimpleMutual.f_Add(Measure);
 				}
 				{
 					CTestPerformanceMeasure Measure("mutex");
-					std::mutex Lock;
 					for (mint i = 0; i < nTests; ++i)
 					{
+						std::mutex Lock;
 						Measure.f_Start();
-						for (mint i = 0; i < nLoops; ++i)
-						{
-							Lock.lock();
-							Lock.unlock();
-						}
+						[&]() inline_never
+							{
+								for (mint i = 0; i < nLoops; ++i)
+								{
+									Lock.lock();
+									Lock.unlock();
+								}
+							}()
+						;
 						Measure.f_Stop(nLoops);
 					}
 					PerfTestSimpleMutual.f_AddReference(Measure);
 				}
 				{
 					CTestPerformanceMeasure Measure("CMutualManyRead");
-					NMib::NThread::CMutualManyRead Lock;
-					{
-						DMibLock(Lock);
-					}
 					for (mint i = 0; i < nTests; ++i)
 					{
-						Measure.f_Start();
-						for (mint i = 0; i < nLoops; ++i)
+						NMib::NThread::CMutualManyRead Lock;
 						{
 							DMibLock(Lock);
 						}
+						Measure.f_Start();
+						[&]() inline_never
+							{
+								for (mint i = 0; i < nLoops; ++i)
+									DMibLock(Lock);
+							}()
+						;
 						Measure.f_Stop(nLoops);
 					}
 					PerfTestReadWriteWrite.f_Add(Measure);
 				}
 				{
 					CTestPerformanceMeasure Measure("CMutualManyRead");
-					NMib::NThread::CMutualManyRead Lock;
 					for (mint i = 0; i < nTests; ++i)
 					{
+						NMib::NThread::CMutualManyRead Lock;
 						Measure.f_Start();
-						for (mint i = 0; i < nLoops; ++i)
-						{
-							DMibLockRead(Lock);
-						}
+						[&]() inline_never
+							{
+								for (mint i = 0; i < nLoops; ++i)
+									DMibLockRead(Lock);
+							}()
+						;
 						Measure.f_Stop(nLoops);
 					}
 					PerfTestReadWriteRead.f_Add(Measure);
@@ -1008,21 +1098,42 @@ namespace
 					for (mint i = 0; i < 10; ++i)
 					{
 						NMib::NAggregate::TCAggregate<TCThreadLocal<CTemp35, NMib::NMem::CAllocator_Heap, EThreadLocalFlag_AlwaysCreated>> ThreadLocal = {DAggregateInit};
-						NMib::NPtr::TCUniquePointer<CThreadObject> pThread = CThreadObject::fs_StartThread([&] (CThreadObject *_pThread) -> aint
-																			   {
-																				   _pThread->m_EventWantQuit.f_Wait();
-																				   int32 ValueInThread = (*ThreadLocal)->m_Value;
-																				   DMibTest(DMibExpr(ValueInThread) == DMibExpr(35)) (ETestFlag_Aggregated);
-																				   return 0;
-																			   }, 
-																			   "Test thread local thread");
+						NMib::NThread::CEvent Event;
+						NMib::NThread::CEvent EventDone;
+						NMib::NPtr::TCUniquePointer<CThreadObject> pThread = CThreadObject::fs_StartThread
+							(
+								[&] (CThreadObject *_pThread) -> aint
+								{
+									_pThread->m_EventWantQuit.f_Wait();
+									int32 ValueInThread = (*ThreadLocal)->m_Value;
+									DMibTest(DMibExpr(ValueInThread) == DMibExpr(35)) (ETestFlag_Aggregated);
+									EventDone.f_SetSignaled();
+									Event.f_Wait();
+									return 0;
+								} 
+								, "Test thread local thread"
+							)
+						;
 						if (i > 5)
 							NMib::NSys::fg_Thread_Sleep(0.050f);
 						(*ThreadLocal)->m_Value = 36;
 						pThread->m_EventWantQuit.f_Signal();
+						EventDone.f_Wait();
 						DMibTest(DMibExpr((*ThreadLocal)->m_Value) == DMibExpr(36)) (ETestFlag_Aggregated);
-						pThread.f_Clear();
-						ThreadLocal.f_Destruct();
+						if (i & 1)
+						{
+							ThreadLocal.f_Destruct();
+							Event.f_SetSignaled();
+							pThread->f_Stop();
+							pThread.f_Clear();
+						}
+						else
+						{
+							Event.f_SetSignaled();
+							pThread->f_Stop();
+							pThread.f_Clear();
+							ThreadLocal.f_Destruct();
+						}
 					};
 				};
 
@@ -1031,23 +1142,44 @@ namespace
 					for (mint i = 0; i < 10; ++i)
 					{
 						NMib::NAggregate::TCAggregate<TCThreadLocal<CTemp, NMib::NMem::CAllocator_Heap, EThreadLocalFlag_Inherit>> ThreadLocal = {DAggregateInit};
+						
+						NMib::NThread::CEvent Event;
+						NMib::NThread::CEvent EventDone;
 						(*ThreadLocal)->m_Value = 36;
+
 						DMibTest(DMibExpr((*ThreadLocal)->m_Value) == DMibExpr(36)) (ETestFlag_Aggregated);
-						NMib::NPtr::TCUniquePointer<CThreadObject> pThread = CThreadObject::fs_StartThread([&] (CThreadObject *_pThread) -> aint
-																			   {
-																				   _pThread->m_EventWantQuit.f_Wait();
-																				   int32 ValueInThread = (*ThreadLocal)->m_Value;
-																				   DMibTest(DMibExpr(ValueInThread) == DMibExpr(36)) (ETestFlag_Aggregated);
-																				   return 0;
-																			   }, 
-																			   "Test thread local thread");
+						NMib::NPtr::TCUniquePointer<CThreadObject> pThread = CThreadObject::fs_StartThread
+							(
+								[&] (CThreadObject *_pThread) -> aint
+								{
+									_pThread->m_EventWantQuit.f_Wait();
+									int32 ValueInThread = (*ThreadLocal)->m_Value;
+									DMibTest(DMibExpr(ValueInThread) == DMibExpr(36)) (ETestFlag_Aggregated);
+									EventDone.f_SetSignaled();
+									Event.f_Wait();
+									return 0;
+								} 
+								, "Test thread local thread"
+							)
+						;
 						if (i > 5)
 							NMib::NSys::fg_Thread_Sleep(0.050f);
-						
 						pThread->m_EventWantQuit.f_Signal();
-						pThread->f_Stop();
-						pThread.f_Clear();
-						ThreadLocal.f_Destruct();
+						EventDone.f_Wait();
+						if (i & 1)
+						{
+							ThreadLocal.f_Destruct();
+							Event.f_SetSignaled();
+							pThread->f_Stop();
+							pThread.f_Clear();
+						}
+						else
+						{
+							Event.f_SetSignaled();
+							pThread->f_Stop();
+							pThread.f_Clear();
+							ThreadLocal.f_Destruct();
+						}
 					}
 				};
 
@@ -1056,34 +1188,59 @@ namespace
 					for (mint i = 0; i < 10; ++i)
 					{
 						NMib::NAggregate::TCAggregate<TCThreadLocal<CTemp, NMib::NMem::CAllocator_Heap, EThreadLocalFlag(uint32(EThreadLocalFlag_Inherit) | uint32(EThreadLocalFlag_AlwaysCreated))>> ThreadLocal = {DAggregateInit};
-						NMib::NPtr::TCUniquePointer<CThreadObject> pThread0 = CThreadObject::fs_StartThread([&] (CThreadObject *_pThread) -> aint
-																			   {
-																				   _pThread->m_EventWantQuit.f_Wait();
-																				   int32 ValueInThread0 = (*ThreadLocal)->m_Value;
-																				   DMibTest(DMibExpr(ValueInThread0) == DMibExpr(36) || DMibExpr(ValueInThread0) == DMibExpr(0)) (ETestFlag_Aggregated);
-																				   return 0;
-																			   }, 
-																			   "Test thread local thread 0");
+						NMib::NThread::CEvent Event;
+						NMib::NThread::CEvent EventDone;
+						NMib::NPtr::TCUniquePointer<CThreadObject> pThread0 = CThreadObject::fs_StartThread
+							(
+								[&] (CThreadObject *_pThread) -> aint
+								{
+									_pThread->m_EventWantQuit.f_Wait();
+									int32 ValueInThread0 = (*ThreadLocal)->m_Value;
+									DMibTest(DMibExpr(ValueInThread0) == DMibExpr(36) || DMibExpr(ValueInThread0) == DMibExpr(0)) (ETestFlag_Aggregated);
+									return 0;
+								}
+								, "Test thread local thread 0"
+							)
+						;
 						if (i > 5)
 							NMib::NSys::fg_Thread_Sleep(0.050f);
 						(*ThreadLocal)->m_Value = 36;
 						DMibTest(DMibExpr((*ThreadLocal)->m_Value) == DMibExpr(36)) (ETestFlag_Aggregated);
-						NMib::NPtr::TCUniquePointer<CThreadObject> pThread1 = CThreadObject::fs_StartThread([&] (CThreadObject *_pThread) -> aint
-																			   {
-																				   _pThread->m_EventWantQuit.f_Wait();
-																				   int32 ValueInThread1 = (*ThreadLocal)->m_Value;
-																				   DMibTest(DMibExpr(ValueInThread1) == DMibExpr(36)) (ETestFlag_Aggregated);
-																				   return 0;
-																			   }, 
-																			   "Test thread local thread 1");
+						NMib::NPtr::TCUniquePointer<CThreadObject> pThread1 = CThreadObject::fs_StartThread
+							(
+								[&] (CThreadObject *_pThread) -> aint
+								{
+									_pThread->m_EventWantQuit.f_Wait();
+									int32 ValueInThread1 = (*ThreadLocal)->m_Value;
+									DMibTest(DMibExpr(ValueInThread1) == DMibExpr(36)) (ETestFlag_Aggregated);
+									EventDone.f_SetSignaled();
+									Event.f_Wait();
+									return 0;
+								} 
+								, "Test thread local thread 1"
+							)
+						;
 						
 						pThread0->m_EventWantQuit.f_Signal();
 						pThread0->f_Stop();
 						pThread1->m_EventWantQuit.f_Signal();
-						pThread1->f_Stop();
-						pThread0.f_Clear();
-						pThread1.f_Clear();
-						ThreadLocal.f_Destruct();
+						EventDone.f_Wait();
+						if (i & 1)
+						{
+							ThreadLocal.f_Destruct();
+							Event.f_SetSignaled();
+							pThread1->f_Stop();
+							pThread0.f_Clear();
+							pThread1.f_Clear();
+						}
+						else
+						{
+							Event.f_SetSignaled();
+							pThread1->f_Stop();
+							pThread0.f_Clear();
+							pThread1.f_Clear();
+							ThreadLocal.f_Destruct();
+						}
 					}
 				};
 

@@ -114,6 +114,9 @@ namespace NMib
 			NMem::TCPool<CPerThread, 128, NThread::CNoLock, NMem::CPoolType_Freeable, NMem::CAllocator_VirtualNoTracking> m_PoolPerThread;
 			CAllocationPool m_PoolAllocation;
 			
+#if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
+			mint m_iPerThreadDestructor;
+#endif
 			mint m_iPerThread;
 
 			NThread::CMutual m_LockResizePerThread;

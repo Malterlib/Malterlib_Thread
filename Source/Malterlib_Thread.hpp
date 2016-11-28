@@ -94,8 +94,11 @@ namespace NMib
 			}
 			else
 			{
-				if (pData)
+				if (likely(pData))
+				{
+					//DMibFastCheck(((t_CData *)fg_GetSys()->f_ThreadLocalGet(m_pStorage)) == pData);
 					return pData;
+				}
 				return fp_GetNew();
 			}
 		}
@@ -371,8 +374,11 @@ namespace NMib
 			}
 			else
 			{
-				if (pData)
+				if (likely(pData))
+				{
+					//DMibFastCheck(((t_CData *)fg_GetSys()->f_ThreadLocalGet(m_pStorage)) == pData);
 					return pData;
+				}
 				return fp_GetNew();
 			}
 		}
