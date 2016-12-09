@@ -111,7 +111,7 @@ namespace NMib
 		void CThreadLocalContext::fs_PerThreadDestructor(void* _pPerThread)
 		{
 			CPerThread* pPerThread = (CPerThread*)_pPerThread;
-
+			
 			g_ThreadLocalContext->fp_FreePerThread(pPerThread);
 		}
 
@@ -151,7 +151,17 @@ namespace NMib
 			
 			auto pCurrentThread = m_lPerThread.f_FindEqual(_ThreadID);
 			if (pCurrentThread)
+			{
+				if (_ThreadID == NSys::fg_Thread_GetCurrentUID())
+				{
+#if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
+					NSys::fg_Thread_SetLocalDestructor(_ThreadID, m_iPerThreadDestructor, pCurrentThread);
+#endif
+					NSys::fg_Thread_SetLocal(m_iPerThread, pCurrentThread);
+				}
+				
 				return pCurrentThread; // Can happen when system destroys thread local and another thread local is dependant
+			}
 			// Lock for the pool
 			// The thread storage does not exist for this thread, lets create it
 			CPerThread *pThreadLocal = m_PoolPerThread.f_New
@@ -173,6 +183,11 @@ namespace NMib
 		bool CThreadLocalContext::f_ThreadDestroyed() const
 		{
 			return (mint)NSys::fg_Thread_GetLocal(m_iPerThread) == TCLimitsInt<mint>::mc_Max;
+		}
+		
+		bool CThreadLocalContext::f_ThreadCreated()
+		{
+			return (mint)NSys::fg_Thread_GetLocal(m_iPerThread) != 0;
 		}
 
 		CThreadLocalContext::CPerThread *CThreadLocalContext::fp_GetPerThread(mint _ThreadID)
@@ -361,6 +376,8 @@ namespace NMib
 				return; // Already created
 
 			pCopyTo->m_bOnThreadCreated = true;
+			
+			DMibFastCheck(fg_GetSys()->f_ThreadCreated());
 
 			CPerThread *pCopyFrom = m_lPerThread.f_FindEqual(_ParentThread);
 
@@ -623,5 +640,9 @@ namespace NMib
 	{
 		return NPrivate::g_ThreadLocalContext->f_ThreadDestroyed();
 	}
-
+	
+	bool CSystem::f_ThreadCreated() const
+	{
+		return NPrivate::g_ThreadLocalContext->f_ThreadCreated();
+	}
 } // Namespace NMib
