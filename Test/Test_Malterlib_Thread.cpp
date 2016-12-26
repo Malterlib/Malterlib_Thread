@@ -512,7 +512,9 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncNative();
+#ifndef DCompiler_MSVC
 								asm("");
+#endif
 							}
 						}()
 					;
@@ -526,7 +528,9 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncNativeArray();
+#ifndef DCompiler_MSVC
 								asm("");
+#endif
 							}
 						}()
 					;
@@ -539,7 +543,9 @@ namespace
 						for (mint i = 0; i < nLoops; ++i)
 						{
 							CThread_Tests::fs_IncTls();
+#ifndef DCompiler_MSVC
 							asm("");
+#endif
 						}
 						TlsTime.f_Stop();
 					};
@@ -549,7 +555,9 @@ namespace
 						for (mint i = 0; i < nLoops; ++i)
 						{
 							CThread_Tests::fs_IncFls();
+#ifndef DCompiler_MSVC
 							asm("");
+#endif
 						}
 						FlsTime.f_Stop();
 					};
@@ -563,7 +571,9 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncMalterlib();
+#ifndef DCompiler_MSVC
 								asm("");
+#endif
 							}
 						}()
 					;
@@ -578,7 +588,9 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncMalterlibFast();
+#ifndef DCompiler_MSVC
 								asm("");
+#endif
 							}
 						}()
 					;
@@ -593,7 +605,9 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncMalterlibStorageFast();
+#ifndef DCompiler_MSVC
 								asm("");
+#endif
 							}
 						}()
 					;
@@ -608,7 +622,9 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncMalterlibStorage();
+#ifndef DCompiler_MSVC
 								asm("");
+#endif
 							}
 						}()
 					;
@@ -729,7 +745,10 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								Results += fs_CurrentThreadNative();
+#ifndef DCompiler_MSVC
 								asm("");
+#endif
+
 							}
 							return Results;
 						}()
@@ -746,7 +765,10 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								Results += fs_CurrentThreadMalterlib();
+#ifndef DCompiler_MSVC
 								asm("");
+#endif
+
 							}
 							return Results;
 						}()
