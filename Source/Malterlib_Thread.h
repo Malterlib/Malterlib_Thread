@@ -1330,13 +1330,17 @@ namespace NMib
 				mint nReading = m_nReading.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire);
 				if (nReading & mc_FlagReadingNotAllowed)
 				{
-					mint PrevFlags = m_nReading.f_FetchOr(mc_FlagReadOkEventReset, NAtomic::EMemoryOrder_Acquire);
-					if (!(PrevFlags & mc_FlagReadOkEventReset))
+					++nReading;
+					while (!(nReading & mc_FlagReadOkEventReset) && (nReading & mc_FlagReadingNotAllowed))
 					{
-						m_ReadOkEvent.f_ResetSignaled();
-						PrevFlags = m_nReading.f_FetchOr(mc_FlagReadOkEventResetDone, NAtomic::EMemoryOrder_Release);
+						if (m_nReading.f_CompareExchangeStrong(nReading, nReading | mc_FlagReadOkEventReset, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
+						{
+							m_ReadOkEvent.f_ResetSignaled();
+							nReading = m_nReading.f_FetchOr(mc_FlagReadOkEventResetDone, NAtomic::EMemoryOrder_Release);
+							break;
+						}
 					}
-					if (PrevFlags & mc_FlagReadingNotAllowed)
+					if (nReading & mc_FlagReadingNotAllowed)
 					{
 						f_UnlockReadInternal();
 						{
