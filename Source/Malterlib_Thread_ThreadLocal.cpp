@@ -487,6 +487,8 @@ namespace NMib
 						auto &Interface = *Index.m_pInterface;
 						
 						_pPerThread->m_DestroyingID = Index.m_iThreadLocal;
+						if (pPtr)
+							Interface.f_DeleteItem(pPtr);
 					//#ifndef DMibPSupportThreadLocalDestructors
 						if (Interface.m_Flags & NThread::EThreadLocalInterfaceFlag_UseFastStorage)
 							NSys::fg_Thread_SetLocalFast(Index.m_LocalThreadLocal, nullptr);
@@ -494,8 +496,6 @@ namespace NMib
 							NSys::fg_Thread_SetLocal(Index.m_LocalThreadLocal, nullptr);
 					//#endif
 						Pointer.m_pPtr = nullptr;
-						if (pPtr)
-							Interface.f_DeleteItem(pPtr);
 					}
 
 				}
