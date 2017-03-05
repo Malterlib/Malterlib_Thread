@@ -226,7 +226,7 @@ namespace NMib
 						NTraits::TCIsConstructorCallableWith<t_CData, t_CData &&>::mc_Value, NPrivate::TCCreateHelperDo, NPrivate::TCCreateHelperDoNot
 					>::CType::template fs_CreateHelperMove<t_CData>
 					(
-						t_CAllocator::f_AllocAligned(Size, fg_Max(DMibPMemoryCacheLineSize, NTraits::TCAlignmentOf<t_CData>::mc_Value))
+						t_CAllocator::f_AllocAligned(Size, fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))
 						, _pSource
 					)
 				;
@@ -238,7 +238,7 @@ namespace NMib
 					mint Size = sizeof(t_CData);
 					return TCChooseType<EInherit, NPrivate::TCCreateHelperDo, NPrivate::TCCreateHelperDoNot>::CType::template fs_CreateHelper<t_CData>
 						(
-							t_CAllocator::f_AllocAligned(Size, fg_Max(DMibPMemoryCacheLineSize, NTraits::TCAlignmentOf<t_CData>::mc_Value))
+							t_CAllocator::f_AllocAligned(Size, fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))
 							, _pSource
 						)
 					;
@@ -257,7 +257,7 @@ namespace NMib
 			if ((Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
 			{
 				mint Size = fg_AlignUp(sizeof(t_CData), t_CAllocator::f_GranularityAlloc());
-				return new(t_CAllocator::f_AllocAligned(Size, fg_Max(DMibPMemoryCacheLineSize, NTraits::TCAlignmentOf<t_CData>::mc_Value))) t_CData();
+				return new(t_CAllocator::f_AllocAligned(Size, fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))) t_CData();
 			}
 			return nullptr;
 		}
