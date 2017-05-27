@@ -64,11 +64,13 @@ namespace NMib
 					DMibFastCheck(SystemThreads.f_BinarySearch(PerThread.m_ThreadID) >= 0);
 					LocalThreads.f_Insert(PerThread.m_ThreadID);
 				}
+
+				/*
 				LocalThreads.f_Sort();
 				for (auto &SystemThread : SystemThreads)
 				{
 					DMibFastCheck(LocalThreads.f_BinarySearch(SystemThread) >= 0);
-				}
+				}*/
 			}
 #endif
 
