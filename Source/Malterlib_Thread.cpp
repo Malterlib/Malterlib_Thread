@@ -440,12 +440,14 @@ namespace NMib
 		TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::~TCSharedPointerIntrusiveBase()
 		{
 			DMibCheck(f_RefCountGet() <= 0);
+			DMibRefcountDebuggingOnly(if (f_RefCountGet() == 0) m_Debug.f_Destruct());
 		}
+
 		TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::~TCSharedPointerIntrusiveBase()
 		{
 			DMibCheck(f_RefCountGet() <= 0);
+			DMibRefcountDebuggingOnly(if (f_RefCountGet() == 0) m_Debug.f_Destruct());
 		}
-
 	}
 }
 
