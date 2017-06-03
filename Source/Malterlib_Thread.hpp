@@ -159,11 +159,13 @@ namespace NMib
 			return f_Get();
 		}
 
+#ifndef DDocumentation_Doxygen
 		template <typename t_CData, typename t_CAllocator, CThreadLocalFlagUnderlaying t_Flags>
 		inline_small t_CData & TCThreadLocal<t_CData, t_CAllocator, t_Flags>::operator &()
 		{
 			return *f_Get();
 		}
+#endif
 
 		template <typename t_CData, typename t_CAllocator, CThreadLocalFlagUnderlaying t_Flags>
 		void TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_DeleteItem(void *_pItem)
@@ -434,11 +436,13 @@ namespace NMib
 			return f_Get();
 		}
 
+#ifndef DDocumentation_Doxygen
 		template <typename t_CData, CThreadLocalFlagUnderlaying t_Flags>
 		inline_small t_CData & TCThreadLocalDynamic<t_CData, t_Flags>::operator &()
 		{
 			return *f_Get();
 		}
+#endif
 
 		template <typename t_CData, CThreadLocalFlagUnderlaying t_Flags>
 		void TCThreadLocalDynamic<t_CData, t_Flags>::f_DeleteItem(void *_pItem)
