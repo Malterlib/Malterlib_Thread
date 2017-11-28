@@ -43,16 +43,16 @@ namespace NMib::NPtr
 
 	aint TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RefCountDecrease(CRefCountDebugReference &o_Reference) const
 	{
-		aint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
-		if (Return == 0)
-			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
-
 		DMibFastCheck(o_Reference.m_pCallstack);
 		{
 			DMibLock(m_Debug->m_Lock);
 			m_Debug->m_Callstacks.f_Remove(*o_Reference.m_pCallstack);
 			o_Reference.m_pCallstack = nullptr;
 		}
+
+		aint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+		if (Return == 0)
+			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
 
 		DMibRefcountDebuggingOnly(if (Return == 0) m_Debug.f_Destruct());
 
@@ -87,16 +87,16 @@ namespace NMib::NPtr
 
 	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountDecrease(CRefCountDebugReference &o_Reference) const
 	{
-		smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
-		if (Return == 0)
-			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
-
 		DMibFastCheck(o_Reference.m_pCallstack);
 		{
 			DMibLock(m_Debug->m_Lock);
 			m_Debug->m_Callstacks.f_Remove(*o_Reference.m_pCallstack);
 			o_Reference.m_pCallstack = nullptr;
 		}
+
+		smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+		if (Return == 0)
+			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
 
 		return Return;
 	}
@@ -138,10 +138,6 @@ namespace NMib::NPtr
 
 	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_WeakRefCountDecrease(CRefCountDebugReference *o_pReference) const
 	{
-		smint Return = m_WeakRefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
-		if (Return == 0)
-			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
-
 		if (o_pReference)
 		{
 			DMibFastCheck(o_pReference->m_pCallstack);
@@ -151,6 +147,10 @@ namespace NMib::NPtr
 				o_pReference->m_pCallstack = nullptr;
 			}
 		}
+
+		smint Return = m_WeakRefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+		if (Return == 0)
+			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
 
 		DMibRefcountDebuggingOnly(if (Return == 0) m_Debug.f_Destruct());
 
