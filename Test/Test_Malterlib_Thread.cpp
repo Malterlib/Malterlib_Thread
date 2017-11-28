@@ -1099,11 +1099,14 @@ namespace
 					PerfTestReadWriteRead.f_Add(Measure);
 				}
 
-				DMibTest(DMibExpr(PerfTestMutual));
-				DMibTest(DMibExpr(PerfTestSimpleMutual));
-				DMibTest(DMibExpr(PerfTestMutualRecursive));
-				DMibTest(DMibExpr(PerfTestReadWriteWrite));
-				DMibTest(DMibExpr(PerfTestReadWriteRead));
+				if (NMib::NTest::fg_GroupActive("Performance"))
+				{
+					DMibTest(DMibExpr(PerfTestMutual));
+					DMibTest(DMibExpr(PerfTestSimpleMutual));
+					DMibTest(DMibExpr(PerfTestMutualRecursive));
+					DMibTest(DMibExpr(PerfTestReadWriteWrite));
+					DMibTest(DMibExpr(PerfTestReadWriteRead));
+				}
 			};
 
 			DMibTestSuite("Read write contention")
