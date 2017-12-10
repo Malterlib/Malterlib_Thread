@@ -26,6 +26,12 @@ BOOL winFlsSetValue(DWORD dwFlsIndex, PVOID lpFlsData);
 using namespace NMib::NTime;
 using namespace NMib::NThread;
 
+#ifndef DCompiler_MSVC
+#define DLimitOptimizations asm("")
+#else
+#define DLimitOptimizations 
+#endif
+
 enum 
 {
 	ECacheLineSize = 64
@@ -512,9 +518,7 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncNative();
-#ifndef DCompiler_MSVC
-								asm("");
-#endif
+								DLimitOptimizations;
 							}
 						}()
 					;
@@ -528,9 +532,7 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncNativeArray();
-#ifndef DCompiler_MSVC
-								asm("");
-#endif
+								DLimitOptimizations;
 							}
 						}()
 					;
@@ -543,9 +545,7 @@ namespace
 						for (mint i = 0; i < nLoops; ++i)
 						{
 							CThread_Tests::fs_IncTls();
-#ifndef DCompiler_MSVC
-							asm("");
-#endif
+							DLimitOptimizations;
 						}
 						TlsTime.f_Stop();
 					};
@@ -555,9 +555,7 @@ namespace
 						for (mint i = 0; i < nLoops; ++i)
 						{
 							CThread_Tests::fs_IncFls();
-#ifndef DCompiler_MSVC
-							asm("");
-#endif
+							DLimitOptimizations;
 						}
 						FlsTime.f_Stop();
 					};
@@ -571,9 +569,7 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncMalterlib();
-#ifndef DCompiler_MSVC
-								asm("");
-#endif
+								DLimitOptimizations;
 							}
 						}()
 					;
@@ -588,9 +584,7 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncMalterlibFast();
-#ifndef DCompiler_MSVC
-								asm("");
-#endif
+								DLimitOptimizations;
 							}
 						}()
 					;
@@ -605,9 +599,7 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncMalterlibStorageFast();
-#ifndef DCompiler_MSVC
-								asm("");
-#endif
+								DLimitOptimizations;
 							}
 						}()
 					;
@@ -622,9 +614,7 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								CThread_Tests::fs_IncMalterlibStorage();
-#ifndef DCompiler_MSVC
-								asm("");
-#endif
+								DLimitOptimizations;
 							}
 						}()
 					;
@@ -745,10 +735,7 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								Results += fs_CurrentThreadNative();
-#ifndef DCompiler_MSVC
-								asm("");
-#endif
-
+								DLimitOptimizations;
 							}
 							return Results;
 						}()
@@ -765,10 +752,7 @@ namespace
 							for (mint i = 0; i < nLoops; ++i)
 							{
 								Results += fs_CurrentThreadMalterlib();
-#ifndef DCompiler_MSVC
-								asm("");
-#endif
-
+								DLimitOptimizations;
 							}
 							return Results;
 						}()
