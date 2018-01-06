@@ -1,4 +1,4 @@
-﻿// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB 
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #pragma once
@@ -119,7 +119,6 @@ namespace NMib
 #endif
 			mint m_iPerThread;
 
-			NThread::CMutual m_LockResizePerThread;
 			mint m_iThreadLocalCurrentLen;
 
 			NMem::TCPool<CStorageIndex, 128, NThread::CNoLock, NMem::CPoolType_Freeable, NMem::CAllocator_VirtualNoTracking> m_PoolStorageIndices;
@@ -148,6 +147,9 @@ namespace NMib
 			void f_EnumThreads(NFunction::TCFunction<void (mint _ThreadID)> const &_EnumFunc);
 			bool f_ThreadDestroyed() const;
 			bool f_ThreadCreated();
+			void f_PrepareFork();
+			void f_ForkedChild();
+			void f_ForkedParent();
 		};
 	}
 };

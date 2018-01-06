@@ -1,4 +1,4 @@
-﻿// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB 
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #include <Mib/Core/Core>
@@ -106,6 +106,24 @@ namespace NMib
 			DMibSafeCheck(!m_pPtr, "Pointer must already be deleted");
 	//		if (m_pPtr)
 		//		delete m_pPtr;
+		}
+
+		void CThreadLocalContext::f_PrepareFork()
+		{
+			m_LockContext.f_Lock();
+			m_LockContext.f_PrepareFork();
+		}
+
+		void CThreadLocalContext::f_ForkedChild()
+		{
+			m_LockContext.f_ForkedChild();
+			m_LockContext.f_Unlock();
+		}
+
+		void CThreadLocalContext::f_ForkedParent()
+		{
+			m_LockContext.f_ForkedParent();
+			m_LockContext.f_Unlock();
 		}
 
 	#ifdef DMibPSupportThreadLocalDestructors
@@ -568,7 +586,22 @@ namespace NMib
 			}
 		}
 	}
-	
+
+	void CSystem::f_ThreadLocal_PrepareFork()
+	{
+		NPrivate::g_ThreadLocalContext->f_PrepareFork();
+	}
+
+	void CSystem::f_ThreadLocal_ForkedChild()
+	{
+		NPrivate::g_ThreadLocalContext->f_ForkedChild();
+	}
+
+	void CSystem::f_ThreadLocal_ForkedParent()
+	{
+		NPrivate::g_ThreadLocalContext->f_ForkedParent();
+	}
+
 	void *CSystem::f_ThreadLocalAlloc(NThread::CThreadLocalInterface &_Interface, mint &_ThreadLocalLocal)
 	{
 		return NPrivate::g_ThreadLocalContext->f_Alloc(_Interface, _ThreadLocalLocal);
