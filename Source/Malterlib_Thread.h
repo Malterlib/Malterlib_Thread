@@ -2188,8 +2188,15 @@ namespace NMib
 				virtual ch8 const * f_GetName() = 0;
 			};
 
+#if defined(DCompiler_MSVC_Workaround)
+			template <typename tf_CObjectType, typename tf_CAllocator, typename... tfp_CParams, TCEnableIfType<NTraits::TCRemoveReference<tf_CAllocator>::CType::mc_bIsDefault> *>
+			friend tf_CObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams &&...p_Params);
+			template <typename tf_CObjectType, typename tf_CAllocator, typename... tfp_CParams, TCEnableIfType<!NTraits::TCRemoveReference<tf_CAllocator>::CType::mc_bIsDefault> *>
+			friend tf_CObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams &&...p_Params);
+#else
 			template <typename tf_ObjectType, typename tf_CAllocator, typename... tfp_CParams>
 			friend tf_ObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams&&... p_Params);
+#endif
 
 			NPtr::TCUniquePointer<CCallerObject, t_CAllocator> m_pCallerObject;
 
