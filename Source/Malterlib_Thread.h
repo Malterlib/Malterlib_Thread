@@ -1,4 +1,4 @@
-﻿// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB 
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #pragma once
@@ -2372,7 +2372,7 @@ namespace NMib
 			void f_InitialRef(CRefCountDebugReference &o_Reference) const;
 			smint f_RefCountDecrease(CRefCountDebugReference &o_Reference) const;
 			smint f_RefCountIncrease(CRefCountDebugReference &o_Reference) const;
-			bool f_RefCountIncreaseWhileNot(CRefCountDebugReference &o_Reference, smint _Value) const;
+			bool f_RefCountIncreaseWhileValid(CRefCountDebugReference &o_Reference) const;
 			smint f_WeakRefCountDecrease(CRefCountDebugReference *o_pReference) const;
 			smint f_WeakRefCountIncrease(CRefCountDebugReference &o_Reference) const;
 #else
@@ -2392,10 +2392,10 @@ namespace NMib
 				return Return;
 			}
 
-			bool f_RefCountIncreaseWhileNot(smint _Value) const
+			bool f_RefCountIncreaseWhileValid() const
 			{
 				smint CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
-				while (CurrentValue != _Value)
+				while (CurrentValue >= 0)
 				{
 					if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::EMemoryOrder_Release, NAtomic::EMemoryOrder_Relaxed))
 						return true;
@@ -2414,11 +2414,21 @@ namespace NMib
 
 			smint f_WeakRefCountIncrease() const
 			{
-				DMibFastCheck(m_RefCount.f_Load() >= -1);
 				return m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
 			}
 #endif
-	
+
+			void f_WeakRefCountSetSize(mint _Size) const
+			{
+				[[maybe_unused]] smint CurrentValue = m_RefCount.f_Exchange(smint(-1) - smint(_Size));
+				DMibFastCheck(CurrentValue == -1);
+			}
+
+			mint f_WeakRefCountGetSize() const
+			{
+				return smint(-1) -m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			}
+
 			smint f_RefCountGet() const
 			{
 				return m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);

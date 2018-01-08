@@ -116,10 +116,10 @@ namespace NMib::NPtr
 		return Return;
 	}
 
-	bool TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountIncreaseWhileNot(CRefCountDebugReference &o_Reference, smint _Value) const
+	bool TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountIncreaseWhileValid(CRefCountDebugReference &o_Reference) const
 	{
 		smint CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
-		while (CurrentValue != _Value)
+		while (CurrentValue >= 0)
 		{
 			if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::EMemoryOrder_Release, NAtomic::EMemoryOrder_Relaxed))
 			{

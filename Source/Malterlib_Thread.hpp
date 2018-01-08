@@ -1,4 +1,4 @@
-﻿// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB 
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 namespace NMib
@@ -171,7 +171,7 @@ namespace NMib
 		void TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_DeleteItem(void *_pItem)
 		{
 			t_CData *pData = (t_CData *)_pItem;
-			fg_DeleteObject(t_CAllocator(), pData);
+			fg_DeleteObjectDefiniteType(t_CAllocator(), pData, fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value));
 		}
 
 		namespace NPrivate
@@ -221,14 +221,13 @@ namespace NMib
 
 			if (_bMove)
 			{
-				mint Size = sizeof(t_CData);
-				return 
+				return
 					TCChooseType
 					<
 						NTraits::TCIsConstructorCallableWith<t_CData, t_CData &&>::mc_Value, NPrivate::TCCreateHelperDo, NPrivate::TCCreateHelperDoNot
 					>::CType::template fs_CreateHelperMove<t_CData>
 					(
-						t_CAllocator::f_AllocAligned(Size, fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))
+						t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))
 						, _pSource
 					)
 				;
@@ -237,10 +236,9 @@ namespace NMib
 			{
 				if (EInherit)
 				{
-					mint Size = sizeof(t_CData);
 					return TCChooseType<EInherit, NPrivate::TCCreateHelperDo, NPrivate::TCCreateHelperDoNot>::CType::template fs_CreateHelper<t_CData>
 						(
-							t_CAllocator::f_AllocAligned(Size, fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))
+							t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))
 							, _pSource
 						)
 					;
@@ -257,10 +255,7 @@ namespace NMib
 		{
 			EThreadLocalFlag Flags = fs_GetFlags();
 			if ((Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
-			{
-				mint Size = fg_AlignUp(sizeof(t_CData), t_CAllocator::f_GranularityAlloc());
-				return new(t_CAllocator::f_AllocAligned(Size, fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))) t_CData();
-			}
+				return new(t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))) t_CData();
 			return nullptr;
 		}
 
