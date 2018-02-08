@@ -1331,6 +1331,14 @@ namespace NMib
 			
 			inline_never void f_LockRead()
 			{
+				mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
+
+				if (t_CBase::m_ThreadID == CurrentThread)
+				{
+					++t_CBase::m_nRecurse;
+					return;
+				}
+
 		RestartLock:
 				mint nReading = m_nReading.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire);
 				if (nReading & mc_FlagReadingNotAllowed)
@@ -1372,6 +1380,14 @@ namespace NMib
 
 			inline_never void f_UnlockRead()
 			{
+				mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
+
+				if (t_CBase::m_ThreadID == CurrentThread)
+				{
+					f_Unlock();
+					return;
+				}
+
 #				if DMibEnableSafeCheck > 0
 					m_nReadingDebugCheck.f_FetchSub(1, NAtomic::EMemoryOrder_Relaxed);
 #				endif
