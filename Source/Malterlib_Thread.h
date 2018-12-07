@@ -2193,7 +2193,9 @@ namespace NMib
 		template <typename t_CAllocator, typename t_CStr>
 		class TCThreadObject : private CThread
 		{
-			DMibClassNoCopyAllowed(TCThreadObject);
+			TCThreadObject(TCThreadObject const &) = delete;
+			TCThreadObject &operator = (TCThreadObject const &) = delete;
+			
 			class CCallerObject
 			{
 			public:
