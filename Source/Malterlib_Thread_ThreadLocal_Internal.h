@@ -60,7 +60,7 @@ namespace NMib
 					}
 				};
 
-				DMibIntrusiveLink(CPerThread, NIntrusive::TCAVLLink<>, m_Link);
+				NIntrusive::TCAVLLink<> m_Link;
 				class CPointer
 				{
 					CPointer(CPointer const &_Copy);
@@ -110,7 +110,7 @@ namespace NMib
 			};
 		private:
 
-			NIntrusive::TCAVLTree<CPerThread::CLinkTraits_m_Link, CPerThread::CCompare> m_lPerThread;
+			NIntrusive::TCAVLTree<&CPerThread::m_Link, CPerThread::CCompare> m_lPerThread;
 			NMem::TCPool<CPerThread, 128, NThread::CNoLock, NMem::CPoolType_Freeable, NMem::CAllocator_VirtualNoTracking> m_PoolPerThread;
 			CAllocationPool m_PoolAllocation;
 			

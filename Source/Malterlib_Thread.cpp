@@ -1,4 +1,4 @@
-﻿// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB 
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #include <Mib/Core/Core>
@@ -400,10 +400,10 @@ namespace NMib
 					}
 				};
 
-				DMibIntrusiveLink(CCheckRecursive, NIntrusive::TCAVLLink<>, m_Link);
+				NIntrusive::TCAVLLink<> m_Link;
 			};
 			
-			void fg_Signal_CSemaphoreReportableAggregate(CSemaphoreReportableAggregate *_pThis, NIntrusive::TCAVLTree<CCheckRecursive::CLinkTraits_m_Link, CCheckRecursive::CCompare> &_Tree, mint _nToSignal)
+			void fg_Signal_CSemaphoreReportableAggregate(CSemaphoreReportableAggregate *_pThis, NIntrusive::TCAVLTree<&CCheckRecursive::m_Link, CCheckRecursive::CCompare> &_Tree, mint _nToSignal)
 			{
 				if (_Tree.f_FindEqual(_pThis))
 					return;
@@ -430,7 +430,7 @@ namespace NMib
         void CSemaphoreReportableAggregate::f_Signal(int _nToSignal)
 		{
 			DMibLockTyped(CMutual, fg_GetSys()->m_EventMember_Lock);
-			NIntrusive::TCAVLTree<CCheckRecursive::CLinkTraits_m_Link, CCheckRecursive::CCompare> Recursive;
+			NIntrusive::TCAVLTree<&CCheckRecursive::m_Link, CCheckRecursive::CCompare> Recursive;
 			fg_Signal_CSemaphoreReportableAggregate(this, Recursive, _nToSignal);
 		}
 	}
