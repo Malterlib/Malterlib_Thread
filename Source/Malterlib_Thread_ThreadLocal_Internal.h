@@ -10,7 +10,7 @@ namespace NMib
 		class CThreadLocalContext
 		{
 			friend class CSystem;
-			friend class NAggregate::TCAggregateSimple<CThreadLocalContext>;
+			friend class NStorage::TCAggregateSimple<CThreadLocalContext>;
 			CThreadLocalContext();
 
 			~CThreadLocalContext();
@@ -46,7 +46,9 @@ namespace NMib
 				CStorageIndex *m_pStorageIndex;
 			};
 
-			typedef NMem::TCPool<NContainer::TCMapTreeMember<mint, CAllocation>, 128, NThread::CMutual, NMem::CPoolType_Freeable, NMem::CAllocator_VirtualNoTracking> CAllocationPool;
+			using CAllocationPool
+				= NMemory::TCPool<NContainer::TCMapTreeMember<mint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>
+			;
 			
 			class CPerThread
 			{
@@ -85,16 +87,16 @@ namespace NMib
 				mint m_DestroyingID;
 				bint m_bOnThreadCreated;
 
-				NContainer::TCMap<mint, CAllocation, CSort_Default, NMem::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
-				NContainer::TCMap<mint, CAllocation, CSort_Default, NMem::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
+				NContainer::TCMap<mint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
+				NContainer::TCMap<mint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
 
 				CPerThread
 					(
 						mint _ThreadID
 						, CThreadLocalContext * _pContext
 					)
-					: m_Created(NMem::CAllocatorConstructTag(), _pContext->m_PoolAllocation)
-					, m_CreatedAlwaysCreate(NMem::CAllocatorConstructTag(), _pContext->m_PoolAllocation)
+					: m_Created(NMemory::CAllocatorConstructTag(), _pContext->m_PoolAllocation)
+					, m_CreatedAlwaysCreate(NMemory::CAllocatorConstructTag(), _pContext->m_PoolAllocation)
 					, m_ThreadID(_ThreadID)
 					, m_DestroyingID(-1)
 					, m_bOnThreadCreated(false)
@@ -105,13 +107,13 @@ namespace NMib
 				{
 				}
 
-				NContainer::TCVector<CPointer, NMem::CAllocator_VirtualNoTracking> m_aThreadLocal;
+				NContainer::TCVector<CPointer, NMemory::CAllocator_VirtualNoTracking> m_aThreadLocal;
 				NThread::CMutual m_Lock;
 			};
 		private:
 
 			NIntrusive::TCAVLTree<&CPerThread::m_Link, CPerThread::CCompare> m_lPerThread;
-			NMem::TCPool<CPerThread, 128, NThread::CNoLock, NMem::CPoolType_Freeable, NMem::CAllocator_VirtualNoTracking> m_PoolPerThread;
+			NMemory::TCPool<CPerThread, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> m_PoolPerThread;
 			CAllocationPool m_PoolAllocation;
 			
 #if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
@@ -121,7 +123,7 @@ namespace NMib
 
 			mint m_iThreadLocalCurrentLen;
 
-			NMem::TCPool<CStorageIndex, 128, NThread::CNoLock, NMem::CPoolType_Freeable, NMem::CAllocator_VirtualNoTracking> m_PoolStorageIndices;
+			NMemory::TCPool<CStorageIndex, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> m_PoolStorageIndices;
 
 			DMibListLinkD_List(CStorageIndex, m_Link) m_ThreadLocal_Free; // List of indices that are free
 			DMibListLinkD_List(CStorageIndex, m_Link) m_ThreadLocal_DestroyOrder;

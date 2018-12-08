@@ -7,7 +7,7 @@
 #include <Mib/Thread/Thread>
 #include <Mib/Storage/Pointer>
 
-namespace NMib::NPtr
+namespace NMib::NStorage
 {
 	CRefCountDebugReference::CRefCountDebugReference() = default;
 

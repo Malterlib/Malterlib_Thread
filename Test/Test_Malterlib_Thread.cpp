@@ -355,8 +355,8 @@ namespace
 		//LPVOID (WINAPI *pFlsGetValue)(DWORD dwFlsIndex);
 #	endif
 
-	TCThreadLocal<mint, NMib::NMem::CAllocator_Heap, EThreadLocalFlag_AlwaysCreated> g_ThreadLocalMalterlib;
-	TCThreadLocal<mint, NMib::NMem::CAllocator_Heap, EThreadLocalFlag(uint32(EThreadLocalFlag_AlwaysCreated) | uint32(EThreadLocalFlag_FastThreadLocal))> g_ThreadLocalMalterlibFast;
+	TCThreadLocal<mint, NMib::NMemory::CAllocator_Heap, EThreadLocalFlag_AlwaysCreated> g_ThreadLocalMalterlib;
+	TCThreadLocal<mint, NMib::NMemory::CAllocator_Heap, EThreadLocalFlag(uint32(EThreadLocalFlag_AlwaysCreated) | uint32(EThreadLocalFlag_FastThreadLocal))> g_ThreadLocalMalterlibFast;
 	mint g_ThreadLocalFastIndex;
 	mint g_ThreadLocalIndex;
 
@@ -1106,10 +1106,10 @@ namespace
 				{
 					for (mint i = 0; i < 10; ++i)
 					{
-						NMib::NAggregate::TCAggregate<TCThreadLocal<CTemp35, NMib::NMem::CAllocator_Heap, EThreadLocalFlag_AlwaysCreated>> ThreadLocal = {DAggregateInit};
+						NMib::NStorage::TCAggregate<TCThreadLocal<CTemp35, NMib::NMemory::CAllocator_Heap, EThreadLocalFlag_AlwaysCreated>> ThreadLocal = {DAggregateInit};
 						NMib::NThread::CEvent Event;
 						NMib::NThread::CEvent EventDone;
-						NMib::NPtr::TCUniquePointer<CThreadObject> pThread = CThreadObject::fs_StartThread
+						NMib::NStorage::TCUniquePointer<CThreadObject> pThread = CThreadObject::fs_StartThread
 							(
 								[&] (CThreadObject *_pThread) -> aint
 								{
@@ -1150,14 +1150,14 @@ namespace
 				{
 					for (mint i = 0; i < 10; ++i)
 					{
-						NMib::NAggregate::TCAggregate<TCThreadLocal<CTemp, NMib::NMem::CAllocator_Heap, EThreadLocalFlag_Inherit>> ThreadLocal = {DAggregateInit};
+						NMib::NStorage::TCAggregate<TCThreadLocal<CTemp, NMib::NMemory::CAllocator_Heap, EThreadLocalFlag_Inherit>> ThreadLocal = {DAggregateInit};
 						
 						NMib::NThread::CEvent Event;
 						NMib::NThread::CEvent EventDone;
 						(*ThreadLocal)->m_Value = 36;
 
 						DMibTest(DMibExpr((*ThreadLocal)->m_Value) == DMibExpr(36)) (ETestFlag_Aggregated);
-						NMib::NPtr::TCUniquePointer<CThreadObject> pThread = CThreadObject::fs_StartThread
+						NMib::NStorage::TCUniquePointer<CThreadObject> pThread = CThreadObject::fs_StartThread
 							(
 								[&] (CThreadObject *_pThread) -> aint
 								{
@@ -1196,10 +1196,14 @@ namespace
 				{
 					for (mint i = 0; i < 10; ++i)
 					{
-						NMib::NAggregate::TCAggregate<TCThreadLocal<CTemp, NMib::NMem::CAllocator_Heap, EThreadLocalFlag(uint32(EThreadLocalFlag_Inherit) | uint32(EThreadLocalFlag_AlwaysCreated))>> ThreadLocal = {DAggregateInit};
+						NMib::NStorage::TCAggregate
+							<
+								TCThreadLocal<CTemp, NMib::NMemory::CAllocator_Heap, EThreadLocalFlag(uint32(EThreadLocalFlag_Inherit) | uint32(EThreadLocalFlag_AlwaysCreated))>
+							> ThreadLocal = {DAggregateInit}
+						;
 						NMib::NThread::CEvent Event;
 						NMib::NThread::CEvent EventDone;
-						NMib::NPtr::TCUniquePointer<CThreadObject> pThread0 = CThreadObject::fs_StartThread
+						NMib::NStorage::TCUniquePointer<CThreadObject> pThread0 = CThreadObject::fs_StartThread
 							(
 								[&] (CThreadObject *_pThread) -> aint
 								{
@@ -1215,7 +1219,7 @@ namespace
 							NMib::NSys::fg_Thread_Sleep(0.050f);
 						(*ThreadLocal)->m_Value = 36;
 						DMibTest(DMibExpr((*ThreadLocal)->m_Value) == DMibExpr(36)) (ETestFlag_Aggregated);
-						NMib::NPtr::TCUniquePointer<CThreadObject> pThread1 = CThreadObject::fs_StartThread
+						NMib::NStorage::TCUniquePointer<CThreadObject> pThread1 = CThreadObject::fs_StartThread
 							(
 								[&] (CThreadObject *_pThread) -> aint
 								{
@@ -1635,7 +1639,7 @@ public:
 		}		
 	};
 
-	NMib::NThread::TCThreadLocal<CThreadLocal, NMib::NMem::CAllocator_Heap, true> m_ThreadLocal;
+	NMib::NThread::TCThreadLocal<CThreadLocal, NMib::NMemory::CAllocator_Heap, true> m_ThreadLocal;
 
 	class CThreadLocalTest : public NMib::NThread::CThread
 	{

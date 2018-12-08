@@ -11,7 +11,7 @@ namespace NMib
 	
 	namespace NPrivate
 	{
-		NMib::NAggregate::TCAggregateSimple<NPrivate::CThreadLocalContext> g_ThreadLocalContext = {DAggregateInit};
+		NMib::NStorage::TCAggregateSimple<NPrivate::CThreadLocalContext> g_ThreadLocalContext = {DAggregateInit};
 		
 		/************************************************************************************************\
 		||¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯||
@@ -48,7 +48,7 @@ namespace NMib
 #if DMibEnableSafeCheck > 0 && defined(DMibPSupportAlwaysCreatedThreadLocal)
 			if (!fg_GetSys()->f_IsDll())
 			{
-				NContainer::TCVector<mint, NMem::CAllocator_VirtualNoTracking> SystemThreads;
+				NContainer::TCVector<mint, NMemory::CAllocator_VirtualNoTracking> SystemThreads;
 				NSys::fg_Thread_EnumOtherThreadsInProcess
 					(
 						[&](mint _ThreadID)
@@ -58,7 +58,7 @@ namespace NMib
 					)
 				;
 				SystemThreads.f_Sort();
-				NContainer::TCVector<mint, NMem::CAllocator_VirtualNoTracking> LocalThreads;
+				NContainer::TCVector<mint, NMemory::CAllocator_VirtualNoTracking> LocalThreads;
 				for (auto &PerThread : m_lPerThread)
 				{
 					DMibFastCheck(SystemThreads.f_BinarySearch(PerThread.m_ThreadID) >= 0);

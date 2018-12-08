@@ -1,4 +1,4 @@
-﻿// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB 
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #pragma once
@@ -76,7 +76,7 @@ namespace NMib
 			EThreadLocalFlag_FastThreadLocal = DMibBit(2),
 		};
 
-		template <typename t_CData, typename t_CAllocator = NMem::CAllocator_Heap, CThreadLocalFlagUnderlaying t_Flags = EThreadLocalFlag_None>
+		template <typename t_CData, typename t_CAllocator = NMemory::CAllocator_Heap, CThreadLocalFlagUnderlaying t_Flags = EThreadLocalFlag_None>
 		class TCThreadLocal : CThreadLocalInterface
 		{
 			// Disable copy
