@@ -2474,28 +2474,10 @@ namespace NMib::NStorage
 		{
 			t_CType m_Data;
 		public:
-			TCSharedPointerCounter(TCSharedPointerCounter const &_Other)
-				: m_Data(_Other.m_Data)
-			{
-			}
-			TCSharedPointerCounter(TCSharedPointerCounter &_Other)
-				: m_Data(_Other.m_Data)
-			{
-			}
-			TCSharedPointerCounter(TCSharedPointerCounter volatile &_Other)
-				: m_Data(_Other.m_Data)
-			{
-			}
-			TCSharedPointerCounter(TCSharedPointerCounter const volatile &_Other)
-				: m_Data(_Other.m_Data)
-			{
-			}
-			TCSharedPointerCounter(TCSharedPointerCounter &&_Other)
-				: m_Data(fg_Move(_Other.m_Data))
-			{
-			}
+			TCSharedPointerCounter(TCSharedPointerCounter const &_Other) = default;
+			TCSharedPointerCounter(TCSharedPointerCounter &&_Other) = default;
 
-			template <typename... tfp_CParams>
+			template <typename... tfp_CParams, TCEnableIfType<NTraits::TCIsConstructorCallableWith<t_CType, void (tfp_CParams...)>::mc_Value> * = nullptr>
 			TCSharedPointerCounter(tfp_CParams &&...p_Params)
 				: m_Data(fg_Forward<tfp_CParams>(p_Params)...)
 			{
@@ -2512,32 +2494,19 @@ namespace NMib::NStorage
 		{
 			t_CType m_Data;
 		public:
+
+#ifdef DCompiler_MSVC_Workaround
 			virtual ~TCSharedPointerCounter()
 			{
 			}
+#else
+			virtual ~TCSharedPointerCounter() = default;
+#endif
 
-			TCSharedPointerCounter(TCSharedPointerCounter const &_Other)
-				: m_Data(_Other.m_Data)
-			{
-			}
-			TCSharedPointerCounter(TCSharedPointerCounter &_Other)
-				: m_Data(_Other.m_Data)
-			{
-			}
-			TCSharedPointerCounter(TCSharedPointerCounter volatile &_Other)
-				: m_Data(_Other.m_Data)
-			{
-			}
-			TCSharedPointerCounter(TCSharedPointerCounter const volatile &_Other)
-				: m_Data(_Other.m_Data)
-			{
-			}
-			TCSharedPointerCounter(TCSharedPointerCounter &&_Other)
-				: m_Data(fg_Move(_Other.m_Data))
-			{
-			}
+			TCSharedPointerCounter(TCSharedPointerCounter const &_Other) = default;
+			TCSharedPointerCounter(TCSharedPointerCounter &&_Other) = default;
 
-			template <typename... tfp_CParams>
+			template <typename... tfp_CParams, TCEnableIfType<NTraits::TCIsConstructorCallableWith<t_CType, void (tfp_CParams...)>::mc_Value> * = nullptr>
 			TCSharedPointerCounter(tfp_CParams &&...p_Params)
 				: m_Data(fg_Forward<tfp_CParams>(p_Params)...)
 			{
