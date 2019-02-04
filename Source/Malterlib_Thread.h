@@ -2441,15 +2441,16 @@ namespace NMib::NStorage
 		}
 #endif
 
-		void f_WeakRefCountSetSize(mint _Size) const
+		void f_WeakRefCountSetCapturedDelete(NMemory::CCapturedDelete const &_CapturedDelete) const
 		{
-			[[maybe_unused]] smint CurrentValue = m_RefCount.f_Exchange(smint(-1) - smint(_Size));
+			*((void **)(this+1)) = _CapturedDelete.m_pMemory;
+			[[maybe_unused]] smint CurrentValue = m_RefCount.f_Exchange(smint(-1) - smint(_CapturedDelete.m_Size));
 			DMibFastCheck(CurrentValue == -1);
 		}
 
-		mint f_WeakRefCountGetSize() const
+		NMemory::CCapturedDelete f_WeakRefCountGetCapturedDelete() const
 		{
-			return smint(-1) -m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			return {*((void * const *)(this+1)), mint(smint(-1) -m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed))};
 		}
 
 		smint f_RefCountGet() const
@@ -2548,8 +2549,11 @@ namespace NMib::NStorage
 			static_assert(NTraits::TCHasVirtualDestructor<tf_CToType>::mc_Value || !NTraits::TCHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>::mc_Value, "Virtual base");
 			static_assert(tf_ToOptions == tf_Options, "Cannot mix weak support with non-weak support");
 			static_assert(NTraits::TCAlignmentOf<tf_CToType>::mc_Value == NTraits::TCAlignmentOf<tf_CType>::mc_Value, "Cannot mix alignment, use TCSharedPointerIntrusiveBase");
+			static_assert(!NTraits::TCIsVirtualBaseOf<tf_CType, tf_CToType>::mc_Value, "Virtual base classes are not supported, use TCSharedPointerIntrusiveBase");
 
-			return (TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions> *)_pIn;
+			auto pCovertTo = (TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions> *)_pIn;
+			DMibFastCheck(pCovertTo->f_Get() == (tf_CToType *)_pIn->f_Get());
+			return pCovertTo;
 		}
 	}
 }
