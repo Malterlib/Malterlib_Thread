@@ -10,14 +10,11 @@
 
 #if defined(DEnableWin32ThreadTest)
 #include <windows.h>
+#include <Fibersapi.h>
 #if defined(DEnableWin32ConCrt)
 #include <concrt.h>
 #endif
 typedef CRITICAL_SECTION CWindowsCriticalSection;
-DWORD winFlsAlloc(PFLS_CALLBACK_FUNCTION lpCallback);
-BOOL winFlsFree(DWORD dwFlsIndex);
-PVOID winFlsGetValue(DWORD dwFlsIndex);
-BOOL winFlsSetValue(DWORD dwFlsIndex, PVOID lpFlsData);
 #endif
 
 #include <thread>
@@ -381,7 +378,7 @@ namespace
 			}
 			static void fs_IncFls()
 			{
-				mint *pTls = (mint *)winFlsGetValue(g_FlsLocal);
+				mint *pTls = (mint *)FlsGetValue(g_FlsLocal);
 				++(*pTls);
 			}
 #		endif
@@ -476,11 +473,11 @@ namespace
 				g_ThreadLocal = 0;
 #				if defined(DEnableWin32ThreadTest)
 					g_TlsLocal = TlsAlloc();
-					g_FlsLocal = winFlsAlloc(nullptr);
+					g_FlsLocal = FlsAlloc(nullptr);
 					TlsSetValue(g_TlsLocal, DMibNew mint);
-					winFlsSetValue(g_FlsLocal, DMibNew mint);
+					FlsSetValue(g_FlsLocal, DMibNew mint);
 					*((mint *)TlsGetValue(g_TlsLocal)) = 0;
-					*((mint *)winFlsGetValue(g_FlsLocal)) = 0;
+					*((mint *)FlsGetValue(g_FlsLocal)) = 0;
 #				endif
 				
 				g_ThreadLocalFastIndex = NMib::NSys::fg_Thread_AllocLocalFast();
@@ -682,7 +679,7 @@ namespace
 				DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(g_ThreadLocalArray[g_LocalArrayIndex]));
 #				if defined(DEnableWin32ThreadTest)
 					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)TlsGetValue(g_TlsLocal))));
-					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)winFlsGetValue(g_FlsLocal))));
+					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)FlsGetValue(g_FlsLocal))));
 					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)NMib::NSys::fg_Thread_GetLocalFast(g_ThreadLocalFastIndex))));
 					DMibTest(DMibExpr(g_ThreadLocal) == DMibExpr(*((mint *)NMib::NSys::fg_Thread_GetLocal(g_ThreadLocalIndex))));
 #				else
@@ -704,8 +701,8 @@ namespace
 #				if defined(DEnableWin32ThreadTest)
 					delete ((mint *)TlsGetValue(g_TlsLocal));
 					TlsFree(g_TlsLocal);
-					delete ((mint *)winFlsGetValue(g_FlsLocal));
-					winFlsFree(g_FlsLocal);
+					delete ((mint *)FlsGetValue(g_FlsLocal));
+					FlsFree(g_FlsLocal);
 #				endif
 
 				delete ((mint *)NMib::NSys::fg_Thread_GetLocalFast(g_ThreadLocalFastIndex));
