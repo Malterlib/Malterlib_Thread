@@ -159,7 +159,6 @@ namespace NMib::NStorage
 
 	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_WeakRefCountIncrease(CRefCountDebugReference &o_Reference) const
 	{
-		DMibFastCheck(m_RefCount.f_Load() >= -1);
 		aint Return = m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
 
 		DMibFastCheck(!o_Reference.m_pCallstack);
