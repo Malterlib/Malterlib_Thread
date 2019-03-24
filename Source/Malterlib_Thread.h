@@ -2036,8 +2036,7 @@ namespace NMib::NThread
 	class CThread
 	{
 	private:
-		mutable CMutual m_Lock;
-		mint m_State;
+		align_cacheline mutable CMutual m_Lock;
 		aint m_ReturnValue;
 		void *m_pThread;
 		mint m_ThreadID;
@@ -2046,8 +2045,9 @@ namespace NMib::NThread
 		bint m_bAutoDestroy;
 		bint m_bWaitStart;
 		bint m_bLockHeld;
-
 		CEvent m_ThreadQuitEvent;
+
+		align_cacheline NAtomic::TCAtomic<uint32> m_StateAtomic{EThreadState_None};
 
 		static aint fsp_ThreadMain(void *_pContext);
 		void fp_Cleanup();
@@ -2078,8 +2078,7 @@ namespace NMib::NThread
 		\*_____________________________________________________________________________*/
 		EThreadState f_GetState() const
 		{
-			DMibLock(m_Lock);
-			return (EThreadState)m_State;
+			return (EThreadState)m_StateAtomic.f_Load();
 		}
 
 		void *f_GetThread() const
@@ -2132,7 +2131,7 @@ namespace NMib::NThread
 		aint f_GetReturnValue()
 		{
 			DMibLockTyped(CMutual, m_Lock);
-			if (m_State == EThreadState_Stopped)
+			if (m_StateAtomic.f_Load() == EThreadState_Stopped)
 				return m_ReturnValue;
 
 			DMibError("You are trying to get a return value from a thread that isn't stopped (or has never run)");
@@ -2250,11 +2249,11 @@ namespace NMib::NThread
 		}
 
 		template <typename tf_CFunctionType>
-		static NStorage::TCUniquePointer<TCThreadObject, t_CAllocator, TCDynamicPtr<typename t_CAllocator::CPtrHolder, TCThreadObject>, void>
+		static NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 		fs_StartThread(tf_CFunctionType &&_FunctionObject, const t_CStr &_Name, EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bint _bAutoDestroy = false);
 
 		template <typename tf_CFunctionType>
-		static NStorage::TCUniquePointer<TCThreadObject, t_CAllocator, TCDynamicPtr<typename t_CAllocator::CPtrHolder, TCThreadObject>, void>
+		static NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 		fs_StartThread(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name, EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bint _bAutoDestroy = false);
 
 	};
@@ -2323,6 +2322,7 @@ namespace NMib::NStorage
 		void f_InitialRef(CRefCountDebugReference &o_Reference) const;
 		aint f_RefCountDecrease(CRefCountDebugReference &o_Reference) const;
 		aint f_RefCountIncrease(CRefCountDebugReference &o_Reference) const;
+		void f_RefCountMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 #else
 		aint f_RefCountDecrease() const
 		{
@@ -2398,6 +2398,9 @@ namespace NMib::NStorage
 		bool f_RefCountIncreaseWhileValid(CRefCountDebugReference &o_Reference) const;
 		smint f_WeakRefCountDecrease(CRefCountDebugReference *o_pReference) const;
 		smint f_WeakRefCountIncrease(CRefCountDebugReference &o_Reference) const;
+
+		void f_RefCountMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
+		void f_WeakRefCountMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 #else
 		smint f_RefCountDecrease() const
 		{

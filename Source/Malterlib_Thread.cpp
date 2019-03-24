@@ -15,7 +15,6 @@ namespace NMib::NThread
 	CThread::CThread()
 	{
 		m_ParentThreadID = 0;
-		m_State = EThreadState_None;
 		m_ReturnValue = 0;
 		m_pThread = nullptr;
 		m_ThreadID = 0;
@@ -45,7 +44,7 @@ namespace NMib::NThread
 	CThread::~CThread()
 	{
 		DMibLockTyped(CMutual, m_Lock);
-		if (m_State > 1)
+		if (m_StateAtomic.f_Load() > 1)
 		{
 			DMibUnlockTyped(CMutual, m_Lock);
 			f_Stop();
@@ -89,7 +88,7 @@ namespace NMib::NThread
 		pThread->m_Lock.f_Lock();
 
 		pThread->m_ReturnValue = Return;
-		pThread->m_State = EThreadState_Stopped;
+		pThread->m_StateAtomic.f_Exchange(EThreadState_Stopped);
 		pSystemThread = pThread->m_pThread;
 		pThread->m_pThread = nullptr;
 		pThread->m_ThreadID = 0;
@@ -130,7 +129,7 @@ namespace NMib::NThread
 		// Make sure that no thread is already running
 		{
 			DMibLockTyped(CMutual, m_Lock);
-			if (m_State > EThreadState_Stopped)
+			if (m_StateAtomic.f_Load() > EThreadState_Stopped)
 			{
 				DMibError("You cannot start a thread that is already running");
 			}
@@ -152,7 +151,7 @@ namespace NMib::NThread
 
 			m_pThread = NSys::fg_Thread_Create(fsp_ThreadMain, this, _Prio, _StackSize, false, pName, _Affinity, m_ThreadID);
 			m_pThreadDestroyContext = NSys::fg_Thread_BeginDestroy(m_pThread);
-			m_State = EThreadState_Running;
+			m_StateAtomic.f_Exchange(EThreadState_Running);
 			if (_bWaitStart)
 			{
 				m_EventWantQuit.f_Wait();
@@ -184,7 +183,7 @@ namespace NMib::NThread
 			;
 
 
-			switch (m_State)
+			switch (m_StateAtomic.f_Load())
 			{
 			case EThreadState_None:
 				return 0;
@@ -202,7 +201,7 @@ namespace NMib::NThread
 				return f_GetReturnValue();
 			case EThreadState_Running:
 				{
-					m_State = EThreadState_EventWantQuit;
+					m_StateAtomic.f_Exchange(EThreadState_EventWantQuit);
 					m_EventWantQuit.f_Signal();
 				}
 				break;
@@ -282,7 +281,7 @@ namespace NMib::NThread
 	{
 		DMibFastCheck(!m_bLockHeld);
 		m_pThreadDestroyContext = nullptr;
-		m_State = EThreadState_None;
+		m_StateAtomic.f_Exchange(EThreadState_None);
 		m_ThreadQuitEvent.f_ForkedChild();
 		m_EventWantQuit.f_ForkedChild();
 		m_Lock.f_ForkedChild();

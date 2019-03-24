@@ -537,7 +537,7 @@ namespace NMib::NThread
 			, mint _Affinity
 			, bint _bAutoDestroy
 		)
-		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator, TCDynamicPtr<typename t_CAllocator::CPtrHolder, TCThreadObject>, void>
+		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
 		NStorage::TCUniquePointer<TCThreadObject, t_CAllocator> pThread
 			= fg_Construct
@@ -560,7 +560,7 @@ namespace NMib::NThread
 	template <typename t_CAllocator, typename t_CStr>
 	template <typename tf_CFunctionType>
 	auto TCThreadObject<t_CAllocator, t_CStr>::fs_StartThread(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name, EThreadPriority _Prio, mint _StackSize, mint _Affinity, bint _bAutoDestroy)
-		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator, TCDynamicPtr<typename t_CAllocator::CPtrHolder, TCThreadObject>, void>
+		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
 		class CCallerObjectImp : public CCallerObject
 		{

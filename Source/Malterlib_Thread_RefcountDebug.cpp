@@ -74,6 +74,23 @@ namespace NMib::NStorage
 		return Return;
 	}
 
+	void TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RefCountMove
+		(
+		 	CRefCountDebugReference &o_SourceReference
+		 	, CRefCountDebugReference &o_DestinationReference
+		) const
+	{
+		DMibFastCheck(o_SourceReference.m_pCallstack);
+		DMibFastCheck(!o_DestinationReference.m_pCallstack);
+		{
+			DMibLock(m_Debug->m_Lock);
+			m_Debug->m_Callstacks.f_Remove(*o_SourceReference.m_pCallstack);
+			o_SourceReference.m_pCallstack = nullptr;
+			o_DestinationReference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
+		}
+		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
+	}
+
 	void TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_InitialRef(CRefCountDebugReference &o_Reference) const
 	{
 		//DMibFastCheck(m_RefCount.f_Load() == 0);
@@ -169,6 +186,40 @@ namespace NMib::NStorage
 		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
 
 		return Return;
+	}
+
+	void TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountMove
+		(
+		 	CRefCountDebugReference &o_SourceReference
+		 	, CRefCountDebugReference &o_DestinationReference
+		) const
+	{
+		DMibFastCheck(o_SourceReference.m_pCallstack);
+		DMibFastCheck(!o_DestinationReference.m_pCallstack);
+		{
+			DMibLock(m_Debug->m_Lock);
+			m_Debug->m_Callstacks.f_Remove(*o_SourceReference.m_pCallstack);
+			o_SourceReference.m_pCallstack = nullptr;
+			o_DestinationReference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
+		}
+		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
+	}
+
+	void TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_WeakRefCountMove
+		(
+		 	CRefCountDebugReference &o_SourceReference
+		 	, CRefCountDebugReference &o_DestinationReference
+		) const
+	{
+		DMibFastCheck(!o_DestinationReference.m_pCallstack);
+		DMibFastCheck(o_SourceReference.m_pCallstack);
+		{
+			DMibLock(m_Debug->m_Lock);
+			m_Debug->m_WeakCallstacks.f_Remove(*o_SourceReference.m_pCallstack);
+			o_SourceReference.m_pCallstack = nullptr;
+			o_DestinationReference.m_pCallstack = &m_Debug->m_WeakCallstacks.f_Insert();
+		}
+		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
 	}
 }
 #else
