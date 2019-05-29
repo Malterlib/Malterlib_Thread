@@ -37,7 +37,7 @@ namespace NMib
 
 			virtual void f_DeleteItem(void *_pItem) = 0;
 			virtual void *f_CreateData(void *_pSource, bool _bMove) = 0;
-			virtual void *f_CreateData(bint _bInitial) = 0;
+			virtual void *f_CreateData(bool _bInitial) = 0;
 #if DMibEnableSafeCheck > 0
 			virtual ch8 const* f_GetName() = 0;
 #endif
@@ -95,7 +95,7 @@ namespace NMib
 
 			void f_DeleteItem(void *_pItem) override;
 			void *f_CreateData(void *_pSource, bool _bMove) override;
-			void *f_CreateData(bint _bInitial) override;
+			void *f_CreateData(bool _bInitial) override;
 			
 #if DMibEnableSafeCheck > 0
 			ch8 const* f_GetName() override;
@@ -110,7 +110,7 @@ namespace NMib
 			t_CData *f_Get();
 			t_CData *f_TryGet();
 			t_CData *f_TryGetForThread(mint _ThreadID);
-			bint f_IsValid();
+			bool f_IsValid();
 
 			inline_small operator t_CData *();
 			inline_small t_CData * operator ->();
@@ -137,7 +137,7 @@ namespace NMib
 
 			void f_DeleteItem(void *_pItem) override;
 			void *f_CreateData(void *_pSource, bool _bMove) override;
-			void *f_CreateData(bint _bInitial) override;
+			void *f_CreateData(bool _bInitial) override;
 #if DMibEnableSafeCheck > 0
 			ch8 const* f_GetName() override;
 #endif
@@ -151,7 +151,7 @@ namespace NMib
 			t_CData *f_Get();
 			t_CData *f_TryGet();
 			t_CData *f_TryGetForThread(mint _ThreadID);
-			bint f_IsValid();
+			bool f_IsValid();
 
 			inline_small operator t_CData *();
 			inline_small t_CData * operator ->();

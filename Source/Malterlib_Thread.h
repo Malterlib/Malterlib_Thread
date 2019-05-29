@@ -80,12 +80,12 @@ namespace NMib::NThread
 		}
 
 
-		inline_small bint f_IsCreated()
+		inline_small bool f_IsCreated()
 		{
 			return m_pSemaphore != 0;
 		}
 
-		inline_small bint f_IsCreated() volatile
+		inline_small bool f_IsCreated() volatile
 		{
 			return fg_Volatile(m_pSemaphore) != 0;
 		}
@@ -120,12 +120,12 @@ namespace NMib::NThread
 		}
 
 		// Returns true if the wait timed out
-		inline_small bint f_WaitTimeout(fp64 _Timeout)
+		inline_small bool f_WaitTimeout(fp64 _Timeout)
 		{
 			return NSys::fg_Semaphore_WaitTimeout(m_pSemaphore, _Timeout);
 		}
 
-		inline_small bint f_TryWait()
+		inline_small bool f_TryWait()
 		{
 			return NSys::fg_Semaphore_TryWait(m_pSemaphore);
 		}
@@ -174,7 +174,7 @@ namespace NMib::NThread
 			m_pEvent = nullptr;
 		}
 
-		inline_small void f_ConstructIfNotCreated(bint _bInitialSignal = false)
+		inline_small void f_ConstructIfNotCreated(bool _bInitialSignal = false)
 		{
 			if (!m_pEvent)
 				m_pEvent = NSys::fg_Event_Alloc(_bInitialSignal);
@@ -182,7 +182,7 @@ namespace NMib::NThread
 				DMibFastCheck(0);
 		}
 
-		inline_small bint f_IsCreated()
+		inline_small bool f_IsCreated()
 		{
 			return m_pEvent != 0;
 		}
@@ -203,12 +203,12 @@ namespace NMib::NThread
 		}
 
 
-		inline_small bint f_IsCreated() volatile
+		inline_small bool f_IsCreated() volatile
 		{
 			return fg_Volatile(m_pEvent) != 0;
 		}
 
-		inline_small void f_Construct(bint _bInitialSignal = false)
+		inline_small void f_Construct(bool _bInitialSignal = false)
 		{
 			m_pEvent = NSys::fg_Event_Alloc(_bInitialSignal);
 		}
@@ -243,12 +243,12 @@ namespace NMib::NThread
 			NSys::fg_Event_Wait(m_pEvent);
 		}
 
-		inline_small bint f_WaitTimeout(fp64 _Timeout)
+		inline_small bool f_WaitTimeout(fp64 _Timeout)
 		{
 			return NSys::fg_Event_WaitTimeout(m_pEvent, _Timeout);
 		}
 
-		inline_small bint f_TryWait()
+		inline_small bool f_TryWait()
 		{
 			return NSys::fg_Event_TryWait(m_pEvent);
 		}
@@ -328,12 +328,12 @@ namespace NMib::NThread
 			NSys::fg_Semaphore_Wait(m_pSemaphore);
 		}
 
-		inline_small bint f_WaitTimeout(fp64 _Timeout)
+		inline_small bool f_WaitTimeout(fp64 _Timeout)
 		{
 			return NSys::fg_Semaphore_WaitTimeout(m_pSemaphore, _Timeout);
 		}
 
-		inline_small bint f_TryWait()
+		inline_small bool f_TryWait()
 		{
 			return NSys::fg_Semaphore_TryWait(m_pSemaphore);
 		}
@@ -376,7 +376,7 @@ namespace NMib::NThread
 		{
 		}
 
-		bint f_OwnsLock() { return true; }
+		bool f_OwnsLock() { return true; }
 
 	};
 
@@ -954,7 +954,7 @@ namespace NMib::NThread
 			m_Event.f_Destruct();
 		}
 
-		inline_never bint f_TryLock()
+		inline_never bool f_TryLock()
 		{
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
@@ -979,12 +979,12 @@ namespace NMib::NThread
 			return false;
 		}
 
-		bint f_IsLocked()
+		bool f_IsLocked()
 		{
 			return m_ThreadID != 0;
 		}
 
-		inline_never bint f_TryLock(aint _SpinCount)
+		inline_never bool f_TryLock(aint _SpinCount)
 		{
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
@@ -1130,7 +1130,7 @@ namespace NMib::NThread
 			m_nRecurse = 1;
 		}
 
-		bint f_OwnsLock()
+		bool f_OwnsLock()
 		{
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 			return m_ThreadID == CurrentThread;
@@ -1178,7 +1178,7 @@ namespace NMib::NThread
 		{
 		}
 #endif
-		bint f_TryLock()
+		bool f_TryLock()
 		{
 			return TCMutualAggregate<t_CEvent, t_bAllowRecursive>::f_TryLock(_nSpins);
 		}
@@ -1913,12 +1913,12 @@ namespace NMib::NThread
 				DMibFastCheck(0);
 		}
 
-		inline_small bint f_IsCreated()
+		inline_small bool f_IsCreated()
 		{
 			return m_pSemaphore != 0;
 		}
 
-		inline_small bint f_IsCreated() volatile
+		inline_small bool f_IsCreated() volatile
 		{
 			return fg_Volatile(m_pSemaphore) != 0;
 		}
@@ -1967,12 +1967,12 @@ namespace NMib::NThread
 			NSys::fg_Semaphore_Wait(m_pSemaphore);
 		}
 
-		inline_small bint f_WaitTimeout(fp64 _Timeout)
+		inline_small bool f_WaitTimeout(fp64 _Timeout)
 		{
 			return NSys::fg_Semaphore_WaitTimeout(m_pSemaphore, _Timeout);
 		}
 
-		inline_small bint f_TryWait()
+		inline_small bool f_TryWait()
 		{
 			return NSys::fg_Semaphore_TryWait(m_pSemaphore);
 		}
@@ -2042,9 +2042,9 @@ namespace NMib::NThread
 		mint m_ThreadID;
 		mint m_ParentThreadID;
 		void *m_pThreadDestroyContext;
-		bint m_bAutoDestroy;
-		bint m_bWaitStart;
-		bint m_bLockHeld;
+		bool m_bAutoDestroy;
+		bool m_bWaitStart;
+		bool m_bLockHeld;
 		CEvent m_ThreadQuitEvent;
 
 		align_cacheline NAtomic::TCAtomic<uint32> m_StateAtomic{EThreadState_None};
@@ -2091,7 +2091,7 @@ namespace NMib::NThread
 			return m_ThreadID;
 		}
 
-		bint f_CallingFromThread()
+		bool f_CallingFromThread()
 		{
 			return m_ThreadID == NSys::fg_Thread_GetCurrentUID();
 		}
@@ -2105,7 +2105,7 @@ namespace NMib::NThread
 		|																				|
 		|	Comments:			Your overridden Main function will be called			|
 		\*_____________________________________________________________________________*/
-		virtual void f_Start(EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bint _bAutoDestroy = false, bint _bWaitStart = false);
+		virtual void f_Start(EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false, bool _bWaitStart = false);
 
 		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
 		|	Function:			Stops the thread										|
@@ -2118,7 +2118,7 @@ namespace NMib::NThread
 		|																				|
 		|	Comments:			Longer_description_not_mandatory						|
 		\*_____________________________________________________________________________*/
-		virtual mint f_Stop(bint _bBlock = true);
+		virtual mint f_Stop(bool _bBlock = true);
 
 		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
 		|	Function:			Returns the return value for a stopped thread			|
@@ -2250,11 +2250,11 @@ namespace NMib::NThread
 
 		template <typename tf_CFunctionType>
 		static NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
-		fs_StartThread(tf_CFunctionType &&_FunctionObject, const t_CStr &_Name, EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bint _bAutoDestroy = false);
+		fs_StartThread(tf_CFunctionType &&_FunctionObject, const t_CStr &_Name, EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false);
 
 		template <typename tf_CFunctionType>
 		static NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
-		fs_StartThread(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name, EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bint _bAutoDestroy = false);
+		fs_StartThread(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name, EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false);
 
 	};
 

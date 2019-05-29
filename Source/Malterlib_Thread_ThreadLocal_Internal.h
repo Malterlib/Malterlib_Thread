@@ -85,7 +85,7 @@ namespace NMib
 
 				mint m_ThreadID;
 				mint m_DestroyingID;
-				bint m_bOnThreadCreated;
+				bool m_bOnThreadCreated;
 
 				NContainer::TCMap<mint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
 				NContainer::TCMap<mint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;

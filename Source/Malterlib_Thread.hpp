@@ -30,7 +30,7 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CData, typename t_CAllocator, CThreadLocalFlagUnderlaying t_Flags>
-	bint TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_IsValid()
+	bool TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_IsValid()
 	{
 		if (fs_GetFlags() & EThreadLocalFlag_FastThreadLocal)
 		{
@@ -248,7 +248,7 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CData, typename t_CAllocator, CThreadLocalFlagUnderlaying t_Flags>
-	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateData(bint _bInitial)
+	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateData(bool _bInitial)
 	{
 		EThreadLocalFlag Flags = fs_GetFlags();
 		if ((Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
@@ -301,7 +301,7 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CData, CThreadLocalFlagUnderlaying t_Flags>
-	bint TCThreadLocalDynamic<t_CData, t_Flags>::f_IsValid()
+	bool TCThreadLocalDynamic<t_CData, t_Flags>::f_IsValid()
 	{
 		if (fs_GetFlags() & EThreadLocalFlag_FastThreadLocal)
 		{
@@ -456,7 +456,7 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CData, CThreadLocalFlagUnderlaying t_Flags>
-	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateData(bint _bInitial)
+	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateData(bool _bInitial)
 	{
 		EThreadLocalFlag Flags = fs_GetFlags();
 		if ((Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
@@ -535,7 +535,7 @@ namespace NMib::NThread
 			, EThreadPriority _Prio
 			, mint _StackSize
 			, mint _Affinity
-			, bint _bAutoDestroy
+			, bool _bAutoDestroy
 		)
 		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
@@ -559,7 +559,7 @@ namespace NMib::NThread
 
 	template <typename t_CAllocator, typename t_CStr>
 	template <typename tf_CFunctionType>
-	auto TCThreadObject<t_CAllocator, t_CStr>::fs_StartThread(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name, EThreadPriority _Prio, mint _StackSize, mint _Affinity, bint _bAutoDestroy)
+	auto TCThreadObject<t_CAllocator, t_CStr>::fs_StartThread(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name, EThreadPriority _Prio, mint _StackSize, mint _Affinity, bool _bAutoDestroy)
 		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
 		class CCallerObjectImp : public CCallerObject

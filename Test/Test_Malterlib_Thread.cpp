@@ -1,4 +1,4 @@
-// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #include <Mib/Test/Performance>
@@ -26,10 +26,10 @@ using namespace NMib::NThread;
 #ifndef DCompiler_MSVC
 #define DLimitOptimizations asm("")
 #else
-#define DLimitOptimizations 
+#define DLimitOptimizations
 #endif
 
-enum 
+enum
 {
 	ECacheLineSize = 64
 
@@ -52,7 +52,7 @@ namespace
 		aint m_ChangingValue;
 		aint m_IncDone;
 		aint m_nTests;
-		
+
 		CReadWriteContention()
 		{
 		}
@@ -161,7 +161,7 @@ namespace
 			aint f_Main()
 			{
 				m_EventWantQuit.f_ReportTo(&m_Event);
-				bint bWantStop = false;
+				bool bWantStop = false;
 				while (1)
 				{
 					m_Event.f_Wait();
@@ -170,7 +170,7 @@ namespace
 					m_nReads = 0;
 //					DMibTestSuite("ReadThread")
 					{
-						bint bInvalidValue = false;
+						bool bInvalidValue = false;
 						while (1)
 						{
 							if (m_bStop.f_Exchange(0))
@@ -202,7 +202,7 @@ namespace
 								m_pTest->m_IncLock.f_UnlockRead();
 							}
 						}
-						
+
 					};
 					if (bWantStop)
 						break;
@@ -291,7 +291,7 @@ namespace
 							Timer.f_Stop();
 							while (1)
 							{
-								bint bAllStopped = true;
+								bool bAllStopped = true;
 								for (mint i = 0; i < EReadThreads; ++i)
 								{
 									if (ReadThreads[i].m_bStop.f_Load())
@@ -360,7 +360,7 @@ namespace
 	class CThread_Tests : public NMib::NTest::CTest
 	{
 	public:
-		
+
 		static void fs_IncNative()
 		{
 			++g_ThreadLocal;
@@ -369,7 +369,7 @@ namespace
 		{
 			++g_ThreadLocalArray[g_LocalArrayIndex];
 		}
-		
+
 #		if defined(DEnableWin32ThreadTest)
 			static void fs_IncTls()
 			{
@@ -406,8 +406,8 @@ namespace
 		static mint fs_CurrentThreadMalterlib()
 		{
 //			return __readgsdword(0x48);
-//000000013F93B004  mov         rax,qword ptr gs:[30h]  
-//000000013F93B00D  mov         eax,dword ptr [rax+48h]  
+//000000013F93B004  mov         rax,qword ptr gs:[30h]
+//000000013F93B00D  mov         eax,dword ptr [rax+48h]
 
 			return NMib::NSys::fg_Thread_GetCurrentUID();
 		}
@@ -425,13 +425,13 @@ namespace
 		}
 
 		template <typename t_CFunctor>
-		static void fs_CallFunctor(t_CFunctor _Functor) 
+		static void fs_CallFunctor(t_CFunctor _Functor)
 		{
 			_Functor();
 		}
 
 		template <typename t_CFunctor>
-		static void fs_CallFunctor2(t_CFunctor _Functor) 
+		static void fs_CallFunctor2(t_CFunctor _Functor)
 		{
 			_Functor();
 			_Functor();
@@ -479,7 +479,7 @@ namespace
 					*((mint *)TlsGetValue(g_TlsLocal)) = 0;
 					*((mint *)FlsGetValue(g_FlsLocal)) = 0;
 #				endif
-				
+
 				g_ThreadLocalFastIndex = NMib::NSys::fg_Thread_AllocLocalFast();
 				NMib::NSys::fg_Thread_SetLocalFast(g_ThreadLocalFastIndex, DMibNew mint);
 				*((mint *)NMib::NSys::fg_Thread_GetLocalFast(g_ThreadLocalFastIndex)) = 0;
@@ -507,7 +507,7 @@ namespace
 				CCyclesMin MalterlibStorageFastTime;
 				CCyclesMin MalterlibStorageTime;
 
-				auto Native = [&] () 
+				auto Native = [&] ()
 				{
 					NativeTime.f_Start();
 					[]() inline_never
@@ -521,7 +521,7 @@ namespace
 					;
 					NativeTime.f_Stop();
 				};
-				auto NativeArray = [&] () 
+				auto NativeArray = [&] ()
 				{
 					NativeArrayTime.f_Start();
 					[]() inline_never
@@ -536,7 +536,7 @@ namespace
 					NativeArrayTime.f_Stop();
 				};
 #				if defined(DEnableWin32ThreadTest)
-					auto Tls = [&] () 
+					auto Tls = [&] ()
 					{
 						TlsTime.f_Start();
 						for (mint i = 0; i < nLoops; ++i)
@@ -546,7 +546,7 @@ namespace
 						}
 						TlsTime.f_Stop();
 					};
-					auto Fls = [&] () 
+					auto Fls = [&] ()
 					{
 						FlsTime.f_Start();
 						for (mint i = 0; i < nLoops; ++i)
@@ -558,7 +558,7 @@ namespace
 					};
 #				endif
 
-				auto Malterlib = [&] () 
+				auto Malterlib = [&] ()
 				{
 					MalterlibTime.f_Start();
 					[]() inline_never
@@ -573,7 +573,7 @@ namespace
 					MalterlibTime.f_Stop();
 				};
 
-				auto MalterlibFast = [&] () 
+				auto MalterlibFast = [&] ()
 				{
 					MalterlibFastTime.f_Start();
 					[]() inline_never
@@ -588,7 +588,7 @@ namespace
 					MalterlibFastTime.f_Stop();
 				};
 
-				auto MalterlibStorageFast = [&] () 
+				auto MalterlibStorageFast = [&] ()
 				{
 					MalterlibStorageFastTime.f_Start();
 					[]() inline_never
@@ -602,8 +602,8 @@ namespace
 					;
 					MalterlibStorageFastTime.f_Stop();
 				};
-				
-				auto MalterlibStorage = [&] () 
+
+				auto MalterlibStorage = [&] ()
 				{
 					MalterlibStorageTime.f_Start();
 					[]() inline_never
@@ -661,7 +661,7 @@ namespace
 					}
 #				endif
 
-				
+
 					NativeTime /= nLoops;
 					NativeArrayTime /= nLoops;
 #				if defined(DEnableWin32ThreadTest)
@@ -685,7 +685,7 @@ namespace
 #				else
 					DMibTest(DMibExpr(*g_ThreadLocalMalterlib) == DMibExpr(*g_ThreadLocalMalterlibFast));
 #				endif
-					
+
 				if (NMib::NTest::fg_GroupActive("Performance"))
 				{
 					DMibTest(DMibExpr(MalterlibStorageFastTime) / DMibExpr(MalterlibFastTime) >= DMibExpr(0.75));
@@ -722,7 +722,7 @@ namespace
 
 				volatile mint ThreadResultMalterlib = 0;
 				volatile mint ThreadResultNative = 0;
-				
+
 				for (mint i = 0; i < nTests; ++i)
 				{
 					NativeTime.f_Start();
@@ -759,7 +759,7 @@ namespace
 
 				NativeTime /= nLoops;
 				MalterlibTime /= nLoops;
-				
+
 				mint ThreadResultMalterlib1 = ThreadResultMalterlib;
 				mint ThreadResultNative1 = ThreadResultNative;
 				DMibTest(DMibExpr(ThreadResultMalterlib1) == DMibExpr(ThreadResultNative1));
@@ -779,7 +779,7 @@ namespace
 
 				CTestPerformance PerfTestReadWriteRead(0.75, false);
 				CTestPerformance PerfTestReadWriteWrite(0.75, false);
-				
+
 #				if defined(DEnableWin32ThreadTest)
 				{
 					CWindowsCriticalSection Crit;
@@ -801,7 +801,7 @@ namespace
 							;
 							Measure.f_Stop(nLoops);
 						}
-						
+
 						PerfTestMutual.f_AddReference(Measure);
 					}
 					{
@@ -1116,7 +1116,7 @@ namespace
 									EventDone.f_SetSignaled();
 									Event.f_Wait();
 									return 0;
-								} 
+								}
 								, "Test thread local thread"
 							)
 						;
@@ -1148,7 +1148,7 @@ namespace
 					for (mint i = 0; i < 10; ++i)
 					{
 						NMib::NStorage::TCAggregate<TCThreadLocal<CTemp, NMib::NMemory::CAllocator_Heap, EThreadLocalFlag_Inherit>> ThreadLocal = {DAggregateInit};
-						
+
 						NMib::NThread::CEvent Event;
 						NMib::NThread::CEvent EventDone;
 						(*ThreadLocal)->m_Value = 36;
@@ -1164,7 +1164,7 @@ namespace
 									EventDone.f_SetSignaled();
 									Event.f_Wait();
 									return 0;
-								} 
+								}
 								, "Test thread local thread"
 							)
 						;
@@ -1226,11 +1226,11 @@ namespace
 									EventDone.f_SetSignaled();
 									Event.f_Wait();
 									return 0;
-								} 
+								}
 								, "Test thread local thread 1"
 							)
 						;
-						
+
 						pThread0->m_EventWantQuit.f_Signal();
 						pThread0->f_Stop();
 						pThread1->m_EventWantQuit.f_Signal();
@@ -1255,8 +1255,8 @@ namespace
 				};
 
 			};
-#endif 
-			
+#endif
+
 		}
 	};
 
@@ -1274,7 +1274,7 @@ namespace
 #if defined(DEnableWin32ThreadTest)
 #include <windows.h>
 /*
-class CDebugInfo 
+class CDebugInfo
 {
     uint16   Type;
     uint16   CreatorBackTraceIndex;
@@ -1353,7 +1353,7 @@ public:
 		}
 	};
 
-	bool f_AutomaticTest() 
+	bool f_AutomaticTest()
 	{
 		return true;
 	}
@@ -1461,7 +1461,7 @@ public:
 		}
 
 		mint m_nReads;
-		bint m_bStop;
+		bool m_bStop;
 
 		aint f_Main()
 		{
@@ -1540,7 +1540,7 @@ public:
 
 		mint m_nOperations;
 
-		bint m_bStop;
+		bool m_bStop;
 
 		aint f_Main()
 		{
@@ -1633,7 +1633,7 @@ public:
 		{
 			m_pThread = _pThread;
 			m_pThread->m_ThreadLocalInstances.f_Increase();
-		}		
+		}
 	};
 
 	NMib::NThread::TCThreadLocal<CThreadLocal, NMib::NMemory::CAllocator_Heap, true> m_ThreadLocal;
@@ -1656,7 +1656,7 @@ public:
 			m_pThread->m_ThreadLocal->f_Init(m_pThread);
 
 			return 0;
-		}	
+		}
 	};
 
 	NMib::NStr::CStr Certify(CTestInterface &_Interface)
@@ -1670,7 +1670,7 @@ public:
 		static const aint NumTests = 2;
 #endif
 		m_ThreadLocal->f_Init(this);
-		m_ThreadLocal->m_TestInherit = 4545;		
+		m_ThreadLocal->m_TestInherit = 4545;
 
 		{
 			CThreadLocalTest Threads[10];
@@ -1685,7 +1685,7 @@ public:
 			}
 		}
 
-		
+
 		DMibCheck(m_ThreadLocalInstances.f_Get() == 1);
 
 		{
@@ -1766,7 +1766,7 @@ public:
 						}
 						while (1)
 						{
-							bint bAllStopped = true;
+							bool bAllStopped = true;
 							for (mint i = 0; i < EReadThreads; ++i)
 							{
 								if (NMib::fg_Volatile(ReadThreads[i].m_bStop))
@@ -1784,7 +1784,7 @@ public:
 		}
 
 
-		
+
 		/*
 
 		{
@@ -1794,12 +1794,12 @@ public:
 			{
 				{
 					DMibScopeTimerMin(Timer);
-					
+
 					for (aint i = 0; i < Tests; ++i)
 					{
 						Lock.f_Lock();
 						Lock.f_Unlock();
-					}				
+					}
 				}
 			}
 			DMibTrace("Performance for CMutualManyRead Lock+Unlock = {0} locks per second\n", ((aint)((fp64(Tests) / Timer.f_GetTime()).f_Get())));
@@ -1812,12 +1812,12 @@ public:
 			{
 				{
 					DMibScopeTimerMin(Timer);
-					
+
 					for (aint i = 0; i < Tests; ++i)
 					{
 						Lock.LockRead();
 						Lock.UnlockRead();
-					}				
+					}
 				}
 			}
 			DMibTrace("Performance for CMutualManyRead LockRead+UnlockRead = {0} locks per second\n", ((aint)((fp64(Tests) / Timer.f_GetTime()).f_Get())));
@@ -1843,9 +1843,9 @@ public:
 
 
 		return "";
-		
+
 	}
-		
+
 };
 
 CTestThread* CTestThread::ms_pThis = nullptr;

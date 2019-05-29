@@ -124,7 +124,7 @@ namespace NMib::NThread
 		return Return;
 	}
 
-	void CThread::f_Start(EThreadPriority _Prio, mint _StackSize, mint _Affinity, bint _bAutoDestroy, bint _bWaitStart)
+	void CThread::f_Start(EThreadPriority _Prio, mint _StackSize, mint _Affinity, bool _bAutoDestroy, bool _bWaitStart)
 	{
 		// Make sure that no thread is already running
 		{
@@ -166,7 +166,7 @@ namespace NMib::NThread
 	}
 
 
-	mint CThread::f_Stop(bint _bBlock)
+	mint CThread::f_Stop(bool _bBlock)
 	{
 
 		{
