@@ -2284,7 +2284,7 @@ namespace NMib::NStorage
 	template <>
 	class TCSharedPointerIntrusiveBase<ESharedPointerOption_None>
 	{
-		mutable NAtomic::TCAtomic<aint> m_RefCount; // -1 means no references
+		mutable NAtomic::TCAtomic<smint> m_RefCount; // -1 means no references
 
 	protected:
 		~TCSharedPointerIntrusiveBase();
@@ -2320,27 +2320,28 @@ namespace NMib::NStorage
 
 #if DMibConfig_RefcountDebugging
 		void f_InitialRef(CRefCountDebugReference &o_Reference) const;
-		aint f_RefCountDecrease(CRefCountDebugReference &o_Reference) const;
-		aint f_RefCountIncrease(CRefCountDebugReference &o_Reference) const;
+		smint f_RefCountDecrease(CRefCountDebugReference &o_Reference) const;
+		smint f_RefCountIncrease(CRefCountDebugReference &o_Reference) const;
 		void f_RefCountMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 #else
-		aint f_RefCountDecrease() const
+		smint f_RefCountDecrease() const
 		{
-			aint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			DMibFastCheck(Return >= 0);
 			if (Return == 0)
 				NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
 			return Return;
 		}
 
-		aint f_RefCountIncrease() const
+		smint f_RefCountIncrease() const
 		{
-			aint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
+			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
 			DMibFastCheck(Return >= 0);
 			return Return;
 		}
 #endif
 
-		aint f_RefCountGet() const
+		smint f_RefCountGet() const
 		{
 			return m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 		}
@@ -2405,6 +2406,7 @@ namespace NMib::NStorage
 		smint f_RefCountDecrease() const
 		{
 			smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			DMibFastCheck(Return >= 0);
 			if (Return == 0)
 				NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
 			return Return;
@@ -2412,7 +2414,7 @@ namespace NMib::NStorage
 
 		smint f_RefCountIncrease() const
 		{
-			aint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
+			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
 			DMibFastCheck(Return >= 0);
 
 			return Return;
