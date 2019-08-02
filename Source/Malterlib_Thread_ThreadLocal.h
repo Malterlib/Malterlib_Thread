@@ -63,7 +63,6 @@ namespace NMib
 		|						thread).												|
         \*_____________________________________________________________________________*/
 
-		using CThreadLocalFlagUnderlaying = int32;
 		enum EThreadLocalFlag : int32
 		{
 			EThreadLocalFlag_None,
@@ -76,7 +75,7 @@ namespace NMib
 			EThreadLocalFlag_FastThreadLocal = DMibBit(2),
 		};
 
-		template <typename t_CData, typename t_CAllocator = NMemory::CAllocator_Heap, CThreadLocalFlagUnderlaying t_Flags = EThreadLocalFlag_None>
+		template <typename t_CData, typename t_CAllocator = NMemory::CAllocator_Heap, EThreadLocalFlag t_Flags = EThreadLocalFlag_None>
 		class TCThreadLocal : CThreadLocalInterface
 		{
 			// Disable copy
@@ -85,14 +84,6 @@ namespace NMib
 			t_CData *fp_GetNew();
 			
 		public:
-			
-			mint m_ThreadLocalLocal;
-			void * m_pStorage; // Index into the thread storage list
-			static inline_small EThreadLocalFlag fs_GetFlags()
-			{
-				return (EThreadLocalFlag)t_Flags;
-			}
-
 			void f_DeleteItem(void *_pItem) override;
 			void *f_CreateData(void *_pSource, bool _bMove) override;
 			void *f_CreateData(bool _bInitial) override;
@@ -115,26 +106,21 @@ namespace NMib
 			inline_small operator t_CData *();
 			inline_small t_CData * operator ->();
 			inline_small t_CData & operator &();
+			
+			mint m_ThreadLocalLocal;
+			void * m_pStorage; // Index into the thread storage list
+			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
 		};
 
-		template <typename t_CData, CThreadLocalFlagUnderlaying t_Flags = EThreadLocalFlag_None>
+		template <typename t_CData, EThreadLocalFlag t_Flags = EThreadLocalFlag_None>
 		class TCThreadLocalDynamic : CThreadLocalInterface
 		{
 			// Disable copy
 			TCThreadLocalDynamic(TCThreadLocalDynamic const &);
 			TCThreadLocalDynamic&operator =(TCThreadLocalDynamic const &);
 			t_CData *fp_GetNew();
-		public:
-			mint m_ThreadLocalLocal;
-			void * m_pStorage; // Index into the thread storage list
-			NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, bool _bMove)> m_Construct;
-			NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> m_Destruct;
-			
-			static inline_small EThreadLocalFlag fs_GetFlags()
-			{
-				return (EThreadLocalFlag)t_Flags;
-			}
 
+		public:
 			void f_DeleteItem(void *_pItem) override;
 			void *f_CreateData(void *_pSource, bool _bMove) override;
 			void *f_CreateData(bool _bInitial) override;
@@ -156,6 +142,13 @@ namespace NMib
 			inline_small operator t_CData *();
 			inline_small t_CData * operator ->();
 			inline_small t_CData & operator &();
+
+			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
+
+			mint m_ThreadLocalLocal;
+			void * m_pStorage; // Index into the thread storage list
+			NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, bool _bMove)> m_Construct;
+			NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> m_Destruct;
 		};
 	}
 }
