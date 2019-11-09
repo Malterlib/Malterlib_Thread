@@ -11,7 +11,7 @@ namespace NMib
 	
 	namespace NPrivate
 	{
-		NMib::NStorage::TCAggregateSimple<NPrivate::CThreadLocalContext> g_ThreadLocalContext = {DAggregateInit};
+		constinit NMib::NStorage::TCAggregateSimple<NPrivate::CThreadLocalContext> g_ThreadLocalContext = {DAggregateInit};
 		
 		/************************************************************************************************\
 		||¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯||

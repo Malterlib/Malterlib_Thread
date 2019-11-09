@@ -918,6 +918,9 @@ namespace NMib::NThread
 			, m_ThreadID{0}
 			, m_nRecurse{0}
 			, m_Event{_Init}
+#		if DMibEnableSafeCheck > 0
+			, m_AlternateThreadID(0)
+#		endif
 		{
 		}
 		TCMutualAggregate()
