@@ -719,10 +719,10 @@ namespace NMib::NThread
 			if (m_nLocked.f_TestAndSet(NAtomic::EMemoryOrder_Acquire))
 				fp_WaitForIt();
 
-#			if DMibEnableSafeCheck > 0
-				m_ThreadID = NSys::fg_Thread_GetCurrentUID();
-				m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
-#			endif
+#		if DMibEnableSafeCheck > 0
+			m_ThreadID = NSys::fg_Thread_GetCurrentUID();
+			m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
+#		endif
 		}
 
 		void f_Unlock()
