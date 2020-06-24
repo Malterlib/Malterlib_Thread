@@ -143,6 +143,12 @@ namespace NMib::NThread
 		return fg_GetSys()->f_ThreadLocalReinitForThread(m_pStorage);
 	}
 
+	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
+	inline_small void TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_DestroyForThread()
+	{
+		return fg_GetSys()->f_ThreadLocalDestroyForThread(m_pStorage);
+	}
+
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	inline_small TCThreadLocal<t_CData, t_CAllocator, t_Flags>::operator t_CData *()
@@ -341,6 +347,12 @@ namespace NMib::NThread
 	inline_small void TCThreadLocalDynamic<t_CData, t_Flags>::f_ReinitForThread()
 	{
 		return fg_GetSys()->f_ThreadLocalReinitForThread(m_pStorage);
+	}
+
+	template <typename t_CData, EThreadLocalFlag t_Flags>
+	inline_small void TCThreadLocalDynamic<t_CData, t_Flags>::f_DestroyForThread()
+	{
+		return fg_GetSys()->f_ThreadLocalDestroyForThread(m_pStorage);
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
