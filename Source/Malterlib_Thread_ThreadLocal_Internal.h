@@ -107,12 +107,12 @@ namespace NMib
 				{
 				}
 
-				NContainer::TCVector<CPointer, NMemory::CAllocator_VirtualNoTracking> m_aThreadLocal;
+				NContainer::TCVector<CPointer, NMemory::CAllocator_VirtualNoTracking> m_ThreadLocals;
 				NThread::CMutual m_Lock;
 			};
 		private:
 
-			NIntrusive::TCAVLTree<&CPerThread::m_Link, CPerThread::CCompare> m_lPerThread;
+			NIntrusive::TCAVLTree<&CPerThread::m_Link, CPerThread::CCompare> m_PerThreadByThreadID;
 			NMemory::TCPool<CPerThread, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> m_PoolPerThread;
 			CAllocationPool m_PoolAllocation;
 			
@@ -142,6 +142,7 @@ namespace NMib
 			CStorageIndex *f_Alloc(NThread::CThreadLocalInterface &_Interface, mint &_ThreadLocalLocal);
 			void f_Free(NThread::CThreadLocalInterface &_Interface, CStorageIndex *_pStorageIndex);
 			void f_ReinitForThread(CStorageIndex *_pStorageIndex);
+			void f_DestroyForThread(CStorageIndex *_pStorageIndex);
 			void f_CreateThread(mint _ThreadID, mint _ParentThread);
 			void f_FreeThread();
 			void f_Set(CStorageIndex *_pStorageIndex, void *_pValue);

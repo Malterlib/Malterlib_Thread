@@ -97,6 +97,7 @@ namespace NMib
 
 			void f_Destroy();
 			void f_ReinitForThread();
+			void f_DestroyForThread();
 
 			t_CData *f_Get();
 			t_CData *f_TryGet();
@@ -133,6 +134,7 @@ namespace NMib
 
 			void f_Destroy();
 			void f_ReinitForThread();
+			void f_DestroyForThread();
 
 			t_CData *f_Get();
 			t_CData *f_TryGet();
