@@ -1250,7 +1250,7 @@ namespace NMib::NThread
 	typedef TMutualSpin<CEventAutoResetAggregate, 64, true> CMutualSpin;
 
 	/***************************************************************************************************\
-	|ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯|
+	|¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|
 	| MutualManyRead																				|
 	|___________________________________________________________________________________________________|
 	\***************************************************************************************************/
@@ -1844,7 +1844,7 @@ namespace NMib::NThread
 	}
 
 	/***************************************************************************************************\
-	|ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯|
+	|¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|
 	| Reportable																						|
 	|___________________________________________________________________________________________________|
 	\***************************************************************************************************/
@@ -1866,7 +1866,7 @@ namespace NMib::NThread
 		DMibListLinkDS_List(CReportListMember, m_LinkReportTo) m_ReportTo;
 		DMibListLinkDS_List(CReportListMember, m_LinkReportFrom) m_ReportFrom;
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Makes a link from the event to another event			|
 		|																				|
 		|	Parameters:																	|
@@ -2072,7 +2072,7 @@ namespace NMib::NThread
 		void f_ForkedChild();
 		void f_ForkedParent();
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Get the state of the thread								|
 		|																				|
 		|	Returns:			The state of the thread @See(EThreadState)				|
@@ -2099,7 +2099,7 @@ namespace NMib::NThread
 			return m_ThreadID == NSys::fg_Thread_GetCurrentUID();
 		}
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Starts the thead										|
 		|																				|
 		|	Parameters:																	|
@@ -2108,9 +2108,9 @@ namespace NMib::NThread
 		|																				|
 		|	Comments:			Your overridden Main function will be called			|
 		\*_____________________________________________________________________________*/
-		virtual void f_Start(EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false, bool _bWaitStart = false);
+		virtual void f_Start(EExecutionPriority _Prio = EExecutionPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false, bool _bWaitStart = false);
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Stops the thread										|
 		|																				|
 		|	Parameters:																	|
@@ -2123,7 +2123,7 @@ namespace NMib::NThread
 		\*_____________________________________________________________________________*/
 		virtual mint f_Stop(bool _bBlock = true);
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Returns the return value for a stopped thread			|
 		|																				|
 		|	Returns:			The return value of the stopped thread					|
@@ -2140,7 +2140,7 @@ namespace NMib::NThread
 			DMibError("You are trying to get a return value from a thread that isn't stopped (or has never run)");
 		}
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Suspends the thread										|
 		|																				|
 		|	Comments:			The suspence of the thread is reference counted,		|
@@ -2150,7 +2150,7 @@ namespace NMib::NThread
 		\*_____________________________________________________________________________*/
 		void f_Suspend();
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Resumes the thread										|
 		|																				|
 		|	Comments:			The suspence of the thread is reference counted,		|
@@ -2160,17 +2160,17 @@ namespace NMib::NThread
 		\*_____________________________________________________________________________*/
 		void f_Resume();
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Sets the priority of the thread							|
 		|																				|
 		|	Parameters:																	|
-		|		_Prio:			The priority @See(EThreadPriority)						|
+		|		_Prio:			The priority @See(EExecutionPriority)					|
 		|																				|
 		|	Comments:			.														|
 		\*_____________________________________________________________________________*/
-		void f_SetPriority(EThreadPriority _Prio);
+		void f_SetPriority(EExecutionPriority _Prio);
 
-		/*ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯ï¾¯*\
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			The main function of the thread. You will have to		|
 		|						override this function to be able to do anything with	|
 		|						your thread.											|
@@ -2253,11 +2253,29 @@ namespace NMib::NThread
 
 		template <typename tf_CFunctionType>
 		static NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
-		fs_StartThread(tf_CFunctionType &&_FunctionObject, const t_CStr &_Name, EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false);
+		fs_StartThread
+			(
+				tf_CFunctionType &&_FunctionObject
+				, const t_CStr &_Name
+				, EExecutionPriority _Prio = EExecutionPriority_Normal
+				, mint _StackSize = 0
+				, mint _Affinity = 0
+				, bool _bAutoDestroy = false
+			)
+		;
 
 		template <typename tf_CFunctionType>
 		static NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
-		fs_StartThread(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name, EThreadPriority _Prio = EThreadPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false);
+		fs_StartThread
+			(
+				tf_CFunctionType *_pFunctionObject
+				, const t_CStr &_Name
+				, EExecutionPriority _Prio = EExecutionPriority_Normal
+				, mint _StackSize = 0
+				, mint _Affinity = 0
+				, bool _bAutoDestroy = false
+			)
+		;
 
 	};
 

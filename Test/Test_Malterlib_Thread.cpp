@@ -232,7 +232,7 @@ namespace
 #endif
 			try
 			{
-				NMib::NSys::fg_Thread_SetPriority(NMib::NSys::fg_Thread_GetCurrent(), NMib::EThreadPriority_Normal);
+				NMib::NSys::fg_Thread_SetPriority(NMib::NSys::fg_Thread_GetCurrent(), NMib::EExecutionPriority_Normal);
 			}
 			catch (NMib::NException::CException const &)
 			{
@@ -328,7 +328,7 @@ namespace
 #endif
 			try
 			{
-				NMib::NSys::fg_Thread_SetPriority(NMib::NSys::fg_Thread_GetCurrent(), NMib::EThreadPriority_Highest);
+				NMib::NSys::fg_Thread_SetPriority(NMib::NSys::fg_Thread_GetCurrent(), NMib::EExecutionPriority_Highest);
 			}
 			catch (NMib::NException::CException const &)
 			{

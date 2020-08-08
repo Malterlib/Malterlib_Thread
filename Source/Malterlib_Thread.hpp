@@ -541,8 +541,8 @@ namespace NMib::NThread
 	TCThreadObject<t_CAllocator, t_CStr>::fs_StartThread
 		(
 			tf_CFunctionType &&_FunctionObject
-			, const t_CStr &_Name
-			, EThreadPriority _Prio
+			, t_CStr const &_Name
+			, EExecutionPriority _Prio
 			, mint _StackSize
 			, mint _Affinity
 			, bool _bAutoDestroy
@@ -569,7 +569,15 @@ namespace NMib::NThread
 
 	template <typename t_CAllocator, typename t_CStr>
 	template <typename tf_CFunctionType>
-	auto TCThreadObject<t_CAllocator, t_CStr>::fs_StartThread(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name, EThreadPriority _Prio, mint _StackSize, mint _Affinity, bool _bAutoDestroy)
+	auto TCThreadObject<t_CAllocator, t_CStr>::fs_StartThread
+		(
+			tf_CFunctionType *_pFunctionObject
+			, t_CStr const &_Name
+			, EExecutionPriority _Prio
+			, mint _StackSize
+			, mint _Affinity
+			, bool _bAutoDestroy
+		)
 		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
 		class CCallerObjectImp : public CCallerObject

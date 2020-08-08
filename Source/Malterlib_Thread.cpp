@@ -124,7 +124,7 @@ namespace NMib::NThread
 		return Return;
 	}
 
-	void CThread::f_Start(EThreadPriority _Prio, mint _StackSize, mint _Affinity, bool _bAutoDestroy, bool _bWaitStart)
+	void CThread::f_Start(EExecutionPriority _Prio, mint _StackSize, mint _Affinity, bool _bAutoDestroy, bool _bWaitStart)
 	{
 		// Make sure that no thread is already running
 		{
@@ -260,13 +260,12 @@ namespace NMib::NThread
 		NSys::fg_Thread_Resume(m_pThread);
 	}
 
-	void CThread::f_SetPriority(EThreadPriority _Prio)
+	void CThread::f_SetPriority(EExecutionPriority _Prio)
 	{
 		DMibLockTyped(CMutual, m_Lock);
 		DMibSafeCheck(m_pThread, "Must be started");
 		NSys::fg_Thread_SetPriority(m_pThread, _Prio);
 	}
-
 
 	void CThread::f_PrepareFork()
 	{
