@@ -1010,10 +1010,10 @@ namespace
 					PerfTestSimpleMutual.f_Add(Measure);
 				}
 				{
-					CTestPerformanceMeasure Measure("CSpinLock");
+					CTestPerformanceMeasure Measure("CLowLevelLock");
 					for (mint i = 0; i < nTests; ++i)
 					{
-						NMib::NThread::CSpinLock Lock;
+						NMib::NThread::CLowLevelLock Lock;
 						Measure.f_Start();
 						[&]() inline_never
 							{

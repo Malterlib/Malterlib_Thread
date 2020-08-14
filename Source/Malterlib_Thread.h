@@ -663,107 +663,54 @@ namespace NMib::NThread
 		virtual void f_LockRead() = 0;
 		virtual void f_UnlockRead() = 0;
 	};
+#if defined(DPlatformFamily_Linux) || defined(DPlatformFamily_Windows) || defined(DPlatformFamily_OSX)
+	using CLowLevelLockAggregateLockType = uint32;
+#endif
 
-	class CSpinLockAggregate
+	class CLowLevelLockAggregate
 	{
 	public:
-		inline_never void fp_WaitForIt(mint _Ticket)
-		{
-			for (int32 SpinCount = 0; m_Out.f_Load(NAtomic::EMemoryOrder_Acquire) != _Ticket; ++SpinCount)
-			{
-				if (SpinCount < 16)
-				{
-					yield_cpu;
-					yield_cpu;
-					yield_cpu;
-					yield_cpu;
-					yield_cpu;
-					yield_cpu;
-					yield_cpu;
-					yield_cpu;
-					yield_cpu;
-					yield_cpu;
-				}
-				else
-					NSys::fg_Thread_Yield();
-			}
-		}
 #ifndef DMibNoAggregateConstexpr
-		constexpr CSpinLockAggregate(EAggregateInitialization _Init)
-			: m_In{0}
-			, m_Out{0}
+		constexpr CLowLevelLockAggregate(EAggregateInitialization _Init)
+			: m_Lock{0}
 #	if DMibEnableSafeCheck > 0
 			, m_ThreadID{0}
 			, m_AlternateThreadID{0}
 #	endif
 		{
 		}
-		CSpinLockAggregate()
+		constexpr CLowLevelLockAggregate()
+			: m_Lock{0}
+#	if DMibEnableSafeCheck > 0
+			, m_ThreadID{0}
+			, m_AlternateThreadID{0}
+#	endif
 		{
 		}
 #endif
-		DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_In;
-		NAtomic::TCAtomicAggregate<mint> m_Out;
+		DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<CLowLevelLockAggregateLockType> m_Lock;
 
 #		if DMibEnableSafeCheck > 0
 			mint m_ThreadID;				// On windows this is the thread id, unix the pthread
 			mint m_AlternateThreadID;	// On windows this is also the thread id, on osx and linux this is the kernel thread id that can be used to match threads in the debugger
 #		endif
 
-		void f_ForkedChildUnlocked()
-		{
-			m_In = 0;
-			m_Out = 0;
-		}
-
-		void f_ForkedChildLocked()
-		{
-			m_In = 1;
-			m_Out = 0;
-		}
-
-		void f_Construct()
-		{
-			m_In = 0;
-			m_Out = 0;
-		}
-
-		void f_Destruct()
-		{
-		}
-
-		void f_Lock()
-		{
-			auto Ticket = m_In.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
-
-			if (m_Out.f_Load(NAtomic::EMemoryOrder_Acquire) != Ticket)
-				fp_WaitForIt(Ticket);
-
-#		if DMibEnableSafeCheck > 0
-			m_ThreadID = NSys::fg_Thread_GetCurrentUID();
-			m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
-#		endif
-		}
-
-		void f_Unlock()
-		{
-#			if DMibEnableSafeCheck > 0
-				m_ThreadID = 0;
-				m_AlternateThreadID = 0;
-#			endif
-
-			m_Out.f_Store(m_Out.f_Load(NAtomic::EMemoryOrder_Relaxed) + 1, NAtomic::EMemoryOrder_Release);
-		}
+		void f_ForkedChildUnlocked();
+		void f_ForkedChildLocked();
+		void f_Construct();
+		void f_Destruct();
+		void f_Lock();
+		void f_Unlock();
 	};
 
-	class CSpinLock : public CSpinLockAggregate
+	class CLowLevelLock : public CLowLevelLockAggregate
 	{
 	public:
-		CSpinLock()
+		CLowLevelLock()
 		{
 			f_Construct();
 		}
-		~CSpinLock()
+		~CLowLevelLock()
 		{
 			f_Destruct();
 		}
@@ -2226,15 +2173,8 @@ namespace NMib::NThread
 			virtual ch8 const * f_GetName() = 0;
 		};
 
-#if defined(DCompiler_MSVC_Workaround)
-		template <typename tf_CObjectType, typename tf_CAllocator, typename... tfp_CParams, TCEnableIfType<NTraits::TCRemoveReference<tf_CAllocator>::CType::mc_bIsDefault> *>
-		friend tf_CObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams &&...p_Params);
-		template <typename tf_CObjectType, typename tf_CAllocator, typename... tfp_CParams, TCEnableIfType<!NTraits::TCRemoveReference<tf_CAllocator>::CType::mc_bIsDefault> *>
-		friend tf_CObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams &&...p_Params);
-#else
 		template <typename tf_ObjectType, typename tf_CAllocator, typename... tfp_CParams>
 		friend tf_ObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams&&... p_Params);
-#endif
 
 		NStorage::TCUniquePointer<CCallerObject, t_CAllocator> m_pCallerObject;
 
