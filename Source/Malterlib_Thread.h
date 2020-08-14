@@ -667,25 +667,31 @@ namespace NMib::NThread
 	class CSpinLockAggregate
 	{
 	public:
-		inline_never void fp_WaitForIt()
+		inline_never void fp_WaitForIt(mint _Ticket)
 		{
-			while (m_nLocked.f_TestAndSet(NAtomic::EMemoryOrder_Acquire))
+			for (int32 SpinCount = 0; m_Out.f_Load(NAtomic::EMemoryOrder_Acquire) != _Ticket; ++SpinCount)
 			{
-				yield_cpu;
-				yield_cpu;
-				yield_cpu;
-				yield_cpu;
-				yield_cpu;
-				yield_cpu;
-				yield_cpu;
-				yield_cpu;
-				yield_cpu;
-				yield_cpu;
+				if (SpinCount < 16)
+				{
+					yield_cpu;
+					yield_cpu;
+					yield_cpu;
+					yield_cpu;
+					yield_cpu;
+					yield_cpu;
+					yield_cpu;
+					yield_cpu;
+					yield_cpu;
+					yield_cpu;
+				}
+				else
+					NSys::fg_Thread_Yield();
 			}
 		}
 #ifndef DMibNoAggregateConstexpr
 		constexpr CSpinLockAggregate(EAggregateInitialization _Init)
-			: m_nLocked{0}
+			: m_In{0}
+			, m_Out{0}
 #	if DMibEnableSafeCheck > 0
 			, m_ThreadID{0}
 			, m_AlternateThreadID{0}
@@ -696,18 +702,18 @@ namespace NMib::NThread
 		{
 		}
 #endif
-
-		NAtomic::CAtomicFlagAggregate m_nLocked;
+		DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_In;
+		NAtomic::TCAtomicAggregate<mint> m_Out;
 
 #		if DMibEnableSafeCheck > 0
 			mint m_ThreadID;				// On windows this is the thread id, unix the pthread
 			mint m_AlternateThreadID;	// On windows this is also the thread id, on osx and linux this is the kernel thread id that can be used to match threads in the debugger
 #		endif
 
-
 		void f_Construct()
 		{
-			m_nLocked.f_Clear(NAtomic::EMemoryOrder_Relaxed);
+			m_In = 0;
+			m_Out = 0;
 		}
 
 		void f_Destruct()
@@ -716,8 +722,10 @@ namespace NMib::NThread
 
 		void f_Lock()
 		{
-			if (m_nLocked.f_TestAndSet(NAtomic::EMemoryOrder_Acquire))
-				fp_WaitForIt();
+			auto Ticket = m_In.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+
+			if (m_Out.f_Load(NAtomic::EMemoryOrder_Acquire) != Ticket)
+				fp_WaitForIt(Ticket);
 
 #		if DMibEnableSafeCheck > 0
 			m_ThreadID = NSys::fg_Thread_GetCurrentUID();
@@ -732,7 +740,7 @@ namespace NMib::NThread
 				m_AlternateThreadID = 0;
 #			endif
 
-			m_nLocked.f_Clear(NAtomic::EMemoryOrder_Release);
+			m_Out.f_Store(m_Out.f_Load(NAtomic::EMemoryOrder_Relaxed) + 1, NAtomic::EMemoryOrder_Release);
 		}
 	};
 
