@@ -710,6 +710,18 @@ namespace NMib::NThread
 			mint m_AlternateThreadID;	// On windows this is also the thread id, on osx and linux this is the kernel thread id that can be used to match threads in the debugger
 #		endif
 
+		void f_ForkedChildUnlocked()
+		{
+			m_In = 0;
+			m_Out = 0;
+		}
+
+		void f_ForkedChildLocked()
+		{
+			m_In = 1;
+			m_Out = 0;
+		}
+
 		void f_Construct()
 		{
 			m_In = 0;
