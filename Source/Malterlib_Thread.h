@@ -903,6 +903,9 @@ namespace NMib::NThread
 			m_nLocked.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
 			m_nRecurse = 0;
 			m_ThreadID = 0;
+#		if DMibEnableSafeCheck > 0
+			m_AlternateThreadID = 0;
+#		endif
 		}
 
 		void f_Construct(void * _pSemaphore)
@@ -913,6 +916,9 @@ namespace NMib::NThread
 				m_nLocked.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
 			m_nRecurse = 0;
 			m_ThreadID = 0;
+#		if DMibEnableSafeCheck > 0
+			m_AlternateThreadID = 0;
+#		endif
 			m_Event.f_Construct(_pSemaphore);
 		}
 
@@ -975,6 +981,9 @@ namespace NMib::NThread
 				if (m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
 				{
 					m_ThreadID = CurrentThread;
+#		if DMibEnableSafeCheck > 0
+					m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
+#		endif
 					m_nRecurse = 1;
 					return true;
 				}
@@ -1010,6 +1019,9 @@ namespace NMib::NThread
 			}
 
 			m_ThreadID = CurrentThread;
+#		if DMibEnableSafeCheck > 0
+			m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
+#		endif
 			m_nRecurse = 1;
 		}
 
@@ -1070,6 +1082,9 @@ namespace NMib::NThread
 				if (likely(m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed)))
 				{
 					m_ThreadID = CurrentThread;
+#		if DMibEnableSafeCheck > 0
+					m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
+#		endif
 					m_nRecurse = 1;
 					return;
 				}
@@ -1407,6 +1422,9 @@ namespace NMib::NThread
 				}
 			}
 			t_CBase::m_ThreadID = CurrentThread;
+#		if DMibEnableSafeCheck > 0
+			t_CBase::m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
+#		endif
 			t_CBase::m_nRecurse = 1;
 			DMibFastCheck(m_nReadingDebugCheck.f_Load() == 0);
 		}
@@ -1431,6 +1449,9 @@ namespace NMib::NThread
 			if (t_CBase::m_nLocked.f_CompareExchangeStrong(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
 			{
 				t_CBase::m_ThreadID = CurrentThread;
+#		if DMibEnableSafeCheck > 0
+				t_CBase::m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
+#		endif
 				t_CBase::m_nRecurse = 1;
 			}
 			else
@@ -1632,6 +1653,9 @@ namespace NMib::NThread
 				}
 			}
 			t_CBase::m_ThreadID = CurrentThread;
+#		if DMibEnableSafeCheck > 0
+			t_CBase::m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
+#		endif
 			t_CBase::m_nRecurse = 1;
 			DMibFastCheck(m_nReadingDebugCheck.f_Load() == 0);
 		}
