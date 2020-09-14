@@ -49,7 +49,7 @@ namespace
 		NMib::NTraits::TCAlign<NMib::NThread::CMutual, ECacheLineSize>::CType m_IncLockMutual;
 		NMib::NTraits::TCAlign<NMib::NThread::CMutual, ECacheLineSize>::CType m_IncDoneLock;
 		bool m_bDummy1;
-		aint m_ChangingValue;
+		NMib::NAtomic::TCAtomic<aint> m_ChangingValue;
 		aint m_IncDone;
 		aint m_nTests;
 
@@ -65,7 +65,6 @@ namespace
 				return "MalterlibCertifier_IncThread";
 			}
 
-			NMib::NThread::CEventAutoResetReportable m_Event;
 			CReadWriteContention *m_pTest;
 
 			CIncThread()
@@ -90,10 +89,9 @@ namespace
 
 			aint f_Main()
 			{
-				m_EventWantQuit.f_ReportTo(&m_Event);
 				while (1)
 				{
-					m_Event.f_Wait();
+					m_EventWantQuit.f_Wait();
 					if (f_GetState() == NMib::NThread::EThreadState_EventWantQuit)
 						break;
 
@@ -132,7 +130,6 @@ namespace
 				return "MalterlibCertifier_ReadThread";
 			}
 
-			NMib::NThread::CEventAutoResetReportable m_Event;
 			CReadWriteContention *m_pTest;
 
 			CReadThread()
@@ -155,16 +152,15 @@ namespace
 
 			}
 
-			mint m_nReads;
+			NMib::NAtomic::TCAtomic<mint> m_nReads;
 			NMib::NAtomic::TCAtomic<smint> m_bStop;
 
 			aint f_Main()
 			{
-				m_EventWantQuit.f_ReportTo(&m_Event);
 				bool bWantStop = false;
 				while (1)
 				{
-					m_Event.f_Wait();
+					m_EventWantQuit.f_Wait();
 					if (f_GetState() == NMib::NThread::EThreadState_EventWantQuit)
 						break;
 					m_nReads = 0;
@@ -182,7 +178,7 @@ namespace
 							{
 								m_pTest->m_IncLock.f_LockRead();
 
-								if (m_pTest->m_ChangingValue != 1112)
+								if (m_pTest->m_ChangingValue.f_Load() != 1112)
 								{
 									if (!bInvalidValue)
 									{
@@ -197,7 +193,7 @@ namespace
 								NMib::fg_Volatile(m_pTest->m_pIncValue) = &m_pTest->m_IncValue;
 								DMibFastCheck(!m_pTest->m_IncLock.f_IsLocked());
 #endif
-								++m_nReads;
+								m_nReads.f_FetchAdd(1, NMib::NAtomic::EMemoryOrder_Relaxed);
 
 								m_pTest->m_IncLock.f_UnlockRead();
 							}
@@ -270,10 +266,10 @@ namespace
 							Timer.f_Start();
 							for (mint i = 0; i < EReadThreads; ++i)
 							{
-								ReadThreads[i].m_Event.f_Signal();
+								ReadThreads[i].m_EventWantQuit.f_Signal();
 							}
 							for (mint i = 0; i < EIncThreads; ++i)
-								IncThreads[i].m_Event.f_Signal();
+								IncThreads[i].m_EventWantQuit.f_Signal();
 
 							while (1)
 							{
@@ -284,9 +280,9 @@ namespace
 							}
 							for (mint i = 0; i < EReadThreads; ++i)
 							{
-								nReads += NMib::fg_Volatile(ReadThreads[i].m_nReads);
+								nReads += ReadThreads[i].m_nReads.f_Load(NMib::NAtomic::EMemoryOrder_Relaxed);
 								ReadThreads[i].m_bStop.f_Exchange(1);
-								ReadThreads[i].m_Event.f_Signal();
+								ReadThreads[i].m_EventWantQuit.f_Signal();
 							}
 							Timer.f_Stop();
 							while (1)
@@ -1319,8 +1315,6 @@ public:
 	class CThread : public NMib::NThread::CThread
 	{
 	public:
-		NMib::NThread::CEventAutoResetReportable m_Event;
-
 		NMib::NStr::CStr f_GetThreadName()
 		{
 			return "MalterlibCertifier_TestThread";
@@ -1328,7 +1322,6 @@ public:
 
 		CThread()
 		{
-			m_EventWantQuit.f_ReportTo(&m_Event);
 		}
 		~CThread()
 		{
@@ -1339,7 +1332,7 @@ public:
 		{
 			while (1)
 			{
-				m_Event.f_Wait();
+				m_EventWantQuit.f_Wait();
 				if (f_GetState() == NMib::NThread::EThreadState_EventWantQuit)
 				{
 					DMibTrace("Got thread quit event\r\n", 0);
@@ -1375,7 +1368,6 @@ public:
 			return "MalterlibCertifier_IncThread";
 		}
 
-		NMib::NThread::CEventAutoResetReportable m_Event;
 		CTestThread *m_pTest;
 
 		CIncThread()
@@ -1398,10 +1390,9 @@ public:
 
 		aint f_Main()
 		{
-			m_EventWantQuit.f_ReportTo(&m_Event);
 			while (1)
 			{
-				m_Event.f_Wait();
+				m_EventWantQuit.f_Wait();
 				if (f_GetState() == NMib::NThread::EThreadState_EventWantQuit)
 					break;
 
@@ -1438,7 +1429,6 @@ public:
 			return "MalterlibCertifier_ReadThread";
 		}
 
-		NMib::NThread::CEventAutoResetReportable m_Event;
 		CTestThread *m_pTest;
 
 		CReadThread()
@@ -1465,10 +1455,9 @@ public:
 
 		aint f_Main()
 		{
-			m_EventWantQuit.f_ReportTo(&m_Event);
 			while (1)
 			{
-				m_Event.f_Wait();
+				m_EventWantQuit.f_Wait();
 				if (f_GetState() == NMib::NThread::EThreadState_EventWantQuit)
 					break;
 				m_nReads = 0;
@@ -1499,108 +1488,6 @@ public:
 			return 0;
 		}
 	};
-
-	class CReportableThread : public NMib::NThread::CThread
-	{
-	public:
-		NMib::NStr::CStr f_GetThreadName()
-		{
-			return "MalterlibCertifier_ReadThread";
-		}
-
-		NMib::NThread::CEventAutoResetReportable m_Event;
-		NMib::NThread::CEventAutoResetReportable m_EventTest;
-		CTestThread *m_pTest;
-
-		CReportableThread()
-		{
-			m_pTest = nullptr;
-			m_bStop = false;
-			m_nOperations = 0;
-		}
-
-		void f_Start(CTestThread *_pTest)
-		{
-			m_pTest = _pTest;
-			NMib::NThread::CThread::f_Start();
-		}
-
-		void f_Stop()
-		{
-			m_bStop = true;
-			NMib::NThread::CThread::f_Stop();
-
-		}
-
-		~CReportableThread()
-		{
-			f_Stop();
-
-		}
-
-		mint m_nOperations;
-
-		bool m_bStop;
-
-		aint f_Main()
-		{
-			m_EventWantQuit.f_ReportTo(&m_Event);
-			while (1)
-			{
-				NMib::NMisc::CRandom31 Random;
-				Random.f_SetSeed(NMib::fg_GetSys()->f_GetTimerValue());
-				m_Event.f_Wait();
-				if (f_GetState() == NMib::NThread::EThreadState_EventWantQuit)
-					break;
-				while (1)
-				{
-					if (NMib::fg_Volatile(m_bStop))
-						break;
-
-					{
-						int32 iThread = Random.f_Get() % 16;
-
-						int32 WhatToDo = Random.f_Get() % 7;
-						switch (WhatToDo)
-						{
-						case 0:
-							m_pTest->m_ReportableThreads[iThread].m_EventTest.f_ReportTo(&m_EventTest);
-							break;
-						case 1:
-							m_EventTest.f_ReportTo(&m_pTest->m_ReportableThreads[iThread].m_EventTest);
-							break;
-						case 2:
-							m_EventTest.f_ClearReportFrom();
-							break;
-						case 3:
-							m_EventTest.f_ClearReportTo();
-							break;
-						case 4:
-							m_pTest->m_ReportableThreads[iThread].m_EventTest.f_ClearReportFrom();
-							break;
-						case 5:
-							m_pTest->m_ReportableThreads[iThread].m_EventTest.f_ClearReportTo();
-							break;
-						case 6:
-							m_pTest->m_ReportableThreads[iThread].m_EventTest.f_Signal();
-							break;
-						case 7:
-							m_EventTest.f_Signal();
-							break;
-						}
-						++m_nOperations;
-
-					}
-				}
-				m_bStop = false;
-				m_pTest->m_IncEvent.f_Signal();
-			}
-
-			return 0;
-		}
-	};
-
-	CReportableThread m_ReportableThreads[16];
 
 	NAtomic::TCAtomic<smint> m_ThreadLocalInstances;
 	class CThreadLocal
@@ -1688,28 +1575,6 @@ public:
 
 		DMibCheck(m_ThreadLocalInstances.f_Get() == 1);
 
-		{
-			NMib::NTime::CTimerMin Timer;
-
-			for (mint i = 0; i < 16; ++i)
-				m_ReportableThreads[i].f_Start(this);
-			Timer.f_Start();
-			for (mint i = 0; i < 16; ++i)
-				m_ReportableThreads[i].m_Event.f_Signal();
-
-			NMib::NSys::fg_Thread_Sleep(1.0);
-
-			mint nOper = 0;
-			for (mint i = 0; i < 16; ++i)
-			{
-				m_ReportableThreads[i].f_Stop();
-				nOper += m_ReportableThreads[i].m_nOperations;
-			}
-			Timer.f_Stop();
-
-			DMibConOut("Performance for reportable events registration = {0} operations per second\r\n", ((aint)((fp64(nOper) / Timer.f_GetTime()).f_Get())));
-		}
-
 		return "";
 
 		NMib::NThread::CMutual Lock;
@@ -1747,10 +1612,10 @@ public:
 						DMibScopeTimerMin(Timer);
 						for (mint i = 0; i < EReadThreads; ++i)
 						{
-							ReadThreads[i].m_Event.f_Signal();
+							ReadThreads[i].m_EventWantQuit.f_Signal();
 						}
 						for (mint i = 0; i < EIncThreads; ++i)
-							IncThreads[i].m_Event.f_Signal();
+							IncThreads[i].m_EventWantQuit.f_Signal();
 
 						while (1)
 						{
@@ -1828,15 +1693,15 @@ public:
 		CThread Thread;
 		Thread.f_Start();
 		NMib::NSys::fg_Thread_Sleep(0.5);
-		Thread.m_Event.f_Signal();
+		Thread.m_EventWantQuit.f_Signal();
 		NMib::NSys::fg_Thread_Sleep(0.5);
-		Thread.m_Event.f_Signal();
+		Thread.m_EventWantQuit.f_Signal();
 		NMib::NSys::fg_Thread_Sleep(0.5);
-		Thread.m_Event.f_Signal();
+		Thread.m_EventWantQuit.f_Signal();
 		NMib::NSys::fg_Thread_Sleep(0.5);
-		Thread.m_Event.f_Signal();
+		Thread.m_EventWantQuit.f_Signal();
 		NMib::NSys::fg_Thread_Sleep(0.5);
-		Thread.m_Event.f_Signal();
+		Thread.m_EventWantQuit.f_Signal();
 		NMib::NSys::fg_Thread_Sleep(0.5);
 
 		Thread.f_Stop();

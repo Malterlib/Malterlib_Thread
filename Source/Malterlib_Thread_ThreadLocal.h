@@ -21,26 +21,80 @@ namespace NMib
 #else
 			, EThreadLocalInterfaceFlag_AlwaysCreated = 0
 #endif
+			, EThreadLocalInterfaceFlag_Inherit = DMibBit(2)
 		};
 
-		class CThreadLocalInterface
+		struct CThreadLocalInterface
 		{
-		public:
-
 			CThreadLocalInterface()
 				: m_Flags(EThreadLocalInterfaceFlag_None)
 			{
 			}
 
 			virtual ~CThreadLocalInterface(){}
-			EThreadLocalInterfaceFlag m_Flags;
+
+			struct CSafeAllocMemory
+			{
+				CSafeAllocMemory(void *_pMemory, mint _Size)
+					: m_pMemory(_pMemory)
+					, m_Size(_Size)
+				{
+				}
+
+				void *m_pMemory;
+				mint m_Size;
+			};
+
+			struct CSafeAlloc
+			{
+				CSafeAlloc(CThreadLocalInterface *_pInterface, CSafeAllocMemory const &_Memory)
+					: m_pInterface(_pInterface)
+					, m_Memory(_Memory)
+				{
+				}
+
+				CSafeAlloc(CSafeAlloc &&_Other)
+					: m_pInterface(fg_Exchange(_Other.m_pInterface, nullptr))
+					, m_Memory(_Other.m_Memory)
+				{
+				}
+
+				CSafeAlloc &operator = (CSafeAlloc &&_Other)
+				{
+					m_pInterface = fg_Exchange(_Other.m_pInterface, nullptr);
+					m_Memory = _Other.m_Memory;
+
+					return *this;
+				}
+
+				~CSafeAlloc()
+				{
+					if (!m_pInterface)
+						return;
+
+					m_pInterface->f_FreeData(m_Memory);
+				}
+
+				void f_Claim()
+				{
+					m_pInterface = nullptr;
+				}
+
+				CThreadLocalInterface *m_pInterface;
+				CSafeAllocMemory m_Memory;
+			};
 
 			virtual void f_DeleteItem(void *_pItem) = 0;
-			virtual void *f_CreateData(void *_pSource, bool _bMove) = 0;
-			virtual void *f_CreateData(bool _bInitial) = 0;
+			virtual CSafeAlloc f_AllocData() = 0;
+			virtual void f_FreeData(CSafeAllocMemory const &_Alloc) = 0;
+			virtual void *f_CreateDataCopy(void *_pSource, void *_pMemory) = 0;
+			virtual void *f_CreateDataMove(void *_pSource, void *_pMemory) = 0;
+			virtual void *f_CreateData(void *_pMemory, bool _bInitial) = 0;
 #if DMibEnableSafeCheck > 0
 			virtual ch8 const* f_GetName() = 0;
 #endif
+
+			EThreadLocalInterfaceFlag m_Flags;
 		};
         /*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
         |	Template:			Implement thread specific storage						|
@@ -85,8 +139,11 @@ namespace NMib
 			
 		public:
 			void f_DeleteItem(void *_pItem) override;
-			void *f_CreateData(void *_pSource, bool _bMove) override;
-			void *f_CreateData(bool _bInitial) override;
+			CSafeAlloc f_AllocData() override;
+			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
+			void *f_CreateDataCopy(void *_pSource, void *_pMemory) override;
+			void *f_CreateDataMove(void *_pSource, void *_pMemory) override;
+			void *f_CreateData(void *_pMemory, bool _bInitial) override;
 			
 #if DMibEnableSafeCheck > 0
 			ch8 const* f_GetName() override;
@@ -123,13 +180,22 @@ namespace NMib
 
 		public:
 			void f_DeleteItem(void *_pItem) override;
-			void *f_CreateData(void *_pSource, bool _bMove) override;
-			void *f_CreateData(bool _bInitial) override;
+			CSafeAlloc f_AllocData() override;
+			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
+			void *f_CreateDataCopy(void *_pSource, void *_pMemory) override;
+			void *f_CreateDataMove(void *_pSource, void *_pMemory) override;
+			void *f_CreateData(void *_pMemory, bool _bInitial) override;
 #if DMibEnableSafeCheck > 0
 			ch8 const* f_GetName() override;
 #endif
-			
-			TCThreadLocalDynamic(NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, bool _bMove)> const &_Construct, NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> const &_Destruct);
+			TCThreadLocalDynamic
+				(
+					NFunction::TCFunctionNoAlloc<CSafeAllocMemory ()> const &_fAlloc
+					, NFunction::TCFunctionNoAlloc<void (CSafeAllocMemory const &_Alloc)> const &_fFree
+					, NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, void *_pMemory, bool _bMove)> const &_fConstruct
+					, NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> const &_fDestruct
+				)
+			;
 			~TCThreadLocalDynamic();
 
 			void f_Destroy();
@@ -149,8 +215,10 @@ namespace NMib
 
 			mint m_ThreadLocalLocal;
 			void * m_pStorage; // Index into the thread storage list
-			NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, bool _bMove)> m_Construct;
-			NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> m_Destruct;
+			NFunction::TCFunctionNoAlloc<CSafeAllocMemory ()> m_fAlloc;
+			NFunction::TCFunctionNoAlloc<void (CSafeAllocMemory const &_Alloc)> m_fFree;
+			NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, void *_pMemory, bool _bMove)> m_fConstruct;
+			NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> m_fDestruct;
 		};
 	}
 }

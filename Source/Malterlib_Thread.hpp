@@ -10,6 +10,9 @@ namespace NMib::NThread
 			m_Flags |= EThreadLocalInterfaceFlag_UseFastStorage;
 		if constexpr ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0)
 			m_Flags |= EThreadLocalInterfaceFlag_AlwaysCreated;
+		if constexpr ((mc_Flags & EThreadLocalFlag_Inherit) != 0)
+			m_Flags |= EThreadLocalInterfaceFlag_Inherit;
+
 		m_pStorage = fg_GetSys()->f_ThreadLocalAlloc(*this, m_ThreadLocalLocal);
 	}
 
@@ -62,7 +65,7 @@ namespace NMib::NThread
 				NSys::fg_Thread_SetLocal(m_ThreadLocalLocal, pData);
 			return pData;
 		}
-		pData = (t_CData *)f_CreateData(false);
+		pData = (t_CData *)f_CreateData(nullptr, false);
 		fg_GetSys()->f_ThreadLocalSet(m_pStorage, pData);
 		return pData;
 	}
@@ -215,49 +218,61 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
-	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateData(void *_pSource, bool _bMove)
+	auto TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_AllocData() -> CSafeAlloc
 	{
-		enum
-		{
-			EInherit = (t_Flags & int(EThreadLocalFlag_Inherit)) != 0
-		};
+		constexpr bool c_bInherit = (t_Flags & int(EThreadLocalFlag_Inherit)) != 0;
 
-		if (_bMove)
-		{
-			return
-				TCChooseType
-				<
-					NTraits::TCIsConstructorCallableWith<t_CData, t_CData &&>::mc_Value, NPrivate::TCCreateHelperDo, NPrivate::TCCreateHelperDoNot
-				>::CType::template fs_CreateHelperMove<t_CData>
-				(
-					t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))
-					, _pSource
-				)
-			;
-		}
-		else
-		{
-			if (EInherit)
-			{
-				return TCChooseType<EInherit, NPrivate::TCCreateHelperDo, NPrivate::TCCreateHelperDoNot>::CType::template fs_CreateHelper<t_CData>
-					(
-						t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))
-						, _pSource
-					)
-				;
-			}
-			else
-			{
-				return nullptr;
-			}
-		}
+		if constexpr (c_bInherit)
+			return CSafeAlloc(this, {t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value)), sizeof(t_CData)});
+
+		return CSafeAlloc(nullptr, {nullptr, 0});
 	}
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
-	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateData(bool _bInitial)
+	void TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_FreeData(CSafeAllocMemory const &_Alloc)
+	{
+		return t_CAllocator::f_Free(_Alloc.m_pMemory, sizeof(t_CData));
+	}
+
+	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
+	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateDataCopy(void *_pSource, void *_pMemory)
+	{
+		constexpr bool c_bInherit = (t_Flags & int(EThreadLocalFlag_Inherit)) != 0;
+
+		if constexpr (c_bInherit)
+		{
+			t_CData const *pSource = (t_CData const *)_pSource;
+			t_CData *pData = new (_pMemory) t_CData(*pSource);
+			return pData;
+		}
+
+		return nullptr;
+	}
+
+	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
+	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateDataMove(void *_pSource, void *_pMemory)
+	{
+		constexpr bool c_bInherit = (t_Flags & int(EThreadLocalFlag_Inherit)) != 0;
+
+		if constexpr (c_bInherit)
+		{
+			t_CData *pSource = (t_CData *)_pSource;
+			t_CData *pData = new (_pMemory) t_CData(fg_Move(*pSource));
+			return pData;
+		}
+
+		return nullptr;
+	}
+
+	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
+	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateData(void *_pMemory, bool _bInitial)
 	{
 		if ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
-			return new(t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value))) t_CData();
+		{
+			if (!_pMemory)
+				_pMemory = t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value));
+			return new(_pMemory) t_CData();
+		}
 		return nullptr;
 	}
 
@@ -274,16 +289,22 @@ namespace NMib::NThread
 	template <typename t_CData, EThreadLocalFlag t_Flags>
 	TCThreadLocalDynamic<t_CData, t_Flags>::TCThreadLocalDynamic
 		(
-			NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, bool _bMove)> const &_Construct
-			, NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> const &_Destruct
+			NFunction::TCFunctionNoAlloc<CSafeAllocMemory ()> const &_fAlloc
+			, NFunction::TCFunctionNoAlloc<void (CSafeAllocMemory const &_Alloc)> const &_fFree
+			, NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, void *_pMemory, bool _bMove)> const &_fConstruct
+			, NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> const &_fDestruct
 		)
-		: m_Construct(_Construct)
-		, m_Destruct(_Destruct)
+		: m_fAlloc(_fAlloc)
+		, m_fFree(_fFree)
+		, m_fConstruct(_fConstruct)
+		, m_fDestruct(_fDestruct)
 	{
 		if constexpr ((mc_Flags & EThreadLocalFlag_FastThreadLocal) != 0)
 			m_Flags |= EThreadLocalInterfaceFlag_UseFastStorage;
 		if constexpr ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0)
 			m_Flags |= EThreadLocalInterfaceFlag_AlwaysCreated;
+		if constexpr ((mc_Flags & EThreadLocalFlag_Inherit) != 0)
+			m_Flags |= EThreadLocalInterfaceFlag_Inherit;
 
 		m_pStorage = fg_GetSys()->f_ThreadLocalAlloc(*this, m_ThreadLocalLocal);
 	}
@@ -338,7 +359,7 @@ namespace NMib::NThread
 				NSys::fg_Thread_SetLocal(m_ThreadLocalLocal, pData);
 			return pData;
 		}
-		pData = (t_CData *)f_CreateData(false);
+		pData = (t_CData *)f_CreateData(nullptr, false);
 		fg_GetSys()->f_ThreadLocalSet(m_pStorage, pData);
 		return pData;
 	}
@@ -451,31 +472,56 @@ namespace NMib::NThread
 	void TCThreadLocalDynamic<t_CData, t_Flags>::f_DeleteItem(void *_pItem)
 	{
 		t_CData *pData = (t_CData *)_pItem;
-		m_Destruct(pData);
+		m_fDestruct(pData);
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
-	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateData(void *_pSource, bool _bMove)
+	auto TCThreadLocalDynamic<t_CData, t_Flags>::f_AllocData() -> CSafeAlloc
 	{
-		enum
-		{
-			EInherit = (t_Flags & int(EThreadLocalFlag_Inherit)) != 0
-		};
-		if ((EInherit && _pSource) || _bMove)
-			return m_Construct((t_CData *)_pSource, _bMove);
+		if constexpr ((t_Flags & int(EThreadLocalFlag_Inherit)) != 0)
+			return CSafeAlloc(this, m_fAlloc());
+		return {nullptr, {nullptr, 0}};
+	}
+
+	template <typename t_CData, EThreadLocalFlag t_Flags>
+	void TCThreadLocalDynamic<t_CData, t_Flags>::f_FreeData(CSafeAllocMemory const &_Alloc)
+	{
+		return m_fFree(_Alloc);
+	}
+
+	template <typename t_CData, EThreadLocalFlag t_Flags>
+	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateDataCopy(void *_pSource, void *_pMemory)
+	{
+		if constexpr ((t_Flags & int(EThreadLocalFlag_Inherit)) != 0)
+			return m_fConstruct((t_CData *)_pSource, _pMemory, false);
 		return nullptr;
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
-	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateData(bool _bInitial)
+	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateDataMove(void *_pSource, void *_pMemory)
+	{
+		if constexpr ((t_Flags & int(EThreadLocalFlag_Inherit)) != 0)
+			return m_fConstruct((t_CData *)_pSource, _pMemory, true);
+		return nullptr;
+	}
+
+	template <typename t_CData, EThreadLocalFlag t_Flags>
+	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateData(void *_pMemory, bool _bInitial)
 	{
 		if ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
 		{
-//				if (!_bInitial)
-//					DMibDTrace("Initial Create({}) {}" DMibNewLine, m_pClass << NSys::fg_Thread_GetCurrentUID());
-//				else
-//					DMibDTrace("Create({}) {}" DMibNewLine, m_pClass << NSys::fg_Thread_GetCurrentUID());
-			return m_Construct(nullptr, false);
+			CSafeAlloc Memory(nullptr, {nullptr, 0});
+			if (!_pMemory)
+			{
+				Memory.m_Memory = m_fAlloc();
+				Memory.m_pInterface = this;
+				_pMemory = Memory.m_Memory.m_pMemory;
+			}
+
+			auto *pReturn = m_fConstruct(nullptr, _pMemory, false);
+			Memory.f_Claim();
+
+			return pReturn;
 		}
 		return nullptr;
 	}

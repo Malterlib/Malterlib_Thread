@@ -117,11 +117,11 @@ namespace NMib
 			CAllocationPool m_PoolAllocation;
 			
 #if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
-			mint m_iPerThreadDestructor;
+			mint m_iPerThreadDestructor = TCLimitsInt<mint>::mc_Max;
 #endif
-			mint m_iPerThread;
+			mint m_iPerThread = TCLimitsInt<mint>::mc_Max;
 
-			mint m_iThreadLocalCurrentLen;
+			mint m_iThreadLocalCurrentLen = 0;
 
 			NMemory::TCPool<CStorageIndex, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> m_PoolStorageIndices;
 

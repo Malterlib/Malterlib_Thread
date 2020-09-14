@@ -53,7 +53,13 @@ namespace NMib::NStorage
 		smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 		DMibFastCheck(Return >= 0);
 		if (Return == 0)
+		{
+#ifdef DMibSanitizerEnabled_Thread
+			m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+#else
 			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+#endif
+		}
 
 		DMibRefcountDebuggingOnly(if (Return == 0) m_Debug.f_Destruct());
 
@@ -115,7 +121,13 @@ namespace NMib::NStorage
 		smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 		DMibFastCheck(Return >= 0);
 		if (Return == 0)
+		{
+#ifdef DMibSanitizerEnabled_Thread
+			m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+#else
 			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+#endif
+		}
 
 		return Return;
 	}
@@ -169,7 +181,13 @@ namespace NMib::NStorage
 
 		smint Return = m_WeakRefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 		if (Return == 0)
+		{
+#ifdef DMibSanitizerEnabled_Thread
+			m_WeakRefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+#else
 			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+#endif
+		}
 
 		DMibRefcountDebuggingOnly(if (Return == 0) m_Debug.f_Destruct());
 

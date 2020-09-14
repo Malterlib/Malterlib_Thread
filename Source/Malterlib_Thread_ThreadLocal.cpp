@@ -1,4 +1,4 @@
-// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #include <Mib/Core/Core>
@@ -7,18 +7,18 @@
 
 namespace NMib
 {
-	
-	
+
+
 	namespace NPrivate
 	{
 		constinit NMib::NStorage::TCAggregateSimple<NPrivate::CThreadLocalContext> g_ThreadLocalContext = {DAggregateInit};
-		
+
 		/************************************************************************************************\
 		||¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯||
 		|| CThreadLocalContext
 		||______________________________________________________________________________________________||
 		\************************************************************************************************/
-		
+
 		CThreadLocalContext::CThreadLocalContext()
 		{
 			// Alloc the thread storage index from the system
@@ -31,7 +31,6 @@ namespace NMib
 				m_iPerThread = NSys::fg_Thread_AllocLocal();
 			#endif
 			DMibFastCheck(m_iPerThread > 0); // This must succeed
-			m_iThreadLocalCurrentLen = 0;
 		}
 
 		CThreadLocalContext::~CThreadLocalContext()
@@ -112,16 +111,28 @@ namespace NMib
 		{
 			m_LockContext.f_Lock();
 			m_LockContext.f_PrepareFork();
+
+			m_PoolAllocation.f_Lock();
+			m_PoolAllocation.f_PrepareFork();
 		}
 
 		void CThreadLocalContext::f_ForkedChild()
 		{
+			// Get rid of all thread locals as they are now defunct
+			m_PerThreadByThreadID.f_Construct();
+
+			m_PoolAllocation.f_ForkedChild();
+			m_PoolAllocation.f_Unlock();
+
 			m_LockContext.f_ForkedChild();
 			m_LockContext.f_Unlock();
 		}
 
 		void CThreadLocalContext::f_ForkedParent()
 		{
+			m_PoolAllocation.f_ForkedParent();
+			m_PoolAllocation.f_Unlock();
+
 			m_LockContext.f_ForkedParent();
 			m_LockContext.f_Unlock();
 		}
@@ -131,7 +142,7 @@ namespace NMib
 		void CThreadLocalContext::fs_PerThreadDestructor(void* _pPerThread)
 		{
 			CPerThread* pPerThread = (CPerThread*)_pPerThread;
-			
+
 			g_ThreadLocalContext->fp_FreePerThread(pPerThread);
 		}
 
@@ -142,7 +153,7 @@ namespace NMib
 		{
 			DMibLock(m_LockContext);
 			// Grow 32 at a time
-			aint NumNew = 32;				
+			aint NumNew = 32;
 			while (NumNew--)
 			{
 				CStorageIndex *pIndex = m_PoolStorageIndices.f_New();
@@ -156,19 +167,19 @@ namespace NMib
 			auto Iter = m_PerThreadByThreadID.f_GetIterator();
 
 			while (Iter)
-			{	
+			{
 				{
-					DMibLock(Iter->m_Lock);						
+					DMibLock(Iter->m_Lock);
 					Iter->m_ThreadLocals.f_SetLen(m_iThreadLocalCurrentLen);
 				}
 				++Iter;
-			}				
+			}
 		}
 
 		CThreadLocalContext::CPerThread *CThreadLocalContext::fp_GetPerThreadNew(mint _ThreadID)
 		{
 			DMibLock(m_LockContext);
-			
+
 			auto pCurrentThread = m_PerThreadByThreadID.f_FindEqual(_ThreadID);
 			if (pCurrentThread)
 			{
@@ -179,7 +190,7 @@ namespace NMib
 #endif
 					NSys::fg_Thread_SetLocal(m_iPerThread, pCurrentThread);
 				}
-				
+
 				return pCurrentThread; // Can happen when system destroys thread local and another thread local is dependant
 			}
 			// Lock for the pool
@@ -204,7 +215,7 @@ namespace NMib
 		{
 			return (mint)NSys::fg_Thread_GetLocal(m_iPerThread) == TCLimitsInt<mint>::mc_Max;
 		}
-		
+
 		bool CThreadLocalContext::f_ThreadCreated()
 		{
 			return (mint)NSys::fg_Thread_GetLocal(m_iPerThread) != 0;
@@ -252,10 +263,12 @@ namespace NMib
 			{
 				CPerThread *pIter = Iter;
 				{
-					void *pNewPtr = _Interface.f_CreateData(true);
+					void *pNewPtr = _Interface.f_CreateData(nullptr, true);
 					if (pNewPtr)
 					{
-						DMibFastCheck(pIter->m_ThreadLocals.f_IsPosValid(iThreadLocal));						
+						DMibLock(pIter->m_Lock);
+
+						DMibFastCheck(pIter->m_ThreadLocals.f_IsPosValid(iThreadLocal));
 						auto &Pointer = pIter->m_ThreadLocals.f_GetArray()[iThreadLocal];
 						DMibSafeCheck(!Pointer.m_pPtr, "Must be empty here");
 						Pointer.m_pPtr = pNewPtr;
@@ -283,9 +296,10 @@ namespace NMib
 
 		void CThreadLocalContext::f_ReinitForThread(CStorageIndex *_pStorageIndex)
 		{
+			auto &Interface = *_pStorageIndex->m_pInterface;
 			DMibLock(m_LockContext);
 			CPerThread *pThreadLocal = fp_GetPerThread(NSys::fg_Thread_GetCurrentUID());
-			
+
 			auto iThreadLocal = _pStorageIndex->m_iThreadLocal;
 
 			DMibFastCheck(pThreadLocal->m_DestroyingID != iThreadLocal); // Circular dependency
@@ -297,16 +311,21 @@ namespace NMib
 				DMibFastCheck(pThreadLocal->m_ThreadLocals.f_IsPosValid(iThreadLocal));
 				auto &Pointer = pThreadLocal->m_ThreadLocals.f_GetArray()[iThreadLocal];
 
-				if (!Pointer.m_pPtr)
+				if (!Pointer.m_pPtr || !(Interface.m_Flags & NThread::EThreadLocalInterfaceFlag_Inherit))
 					return;
 
-				auto &Interface = *_pStorageIndex->m_pInterface;
+				NThread::CThreadLocalInterface::CSafeAlloc Memory(nullptr, {nullptr, 0});
+				{
+					DMibUnlock(pThreadLocal->m_Lock);
+					Memory = Interface.f_AllocData();
+				}
 
 				void *pOldPointer = Pointer.m_pPtr;
-				void *pNewPtr = Interface.f_CreateData(pOldPointer, true);
+				void *pNewPtr = Interface.f_CreateDataMove(pOldPointer, Memory.m_Memory.m_pMemory);
+				DMibFastCheck(pNewPtr);
+				Memory.f_Claim();
 				Pointer.m_pPtr = pNewPtr;
 
-				DMibFastCheck(pNewPtr);
 				NAtomic::fg_MemoryFence();
 
 				if (Interface.m_Flags & NThread::EThreadLocalInterfaceFlag_UseFastStorage)
@@ -368,7 +387,7 @@ namespace NMib
 		{
 			DMibLock(m_LockContext);
 			//DMibDTraceSafe("{} - {} = {}" DMibNewLine, DMibPFunction << _pStorageIndex->m_iThreadLocal << m_ThreadLocal_DestroyOrder.f_GetLen());
-					
+
 			{
 				// Lock for the pool
 				// The thread storage does not exist for this thread, lets create it
@@ -376,6 +395,8 @@ namespace NMib
 				while (Iter)
 				{
 					CPerThread *pIter = Iter;
+					DMibLock(pIter->m_Lock);
+
 					DMibFastCheck(pIter->m_ThreadLocals.f_IsPosValid(_pStorageIndex->m_iThreadLocal));
 					auto &Pointer = pIter->m_ThreadLocals.f_GetArray()[_pStorageIndex->m_iThreadLocal];
 					void *pPtr = Pointer.m_pPtr;
@@ -442,7 +463,7 @@ namespace NMib
 				return; // Already created
 
 			pCopyTo->m_bOnThreadCreated = true;
-			
+
 			DMibFastCheck(fg_GetSys()->f_ThreadCreated());
 
 			CPerThread *pCopyFrom = m_PerThreadByThreadID.f_FindEqual(_ParentThread);
@@ -456,29 +477,45 @@ namespace NMib
 
 					auto iThreadLocal = pIndex->m_iThreadLocal;
 
+					DMibLock(pCopyTo->m_Lock);
+
 					DMibFastCheck(pCopyTo->m_ThreadLocals.f_IsPosValid(iThreadLocal));
 					auto &Pointer = pCopyTo->m_ThreadLocals.f_GetArray()[iThreadLocal];
 
 					if (Pointer.m_pPtr)
 						continue;
-					void *pPtr = nullptr;
-					if (pCopyFrom)
+					auto &Interface = *pIndex->m_pInterface;
+					void *pNewPtr = nullptr;
+
+					if ((Interface.m_Flags & NThread::EThreadLocalInterfaceFlag_Inherit) && pCopyFrom)
 					{
-						DMibFastCheck(pCopyFrom->m_ThreadLocals.f_IsPosValid(iThreadLocal));
-						pPtr = pCopyFrom->m_ThreadLocals.f_GetArray()[iThreadLocal].m_pPtr;
+						{
+							DMibUnlock(pCopyTo->m_Lock);
+							DMibLock(pCopyFrom->m_Lock);
+							DMibFastCheck(pCopyFrom->m_ThreadLocals.f_IsPosValid(iThreadLocal));
+							void *pPtr = pCopyFrom->m_ThreadLocals.f_GetArray()[iThreadLocal].m_pPtr;
+							if (pPtr)
+							{
+								NThread::CThreadLocalInterface::CSafeAlloc Memory(nullptr, {nullptr, 0});
+								{
+									DMibUnlock(pCopyFrom->m_Lock);
+									Memory = Interface.f_AllocData();
+								}
+
+								pNewPtr = Interface.f_CreateDataCopy(pPtr, Memory.m_Memory.m_pMemory);
+								DMibFastCheck(pNewPtr);
+								if (pNewPtr)
+									Memory.f_Claim();
+							}
+						}
 					}
 
-					auto &Interface = *pIndex->m_pInterface;
-
-					void *pNewPtr = nullptr;
-					if (pPtr)
-						pNewPtr = Interface.f_CreateData(pPtr, false);
 					if (!pNewPtr)
-						pNewPtr = Interface.f_CreateData(true);
+						pNewPtr = Interface.f_CreateData(nullptr, true);
+
 					if (pNewPtr)
 					{
 						Pointer.m_pPtr = pNewPtr;
-
 						if (Interface.m_Flags & NThread::EThreadLocalInterfaceFlag_AlwaysCreated)
 							pCopyTo->m_CreatedAlwaysCreate[iThreadLocal].m_pStorageIndex = pIndex;
 						else
@@ -499,25 +536,26 @@ namespace NMib
 		void CThreadLocalContext::fp_FreePerThread(CPerThread* _pPerThread)
 		{
 			DMibLock(m_LockContext);
-					
+
 			if (!_pPerThread)
 			{
-				#ifndef DMibPSupportThreadLocalDestructors			
+				#ifndef DMibPSupportThreadLocalDestructors
 					_pPerThread = (CPerThread *)NSys::fg_Thread_GetLocal(m_iPerThread);
 				#else
 					return;
 				#endif
 			}
-			
+
 			if (_pPerThread && ((mint)_pPerThread != TCLimitsInt<mint>::mc_Max))
 			{
 				if (NSys::fg_Thread_GetLocal(m_iPerThread) == nullptr)
 					NSys::fg_Thread_SetLocal(m_iPerThread, _pPerThread);
-					
+
 				DMibFastCheck(m_PerThreadByThreadID.f_FindEqual(NSys::fg_Thread_GetCurrentUID()) == _pPerThread);
 
 				while (true)
 				{
+					DMibLock(_pPerThread->m_Lock);
 					CStorageIndex *pIndex = nullptr;
 					{
 						auto pToDelete = _pPerThread->m_Created.f_FindLargest();
@@ -538,7 +576,7 @@ namespace NMib
 							_pPerThread->m_Created.f_Remove(pToDelete);
 						}
 					}
-					
+
 					auto &Index = *pIndex;
 
 					DMibFastCheck(_pPerThread->m_ThreadLocals.f_IsPosValid(Index.m_iThreadLocal));
@@ -551,7 +589,7 @@ namespace NMib
 					if (pPtr)
 					{
 						auto &Interface = *Index.m_pInterface;
-						
+
 						_pPerThread->m_DestroyingID = Index.m_iThreadLocal;
 						if (pPtr)
 							Interface.f_DeleteItem(pPtr);
@@ -566,7 +604,7 @@ namespace NMib
 
 				}
 
-			//#ifndef DMibPSupportThreadLocalDestructors			
+			//#ifndef DMibPSupportThreadLocalDestructors
 				if (NSys::fg_Thread_GetLocal(m_iPerThread) == _pPerThread)
 					NSys::fg_Thread_SetLocal(m_iPerThread, (void *)TCLimitsInt<mint>::mc_Max);
 			//#endif
@@ -590,7 +628,7 @@ namespace NMib
 
 			// Lock so m_ThreadLocals is safe
 			DMibLock(pThreadLocal->m_Lock);
-			
+
 			DMibFastCheck(pThreadLocal->m_ThreadLocals.f_IsPosValid(_pStorageIndex->m_iThreadLocal));
 
 			return pThreadLocal->m_ThreadLocals.f_GetArray()[_pStorageIndex->m_iThreadLocal].m_pPtr;
@@ -598,16 +636,15 @@ namespace NMib
 
 		void CThreadLocalContext::f_Set(CStorageIndex *_pStorageIndex, void *_pValue)
 		{
-			DMibLock(m_LockContext);
 			CPerThread *pThreadLocal = fp_GetPerThread(NSys::fg_Thread_GetCurrentUID());
-			
+
 			auto iThreadLocal = _pStorageIndex->m_iThreadLocal;
 
 			DMibFastCheck(pThreadLocal->m_DestroyingID != iThreadLocal); // Circular dependency
 
 			{
 				// Lock so m_ThreadLocals is safe
-				DMibLock(pThreadLocal->m_Lock);			
+				DMibLock(pThreadLocal->m_Lock);
 
 				DMibFastCheck(pThreadLocal->m_ThreadLocals.f_IsPosValid(iThreadLocal));
 				auto &Pointer = pThreadLocal->m_ThreadLocals.f_GetArray()[iThreadLocal];
@@ -687,7 +724,7 @@ namespace NMib
 	{
 		return NPrivate::g_ThreadLocalContext->f_Set((NPrivate::CThreadLocalContext::CStorageIndex *)_pStorageIndex, _pValue);
 	}
-	
+
 	void CSystem::f_OnThreadCreated(mint _ThreadID, mint _ParentID)
 	{
 		f_MemoryManager_OnThreadCreated(_ThreadID, _ParentID);
@@ -706,7 +743,7 @@ namespace NMib
 	{
 		f_ThreadLocalFreeThread();
 	}
-	
+
 	void CSystem::fp_ThreadLocalCreate()
 	{
 		NPrivate::g_ThreadLocalContext.f_Construct();
@@ -721,12 +758,12 @@ namespace NMib
 	{
 		return NPrivate::g_ThreadLocalContext->f_EnumThreads(_EnumFunc);
 	}
-	
+
 	bool CSystem::f_ThreadDestroyed() const
 	{
 		return NPrivate::g_ThreadLocalContext->f_ThreadDestroyed();
 	}
-	
+
 	bool CSystem::f_ThreadCreated() const
 	{
 		return NPrivate::g_ThreadLocalContext->f_ThreadCreated();

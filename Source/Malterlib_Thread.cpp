@@ -295,153 +295,25 @@ namespace NMib::NThread
 		m_Lock.f_ForkedParent();
 		m_Lock.f_Unlock();
 	}
-
-
-
-	/***************************************************************************************************\
-	|¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|
-	| Reportable																						|
-	|___________________________________________________________________________________________________|
-	\***************************************************************************************************/
-
-	void CSemaphoreReportableAggregate::f_ReportTo(CSemaphoreReportableAggregate *_pReportTo)
-	{
-		NStorage::TCUniquePointer<CReportListMember, NMemory::CAllocator_NonTrackedHeap> pReportMember = fg_Construct();
-
-		pReportMember->m_pReportTo = _pReportTo;
-		pReportMember->m_pReportFrom = this;
-
-		DMibLockTyped(CMutual, fg_GetSys()->m_EventMember_Lock);
-		// Lock
-		{
-//				DMibLockTyped(CMutual, m_Lock);
-			m_ReportTo.f_Insert(*pReportMember);
-		}
-		{
-//				DMibLockTyped(CMutual, _pReportTo->m_Lock);				
-
-			_pReportTo->m_ReportFrom.f_Insert(*pReportMember);
-		}
-
-		pReportMember.f_Detach();
-	}
-
-	void CSemaphoreReportableAggregate::f_ClearReportTo()
-	{
-		DMibLockTyped(CMutual, fg_GetSys()->m_EventMember_Lock);
-		{
-			CReportListMember *pMember;
-			{
-//					DMibLockTyped(CMutual, m_Lock);
-				pMember = m_ReportTo.f_Pop();
-			}
-			while (pMember)
-			{
-
-//					CSemaphoreReportableAggregate *pTo = pMember->m_pReportTo;
-				{
-//						DMibLockTyped(CMutual, pTo->m_Lock);					
-					pMember->m_LinkReportFrom.f_Unlink();
-				}
-				NStorage::TCUniquePointer<CReportListMember, NMemory::CAllocator_NonTrackedHeap> pReportMember = fg_Explicit(pMember);
-				pReportMember.f_Clear();
-				{
-//						DMibLockTyped(CMutual, m_Lock);
-					pMember = m_ReportTo.f_Pop();
-				}
-			}
-		}
-	}
-
-	void CSemaphoreReportableAggregate::f_ClearReportFrom()
-	{
-		DMibLockTyped(CMutual, fg_GetSys()->m_EventMember_Lock);
-		{
-			CReportListMember *pMember;
-			{
-//					DMibLockTyped(CMutual, m_Lock);
-				pMember = m_ReportFrom.f_Pop();
-			}
-			while (pMember)
-			{
-
-//					CSemaphoreReportableAggregate *pFrom = pMember->m_pReportFrom;
-				{
-//						DMibLockTyped(CMutual, pFrom->m_Lock);					
-					pMember->m_LinkReportTo.f_Unlink();
-				}
-				NStorage::TCUniquePointer<CReportListMember, NMemory::CAllocator_NonTrackedHeap> pReportMember = fg_Explicit(pMember);
-				pReportMember.f_Clear();
-				{
-//						DMibLockTyp ed(CMutual, m_Lock);
-					pMember = m_ReportFrom.f_Pop();
-				}
-			}
-		}
-	}
-
-	namespace
-	{
-		class CCheckRecursive
-		{
-		public:
-			const CSemaphoreReportableAggregate *m_pThis;
-
-			class CCompare
-			{
-			public:
-				inline_small CSemaphoreReportableAggregate const *operator () (CCheckRecursive const &_Node) const
-				{
-					return _Node.m_pThis;
-				}
-			};
-
-			NIntrusive::TCAVLLink<> m_Link;
-		};
-
-		void fg_Signal_CSemaphoreReportableAggregate(CSemaphoreReportableAggregate *_pThis, NIntrusive::TCAVLTree<&CCheckRecursive::m_Link, CCheckRecursive::CCompare> &_Tree, mint _nToSignal)
-		{
-			if (_Tree.f_FindEqual(_pThis))
-				return;
-
-			NSys::fg_Semaphore_Increase(_pThis->m_pSemaphore, _nToSignal);
-
-			if (!_pThis->m_ReportTo.f_IsEmpty())
-			{
-				CCheckRecursive Check;
-				Check.m_pThis = _pThis;
-				_Tree.f_Insert(Check);
-//					DMibLockTyped(CMutual, _pThis->m_Lock);
-				DMibListLinkDS_List(CSemaphoreReportableAggregate::CReportListMember, m_LinkReportTo)::CIterator Iter(_pThis->m_ReportTo);
-
-				while (Iter)
-				{
-					fg_Signal_CSemaphoreReportableAggregate(Iter->m_pReportTo, _Tree, _nToSignal);
-					++Iter;
-				}
-				_Tree.f_Remove(Check);
-			}
-		}
-	}
-	void CSemaphoreReportableAggregate::f_Signal(int _nToSignal)
-	{
-		DMibLockTyped(CMutual, fg_GetSys()->m_EventMember_Lock);
-		NIntrusive::TCAVLTree<&CCheckRecursive::m_Link, CCheckRecursive::CCompare> Recursive;
-		fg_Signal_CSemaphoreReportableAggregate(this, Recursive, _nToSignal);
-	}
 }
 
 namespace NMib::NStorage
 {
 	TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::~TCSharedPointerIntrusiveBase()
 	{
-		DMibCheck(f_RefCountGet() <= 0);
-		DMibRefcountDebuggingOnly(if (f_RefCountGet() == 0) m_Debug.f_Destruct());
+#if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefcountDebugging
+		smint RefCount = f_RefCountGet();
+#endif
+		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
+		DMibRefcountDebuggingOnly(if (RefCount == 0) m_Debug.f_Destruct());
 	}
 
 	TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::~TCSharedPointerIntrusiveBase()
 	{
-		DMibCheck(f_RefCountGet() <= 0);
-		DMibRefcountDebuggingOnly(if (f_RefCountGet() == 0) m_Debug.f_Destruct());
+#if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefcountDebugging
+		smint RefCount = f_RefCountGet();
+#endif
+		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
+		DMibRefcountDebuggingOnly(if (RefCount == 0) m_Debug.f_Destruct());
 	}
 }
