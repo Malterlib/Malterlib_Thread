@@ -13,7 +13,7 @@ namespace NMib::NThread
 		if constexpr ((mc_Flags & EThreadLocalFlag_Inherit) != 0)
 			m_Flags |= EThreadLocalInterfaceFlag_Inherit;
 
-		m_pStorage = fg_GetSys()->f_ThreadLocalAlloc(*this, m_ThreadLocalLocal);
+		m_pStorage = (mint)fg_GetSys()->f_ThreadLocalAlloc(*this, m_ThreadLocalLocal);
 	}
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
@@ -21,8 +21,8 @@ namespace NMib::NThread
 	{
 		if (m_pStorage)
 		{
-			fg_GetSys()->f_ThreadLocalFree(*this, m_pStorage);
-			m_pStorage = nullptr;
+			fg_GetSys()->f_ThreadLocalFree(*this, (void *)m_pStorage);
+			m_pStorage = 0;
 		}
 	}
 
@@ -49,14 +49,14 @@ namespace NMib::NThread
 			else
 				return NSys::fg_Thread_GetLocal(m_ThreadLocalLocal) != nullptr;
 		}
-		//t_CData *pData = ((t_CData *)fg_GetSys()->f_ThreadLocalGet(m_pStorage));
+		//t_CData *pData = ((t_CData *)fg_GetSys()->f_ThreadLocalGet((void *)m_pStorage));
 		//return pData != 0;
 	}
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	inline_never t_CData *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::fp_GetNew()
 	{
-		t_CData *pData = ((t_CData *)fg_GetSys()->f_ThreadLocalGet(m_pStorage));
+		t_CData *pData = ((t_CData *)fg_GetSys()->f_ThreadLocalGet((void *)m_pStorage));
 		if (pData)
 		{
 			if constexpr ((mc_Flags & EThreadLocalFlag_FastThreadLocal) != 0)
@@ -66,7 +66,7 @@ namespace NMib::NThread
 			return pData;
 		}
 		pData = (t_CData *)f_CreateData(nullptr, false);
-		fg_GetSys()->f_ThreadLocalSet(m_pStorage, pData);
+		fg_GetSys()->f_ThreadLocalSet((void *)m_pStorage, pData);
 		return pData;
 	}
 
@@ -96,7 +96,7 @@ namespace NMib::NThread
 		{
 			if (likely(pData))
 			{
-				//DMibFastCheck(((t_CData *)fg_GetSys()->f_ThreadLocalGet(m_pStorage)) == pData);
+				//DMibFastCheck(((t_CData *)fg_GetSys()->f_ThreadLocalGet((void *)m_pStorage)) == pData);
 				return pData;
 			}
 			return fp_GetNew();
@@ -143,13 +143,13 @@ namespace NMib::NThread
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	inline_small void TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_ReinitForThread()
 	{
-		return fg_GetSys()->f_ThreadLocalReinitForThread(m_pStorage);
+		return fg_GetSys()->f_ThreadLocalReinitForThread((void *)m_pStorage);
 	}
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	inline_small void TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_DestroyForThread()
 	{
-		return fg_GetSys()->f_ThreadLocalDestroyForThread(m_pStorage);
+		return fg_GetSys()->f_ThreadLocalDestroyForThread((void *)m_pStorage);
 	}
 
 
@@ -306,7 +306,7 @@ namespace NMib::NThread
 		if constexpr ((mc_Flags & EThreadLocalFlag_Inherit) != 0)
 			m_Flags |= EThreadLocalInterfaceFlag_Inherit;
 
-		m_pStorage = fg_GetSys()->f_ThreadLocalAlloc(*this, m_ThreadLocalLocal);
+		m_pStorage = (mint)fg_GetSys()->f_ThreadLocalAlloc(*this, m_ThreadLocalLocal);
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
@@ -314,8 +314,8 @@ namespace NMib::NThread
 	{
 		if (m_pStorage)
 		{
-			fg_GetSys()->f_ThreadLocalFree(*this, m_pStorage);
-			m_pStorage = nullptr;
+			fg_GetSys()->f_ThreadLocalFree(*this, (void *)m_pStorage);
+			m_pStorage = 0;
 		}
 	}
 
@@ -343,14 +343,14 @@ namespace NMib::NThread
 			else
 				return NSys::fg_Thread_GetLocal(m_ThreadLocalLocal) != nullptr;
 		}
-		//t_CData *pData = ((t_CData *)fg_GetSys()->f_ThreadLocalGet(m_pStorage));
+		//t_CData *pData = ((t_CData *)fg_GetSys()->f_ThreadLocalGet((void *)m_pStorage));
 		//return pData != 0;
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
 	inline_never t_CData *TCThreadLocalDynamic<t_CData, t_Flags>::fp_GetNew()
 	{
-		t_CData *pData = ((t_CData *)fg_GetSys()->f_ThreadLocalGet(m_pStorage));
+		t_CData *pData = ((t_CData *)fg_GetSys()->f_ThreadLocalGet((void *)m_pStorage));
 		if (pData)
 		{
 			if constexpr ((mc_Flags & EThreadLocalFlag_FastThreadLocal) != 0)
@@ -360,20 +360,20 @@ namespace NMib::NThread
 			return pData;
 		}
 		pData = (t_CData *)f_CreateData(nullptr, false);
-		fg_GetSys()->f_ThreadLocalSet(m_pStorage, pData);
+		fg_GetSys()->f_ThreadLocalSet((void *)m_pStorage, pData);
 		return pData;
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
 	inline_small void TCThreadLocalDynamic<t_CData, t_Flags>::f_ReinitForThread()
 	{
-		return fg_GetSys()->f_ThreadLocalReinitForThread(m_pStorage);
+		return fg_GetSys()->f_ThreadLocalReinitForThread((void *)m_pStorage);
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
 	inline_small void TCThreadLocalDynamic<t_CData, t_Flags>::f_DestroyForThread()
 	{
-		return fg_GetSys()->f_ThreadLocalDestroyForThread(m_pStorage);
+		return fg_GetSys()->f_ThreadLocalDestroyForThread((void *)m_pStorage);
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
@@ -402,7 +402,7 @@ namespace NMib::NThread
 		{
 			if (likely(pData))
 			{
-				//DMibFastCheck(((t_CData *)fg_GetSys()->f_ThreadLocalGet(m_pStorage)) == pData);
+				//DMibFastCheck(((t_CData *)fg_GetSys()->f_ThreadLocalGet((void *)m_pStorage)) == pData);
 				return pData;
 			}
 			return fp_GetNew();
