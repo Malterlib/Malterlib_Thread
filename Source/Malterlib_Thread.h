@@ -775,7 +775,7 @@ namespace NMib::NThread
 
 		inline_never void f_CreateEvent()
 		{
-			mint Original = m_nLocked.f_FetchOr((mint(1) << (EAtomicBits-2)), NAtomic::EMemoryOrder_Relaxed);
+			mint Original = m_nLocked.f_FetchOr((mint(1) << (EAtomicBits-2)), NAtomic::EMemoryOrder_SequentiallyConsistent);
 			if (!(Original & (mint(1) << (EAtomicBits-2))))
 			{
 				m_Event.f_ConstructIfNotCreated();
@@ -1091,7 +1091,7 @@ namespace NMib::NThread
 			if (likely((--m_nRecurse) == 0))
 			{
 				m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
-				mint nLockedValue = m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+				mint nLockedValue = m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_AcquireRelease); // Acquire for m_Event
 				if ((nLockedValue & mcp_AtomicMask) > 1)
 				{
 					mint nCreate = nLockedValue >> (EAtomicBits - 2);
@@ -1479,7 +1479,7 @@ namespace NMib::NThread
 					m_nReading.f_FetchAnd(~(mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone), NAtomic::EMemoryOrder_Release);
 				}
 
-				mint nLockedValue = t_CBase::m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+				mint nLockedValue = t_CBase::m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_AcquireRelease); // Acquire for m_Event
 				if ((nLockedValue & mcp_AtomicMask) > 1)
 				{
 					mint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
@@ -1671,7 +1671,7 @@ namespace NMib::NThread
 				//mint Bit_Signaled = DMibBitTyped(sizeof(m_nReading)*8-2, mint);
 				m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::EMemoryOrder_AcquireRelease);
 
-				mint nLockedValue = t_CBase::m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+				mint nLockedValue = t_CBase::m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_AcquireRelease); // Acquire for m_Event
 				if ((nLockedValue & mcp_AtomicMask) > 1)
 				{
 					mint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
