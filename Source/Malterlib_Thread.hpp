@@ -94,7 +94,7 @@ namespace NMib::NThread
 		}
 		else
 		{
-			if (likely(pData))
+			if (pData) [[likely]]
 			{
 				//DMibFastCheck(((t_CData *)fg_GetSys()->f_ThreadLocalGet((void *)m_pStorage)) == pData);
 				return pData;
@@ -400,7 +400,7 @@ namespace NMib::NThread
 		}
 		else
 		{
-			if (likely(pData))
+			if (pData) [[likely]]
 			{
 				//DMibFastCheck(((t_CData *)fg_GetSys()->f_ThreadLocalGet((void *)m_pStorage)) == pData);
 				return pData;

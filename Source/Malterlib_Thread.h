@@ -991,7 +991,7 @@ namespace NMib::NThread
 			mint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire);
 			mint nLocked = nLockedValue & mcp_AtomicMask;
 
-			if (unlikely(nLocked > 0))
+			if (nLocked > 0) [[unlikely]]
 			{
 				mint nCreate = nLockedValue >> (EAtomicBits - 2);
 				if (nCreate & 2)
@@ -1028,7 +1028,7 @@ namespace NMib::NThread
 				return;
 			}
 
-			while (likely(_SpinCount--))
+			while (_SpinCount--) [[likely]]
 			{
 				mint Original = m_nLocked.f_Load(NAtomic::EMemoryOrder_Relaxed);
 				if (Original & mcp_AtomicMask)
@@ -1036,7 +1036,8 @@ namespace NMib::NThread
 					yield_cpu;
 					continue;
 				}
-				if (likely(m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed)))
+
+				if (m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed)) [[likely]]
 				{
 					m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
 #		if DMibEnableSafeCheck > 0
@@ -1088,7 +1089,7 @@ namespace NMib::NThread
 
 			DMibFastCheck(m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
 
-			if (likely((--m_nRecurse) == 0))
+			if ((--m_nRecurse) == 0) [[likely]]
 			{
 				m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
 				mint nLockedValue = m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_AcquireRelease); // Acquire for m_Event
