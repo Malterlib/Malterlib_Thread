@@ -1856,7 +1856,6 @@ namespace NMib::NThread
 		mint m_ParentThreadID;
 		void *m_pThreadDestroyContext;
 		bool m_bAutoDestroy;
-		bool m_bWaitStart;
 		bool m_bLockHeld;
 		CEvent m_ThreadQuitEvent;
 
@@ -1918,7 +1917,7 @@ namespace NMib::NThread
 		|																				|
 		|	Comments:			Your overridden Main function will be called			|
 		\*_____________________________________________________________________________*/
-		virtual void f_Start(EExecutionPriority _Prio = EExecutionPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false, bool _bWaitStart = false);
+		virtual void f_Start(EExecutionPriority _Prio = EExecutionPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false);
 
 		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Stops the thread										|

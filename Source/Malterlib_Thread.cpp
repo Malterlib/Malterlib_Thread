@@ -20,7 +20,6 @@ namespace NMib::NThread
 		m_ThreadID = 0;
 		m_pThreadDestroyContext = nullptr;
 		m_bAutoDestroy = false;
-		m_bWaitStart = false;
 		m_bLockHeld = false;
 		m_ThreadQuitEvent.f_SetSignaled();
 	}
@@ -77,8 +76,6 @@ namespace NMib::NThread
 		//fg_GetSys()->f_ThreadLocalCreateThread(NSys::fg_Thread_GetCurrentUID(), pThread->m_ParentThreadID);
 	//#endif
 
-		if (pThread->m_bWaitStart)
-			pThread->m_EventWantQuit.f_Signal();
 		aint Return = pThread->f_Main();
 
 	#ifndef DMibPSupportThreadDestroyNotification
@@ -124,7 +121,7 @@ namespace NMib::NThread
 		return Return;
 	}
 
-	void CThread::f_Start(EExecutionPriority _Prio, mint _StackSize, mint _Affinity, bool _bAutoDestroy, bool _bWaitStart)
+	void CThread::f_Start(EExecutionPriority _Prio, mint _StackSize, mint _Affinity, bool _bAutoDestroy)
 	{
 		// Make sure that no thread is already running
 		{
@@ -135,12 +132,9 @@ namespace NMib::NThread
 			}
 			fp_Cleanup();
 			m_ThreadQuitEvent.f_ResetSignaled();
-			if (_bWaitStart)
-				m_EventWantQuit.f_TryWait();
 			m_ReturnValue = 0;
 			m_ParentThreadID = NSys::fg_Thread_GetCurrentUID();
 			m_bAutoDestroy = _bAutoDestroy;
-			m_bWaitStart = _bWaitStart;
 			NStr::CStr ThreadName;
 			auto *pName = f_GetThreadNameRaw();
 			if (!pName)
@@ -152,10 +146,6 @@ namespace NMib::NThread
 			m_pThread = NSys::fg_Thread_Create(fsp_ThreadMain, this, _Prio, _StackSize, false, pName, _Affinity, m_ThreadID);
 			m_pThreadDestroyContext = NSys::fg_Thread_BeginDestroy(m_pThread);
 			m_StateAtomic.f_Exchange(EThreadState_Running);
-			if (_bWaitStart)
-			{
-				m_EventWantQuit.f_Wait();
-			}
 		}
 
 	}
