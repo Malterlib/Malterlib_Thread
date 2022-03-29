@@ -2394,7 +2394,7 @@ namespace NMib::NStorage
 			static_assert(!NTraits::TCHasVirtualDestructor<tf_CToType>::mc_Value || NTraits::TCHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>::mc_Value, "No virtual base");
 			static_assert(NTraits::TCHasVirtualDestructor<tf_CToType>::mc_Value || !NTraits::TCHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>::mc_Value, "Virtual base");
 			static_assert(tf_ToOptions == tf_Options, "Cannot mix weak support with non-weak support");
-			static_assert(NTraits::TCAlignmentOf<tf_CToType>::mc_Value == NTraits::TCAlignmentOf<tf_CType>::mc_Value, "Cannot mix alignment, use TCSharedPointerIntrusiveBase");
+			static_assert(alignof(tf_CToType) == alignof(tf_CType), "Cannot mix alignment, use TCSharedPointerIntrusiveBase");
 			static_assert(!NTraits::TCIsVirtualBaseOf<tf_CType, tf_CToType>::mc_Value, "Virtual base classes are not supported, use TCSharedPointerIntrusiveBase");
 
 			auto pCovertTo = (TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions> *)_pIn;

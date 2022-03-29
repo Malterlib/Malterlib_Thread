@@ -177,7 +177,7 @@ namespace NMib::NThread
 	void TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_DeleteItem(void *_pItem)
 	{
 		t_CData *pData = (t_CData *)_pItem;
-		fg_DeleteObjectDefiniteType(t_CAllocator(), pData, fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value));
+		fg_DeleteObjectDefiniteType(t_CAllocator(), pData, fg_Max(mint(DMibPMemoryCacheLineSize), alignof(t_CData)));
 	}
 
 	namespace NPrivate
@@ -223,7 +223,7 @@ namespace NMib::NThread
 		constexpr bool c_bInherit = (t_Flags & int(EThreadLocalFlag_Inherit)) != 0;
 
 		if constexpr (c_bInherit)
-			return CSafeAlloc(this, {t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value)), sizeof(t_CData)});
+			return CSafeAlloc(this, {t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), alignof(t_CData))), sizeof(t_CData)});
 
 		return CSafeAlloc(nullptr, {nullptr, 0});
 	}
@@ -270,7 +270,7 @@ namespace NMib::NThread
 		if ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
 		{
 			if (!_pMemory)
-				_pMemory = t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), NTraits::TCAlignmentOf<t_CData>::mc_Value));
+				_pMemory = t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(mint(DMibPMemoryCacheLineSize), alignof(t_CData)));
 			return new(_pMemory) t_CData();
 		}
 		return nullptr;
