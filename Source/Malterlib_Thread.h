@@ -1930,10 +1930,9 @@ namespace NMib::NStorage
 #if DMibConfig_RefcountDebugging
 	struct CRefCountDebug
 	{
-		NThread::CMutual m_Lock;
+		NThread::CLowLevelLock m_Lock;
 		NContainer::TCLinkedList<NException::CCallstack, NMemory::CAllocator_NonTrackedHeap> m_Callstacks;
 		NContainer::TCLinkedList<NException::CCallstack, NMemory::CAllocator_NonTrackedHeap> m_WeakCallstacks;
-
 	};
 #endif
 
@@ -1976,8 +1975,15 @@ namespace NMib::NStorage
 
 #if DMibConfig_RefcountDebugging
 		void f_InitialRef(CRefCountDebugReference &o_Reference) const;
+		void f_RemoveRef(CRefCountDebugReference &o_Reference) const;
 		smint f_RefCountDecrease(CRefCountDebugReference &o_Reference) const;
-		smint f_RefCountIncrease(CRefCountDebugReference &o_Reference) const;
+		smint f_RefCountIncrease
+			(
+				CRefCountDebugReference &o_Reference
+#if DMibEnableSafeCheck > 0
+				, bool _bAllowRevive = false
+#endif
+			) const;
 		void f_RefCountMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 #else
 		smint f_RefCountDecrease() const
@@ -1995,10 +2001,15 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		smint f_RefCountIncrease() const
+		smint f_RefCountIncrease
+			(
+#if DMibEnableSafeCheck > 0
+				bool _bAllowRevive = false
+#endif
+			) const
 		{
 			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
-			DMibFastCheck(Return >= 0);
+			DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 			return Return;
 		}
 #endif
@@ -2056,8 +2067,16 @@ namespace NMib::NStorage
 
 #if DMibConfig_RefcountDebugging
 		void f_InitialRef(CRefCountDebugReference &o_Reference) const;
+		void f_RemoveRef(CRefCountDebugReference &o_Reference) const;
 		smint f_RefCountDecrease(CRefCountDebugReference &o_Reference) const;
-		smint f_RefCountIncrease(CRefCountDebugReference &o_Reference) const;
+		smint f_RefCountIncrease
+			(
+				CRefCountDebugReference &o_Reference
+#if DMibEnableSafeCheck > 0
+				, bool _bAllowRevive = false
+#endif
+			) const
+		;
 		bool f_RefCountIncreaseWhileValid(CRefCountDebugReference &o_Reference) const;
 		smint f_WeakRefCountDecrease(CRefCountDebugReference *o_pReference) const;
 		smint f_WeakRefCountIncrease(CRefCountDebugReference &o_Reference) const;
@@ -2080,10 +2099,15 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		smint f_RefCountIncrease() const
+		smint f_RefCountIncrease
+			(
+#if DMibEnableSafeCheck > 0
+				bool _bAllowRevive = false
+#endif
+			) const
 		{
 			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
-			DMibFastCheck(Return >= 0);
+			DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 
 			return Return;
 		}

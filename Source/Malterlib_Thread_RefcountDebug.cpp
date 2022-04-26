@@ -41,6 +41,16 @@ namespace NMib::NStorage
 		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
 	}
 
+	void TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RemoveRef(CRefCountDebugReference &o_Reference) const
+	{
+		DMibFastCheck(o_Reference.m_pCallstack);
+		{
+			DMibLock(m_Debug->m_Lock);
+			m_Debug->m_Callstacks.f_Remove(*o_Reference.m_pCallstack);
+			o_Reference.m_pCallstack = nullptr;
+		}
+	}
+
 	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RefCountDecrease(CRefCountDebugReference &o_Reference) const
 	{
 		DMibFastCheck(o_Reference.m_pCallstack);
@@ -61,15 +71,19 @@ namespace NMib::NStorage
 #endif
 		}
 
-		DMibRefcountDebuggingOnly(if (Return == 0) m_Debug.f_Destruct());
-
 		return Return;
 	}
 
-	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RefCountIncrease(CRefCountDebugReference &o_Reference) const
+	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RefCountIncrease
+		(
+			CRefCountDebugReference &o_Reference
+#if DMibEnableSafeCheck > 0
+			, bool _bAllowRevive
+#endif
+		) const
 	{
 		smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
-		DMibFastCheck(Return >= 0);
+		DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 
 		DMibFastCheck(!o_Reference.m_pCallstack);
 		{
@@ -109,6 +123,16 @@ namespace NMib::NStorage
 		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
 	}
 
+	void TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RemoveRef(CRefCountDebugReference &o_Reference) const
+	{
+		DMibFastCheck(o_Reference.m_pCallstack);
+		{
+			DMibLock(m_Debug->m_Lock);
+			m_Debug->m_Callstacks.f_Remove(*o_Reference.m_pCallstack);
+			o_Reference.m_pCallstack = nullptr;
+		}
+	}
+
 	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountDecrease(CRefCountDebugReference &o_Reference) const
 	{
 		DMibFastCheck(o_Reference.m_pCallstack);
@@ -132,10 +156,16 @@ namespace NMib::NStorage
 		return Return;
 	}
 
-	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountIncrease(CRefCountDebugReference &o_Reference) const
+	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountIncrease
+		(
+			CRefCountDebugReference &o_Reference
+#if DMibEnableSafeCheck > 0
+			, bool _bAllowRevive
+#endif
+		) const
 	{
 		smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
-		DMibFastCheck(Return >= 0);
+		DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 				
 		DMibFastCheck(!o_Reference.m_pCallstack);
 		{
@@ -188,8 +218,6 @@ namespace NMib::NStorage
 			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
 #endif
 		}
-
-		DMibRefcountDebuggingOnly(if (Return == 0) m_Debug.f_Destruct());
 
 		return Return;
 	}
