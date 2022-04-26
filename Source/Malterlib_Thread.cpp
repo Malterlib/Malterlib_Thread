@@ -285,6 +285,17 @@ namespace NMib::NThread
 		m_Lock.f_ForkedParent();
 		m_Lock.f_Unlock();
 	}
+
+	inline_never void CThreadSpinWaiter::f_WaitSlow()
+	{
+		if (m_nWaits < 140)
+		{
+			NSys::fg_Thread_Yield();
+			return;
+		}
+
+		NSys::fg_Thread_SmallestSleep();
+	}
 }
 
 namespace NMib::NStorage
