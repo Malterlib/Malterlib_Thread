@@ -13,7 +13,7 @@
 	#define DMibThreadAtomicsAlignment
 #endif
 
-#if DMibConfig_RefcountDebugging
+#if DMibConfig_RefCountDebugging
 #include <Mib/Container/LinkedList>
 #include <Mib/Storage/Aggregate>
 #endif
@@ -1925,9 +1925,12 @@ namespace NMib::NStorage
 	// Intrusive refcount base
 
 	template <CSharedPointerOptionUnderlying t_Options>
-	class TCSharedPointerIntrusiveBase;
+	struct TCIntrusiveRefCount;
 
-#if DMibConfig_RefcountDebugging
+	using CIntrusiveRefCount = TCIntrusiveRefCount<>;
+	using CIntrusiveRefCountWithWeak = TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>;
+
+#if DMibConfig_RefCountDebugging
 	struct CRefCountDebug
 	{
 		NThread::CLowLevelLock m_Lock;
@@ -1937,56 +1940,54 @@ namespace NMib::NStorage
 #endif
 
 	template <>
-	class TCSharedPointerIntrusiveBase<ESharedPointerOption_None>
+	struct TCIntrusiveRefCount<ESharedPointerOption_None>
 	{
 		mutable NAtomic::TCAtomic<smint> m_RefCount; // -1 means no references
 
-	protected:
-		~TCSharedPointerIntrusiveBase();
-	public:
+		~TCIntrusiveRefCount();
 
-		TCSharedPointerIntrusiveBase()
+		TCIntrusiveRefCount()
 			: m_RefCount(0)
 		{
-			DMibRefcountDebuggingOnly(m_Debug.f_Construct());
+			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
 		}
 
-		TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase const &)
+		TCIntrusiveRefCount(TCIntrusiveRefCount const &)
 			: m_RefCount(0)
 		{
-			DMibRefcountDebuggingOnly(m_Debug.f_Construct());
+			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
 		}
 
-		TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase &&)
+		TCIntrusiveRefCount(TCIntrusiveRefCount &&)
 			: m_RefCount(0)
 		{
-			DMibRefcountDebuggingOnly(m_Debug.f_Construct());
+			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
 		}
 
-		TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase const &)
+		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount const &)
 		{
 			return *this;
 		}
 
-		TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase &&)
+		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount &&)
 		{
 			return *this;
 		}
 
-#if DMibConfig_RefcountDebugging
-		void f_InitialRef(CRefCountDebugReference &o_Reference) const;
-		void f_RemoveRef(CRefCountDebugReference &o_Reference) const;
-		smint f_RefCountDecrease(CRefCountDebugReference &o_Reference) const;
-		smint f_RefCountIncrease
+#if DMibConfig_RefCountDebugging
+		void f_Initial(CRefCountDebugReference &o_Reference) const;
+		void f_Remove(CRefCountDebugReference &o_Reference) const;
+		smint f_Decrease(CRefCountDebugReference &o_Reference) const;
+		smint f_Increase
 			(
 				CRefCountDebugReference &o_Reference
 #if DMibEnableSafeCheck > 0
 				, bool _bAllowRevive = false
 #endif
 			) const;
-		void f_RefCountMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
+		void f_Move(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 #else
-		smint f_RefCountDecrease() const
+		smint f_Decrease() const
 		{
 			smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 			DMibFastCheck(Return >= 0);
@@ -2001,7 +2002,7 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		smint f_RefCountIncrease
+		smint f_Increase
 			(
 #if DMibEnableSafeCheck > 0
 				bool _bAllowRevive = false
@@ -2014,62 +2015,59 @@ namespace NMib::NStorage
 		}
 #endif
 
-		smint f_RefCountGet() const
+		smint f_Get() const
 		{
 			return m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 		}
 
-#if DMibConfig_RefcountDebugging
+#if DMibConfig_RefCountDebugging
 		mutable NStorage::TCAggregateSimple<CRefCountDebug> m_Debug;
 #endif
 	};
 
 	template <>
-	class TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>
+	struct TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>
 	{
 		mutable NAtomic::TCAtomic<smint> m_RefCount; // -1 means no references
 		mutable NAtomic::TCAtomic<smint> m_WeakRefCount; // -1 means no references
 
-	protected:
-		~TCSharedPointerIntrusiveBase();
-
-	public:
-		TCSharedPointerIntrusiveBase()
+		~TCIntrusiveRefCount();
+		TCIntrusiveRefCount()
 			: m_RefCount(0)
 			, m_WeakRefCount(0)
 		{
-			DMibRefcountDebuggingOnly(m_Debug.f_Construct());
+			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
 		}
 
-		TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase const &)
+		TCIntrusiveRefCount(TCIntrusiveRefCount const &)
 			: m_RefCount(0)
 			, m_WeakRefCount(0)
 		{
-			DMibRefcountDebuggingOnly(m_Debug.f_Construct());
+			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
 		}
 
-		TCSharedPointerIntrusiveBase(TCSharedPointerIntrusiveBase &&)
+		TCIntrusiveRefCount(TCIntrusiveRefCount &&)
 			: m_RefCount(0)
 			, m_WeakRefCount(0)
 		{
-			DMibRefcountDebuggingOnly(m_Debug.f_Construct());
+			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
 		}
 
-		TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase const &)
+		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount const &)
 		{
 			return *this;
 		}
 
-		TCSharedPointerIntrusiveBase &operator = (TCSharedPointerIntrusiveBase &&)
+		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount &&)
 		{
 			return *this;
 		}
 
-#if DMibConfig_RefcountDebugging
-		void f_InitialRef(CRefCountDebugReference &o_Reference) const;
-		void f_RemoveRef(CRefCountDebugReference &o_Reference) const;
-		smint f_RefCountDecrease(CRefCountDebugReference &o_Reference) const;
-		smint f_RefCountIncrease
+#if DMibConfig_RefCountDebugging
+		void f_Initial(CRefCountDebugReference &o_Reference) const;
+		void f_Remove(CRefCountDebugReference &o_Reference) const;
+		smint f_Decrease(CRefCountDebugReference &o_Reference) const;
+		smint f_Increase
 			(
 				CRefCountDebugReference &o_Reference
 #if DMibEnableSafeCheck > 0
@@ -2077,14 +2075,14 @@ namespace NMib::NStorage
 #endif
 			) const
 		;
-		bool f_RefCountIncreaseWhileValid(CRefCountDebugReference &o_Reference) const;
-		smint f_WeakRefCountDecrease(CRefCountDebugReference *o_pReference) const;
-		smint f_WeakRefCountIncrease(CRefCountDebugReference &o_Reference) const;
+		bool f_IncreaseWhileValid(CRefCountDebugReference &o_Reference) const;
+		smint f_WeakDecrease(CRefCountDebugReference *o_pReference) const;
+		smint f_WeakIncrease(CRefCountDebugReference &o_Reference) const;
 
-		void f_RefCountMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
-		void f_WeakRefCountMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
+		void f_Move(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
+		void f_WeakMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 #else
-		smint f_RefCountDecrease() const
+		smint f_Decrease() const
 		{
 			smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 			DMibFastCheck(Return >= 0);
@@ -2099,7 +2097,7 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		smint f_RefCountIncrease
+		smint f_Increase
 			(
 #if DMibEnableSafeCheck > 0
 				bool _bAllowRevive = false
@@ -2112,7 +2110,7 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		bool f_RefCountIncreaseWhileValid() const
+		bool f_IncreaseWhileValid() const
 		{
 			smint CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 			while (CurrentValue >= 0)
@@ -2124,7 +2122,7 @@ namespace NMib::NStorage
 			return false;
 		}
 
-		smint f_WeakRefCountDecrease() const
+		smint f_WeakDecrease() const
 		{
 			smint Return = m_WeakRefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 			if (Return == 0)
@@ -2138,35 +2136,35 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		smint f_WeakRefCountIncrease() const
+		smint f_WeakIncrease() const
 		{
 			return m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
 		}
 #endif
 
-		void f_WeakRefCountSetCapturedDelete(NMemory::CCapturedDelete const &_CapturedDelete) const
+		void f_WeakSetCapturedDelete(NMemory::CCapturedDelete const &_CapturedDelete) const
 		{
 			*((void **)(this+1)) = _CapturedDelete.m_pMemory;
 			[[maybe_unused]] smint CurrentValue = m_RefCount.f_Exchange(smint(-1) - smint(_CapturedDelete.m_Size));
 			DMibFastCheck(CurrentValue == -1);
 		}
 
-		NMemory::CCapturedDelete f_WeakRefCountGetCapturedDelete() const
+		NMemory::CCapturedDelete f_WeakGetCapturedDelete() const
 		{
 			return {*((void * const *)(this+1)), mint(smint(-1) -m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire))};
 		}
 
-		smint f_RefCountGet() const
+		smint f_Get() const
 		{
 			return m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 		}
 
-		smint f_WeakRefCountGet() const
+		smint f_WeakGet() const
 		{
 			return m_WeakRefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 		}
 
-#if DMibConfig_RefcountDebugging
+#if DMibConfig_RefCountDebugging
 		mutable NStorage::TCAggregateSimple<CRefCountDebug> m_Debug;
 #endif
 	};
@@ -2174,10 +2172,8 @@ namespace NMib::NStorage
 	namespace NPrivate
 	{
 		template <typename t_CType, bool t_bVirtualDestructor, CSharedPointerOptionUnderlying t_Options>
-		class TCSharedPointerCounter : public TCSharedPointerIntrusiveBase<t_Options>
+		struct TCSharedPointerCounter
 		{
-			t_CType m_Data;
-		public:
 			TCSharedPointerCounter(TCSharedPointerCounter const &_Other) = default;
 			TCSharedPointerCounter(TCSharedPointerCounter &&_Other) = default;
 
@@ -2191,14 +2187,16 @@ namespace NMib::NStorage
 			{
 				return &m_Data;
 			}
+
+			TCIntrusiveRefCount<t_Options> m_RefCount;
+
+		private:
+			t_CType m_Data;
 		};
 
 		template <typename t_CType, CSharedPointerOptionUnderlying t_Options>
-		class TCSharedPointerCounter<t_CType, true, t_Options> : public TCSharedPointerIntrusiveBase<t_Options>
+		struct TCSharedPointerCounter<t_CType, true, t_Options>
 		{
-			t_CType m_Data;
-		public:
-
 #ifdef DCompiler_MSVC_Workaround
 			virtual ~TCSharedPointerCounter()
 			{
@@ -2220,6 +2218,11 @@ namespace NMib::NStorage
 			{
 				return &m_Data;
 			}
+
+			TCIntrusiveRefCount<t_Options> m_RefCount;
+
+		private:
+			t_CType m_Data;
 		};
 
 
@@ -2235,7 +2238,7 @@ namespace NMib::NStorage
 		{
 			static_assert
 				(
-					!TCIsMemberCallableWith_f_RefCountIncrease<tf_CType, void (DMibRefcountDebuggingOnly(NStorage::CRefCountDebugReference &o_DebugRef))>::mc_Value
+					!TCHasIntrusiveRefCount<tf_CType>::mc_Value
 					, "Use DMibDefineSharedPointerType to define type"
 				)
 			;
@@ -2251,8 +2254,8 @@ namespace NMib::NStorage
 			static_assert(!NTraits::TCHasVirtualDestructor<tf_CToType>::mc_Value || NTraits::TCHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>::mc_Value, "No virtual base");
 			static_assert(NTraits::TCHasVirtualDestructor<tf_CToType>::mc_Value || !NTraits::TCHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>::mc_Value, "Virtual base");
 			static_assert(tf_ToOptions == tf_Options, "Cannot mix weak support with non-weak support");
-			static_assert(alignof(tf_CToType) == alignof(tf_CType), "Cannot mix alignment, use TCSharedPointerIntrusiveBase");
-			static_assert(!NTraits::TCIsVirtualBaseOf<tf_CType, tf_CToType>::mc_Value, "Virtual base classes are not supported, use TCSharedPointerIntrusiveBase");
+			static_assert(alignof(tf_CToType) == alignof(tf_CType), "Cannot mix alignment, use TCIntrusiveRefCount");
+			static_assert(!NTraits::TCIsVirtualBaseOf<tf_CType, tf_CToType>::mc_Value, "Virtual base classes are not supported, use TCIntrusiveRefCount");
 
 			auto pCovertTo = (TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions> *)_pIn;
 			DMibFastCheck(pCovertTo->f_Get() == (tf_CToType *)_pIn->f_Get());

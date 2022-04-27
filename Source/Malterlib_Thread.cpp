@@ -300,21 +300,21 @@ namespace NMib::NThread
 
 namespace NMib::NStorage
 {
-	TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::~TCSharedPointerIntrusiveBase()
+	TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::~TCIntrusiveRefCount()
 	{
-#if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefcountDebugging
-		smint RefCount = f_RefCountGet();
+#if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefCountDebugging
+		smint RefCount = f_Get();
 #endif
 		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
-		DMibRefcountDebuggingOnly(if (RefCount == 0) m_Debug.f_Destruct());
+		DMibRefCountDebuggingOnly(if (RefCount == 0) m_Debug.f_Destruct());
 	}
 
-	TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::~TCSharedPointerIntrusiveBase()
+	TCIntrusiveRefCount<ESharedPointerOption_None>::~TCIntrusiveRefCount()
 	{
-#if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefcountDebugging
-		smint RefCount = f_RefCountGet();
+#if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefCountDebugging
+		smint RefCount = f_Get();
 #endif
 		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
-		DMibRefcountDebuggingOnly(if (RefCount == 0) m_Debug.f_Destruct());
+		DMibRefCountDebuggingOnly(if (RefCount == 0) m_Debug.f_Destruct());
 	}
 }

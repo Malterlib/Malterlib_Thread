@@ -1,7 +1,7 @@
 // Copyright © 2015 Hansoft AB 
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
-#if DMibConfig_RefcountDebugging
+#if DMibConfig_RefCountDebugging
 
 #include <Mib/Core/Core>
 #include <Mib/Thread/Thread>
@@ -30,7 +30,7 @@ namespace NMib::NStorage
 		return *this;
 	}
 
-	void TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_InitialRef(CRefCountDebugReference &o_Reference) const
+	void TCIntrusiveRefCount<ESharedPointerOption_None>::f_Initial(CRefCountDebugReference &o_Reference) const
 	{
 		//DMibFastCheck(m_RefCount.f_Load() == 0);
 		DMibFastCheck(!o_Reference.m_pCallstack);
@@ -41,7 +41,7 @@ namespace NMib::NStorage
 		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
 	}
 
-	void TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RemoveRef(CRefCountDebugReference &o_Reference) const
+	void TCIntrusiveRefCount<ESharedPointerOption_None>::f_Remove(CRefCountDebugReference &o_Reference) const
 	{
 		DMibFastCheck(o_Reference.m_pCallstack);
 		{
@@ -51,7 +51,7 @@ namespace NMib::NStorage
 		}
 	}
 
-	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RefCountDecrease(CRefCountDebugReference &o_Reference) const
+	smint TCIntrusiveRefCount<ESharedPointerOption_None>::f_Decrease(CRefCountDebugReference &o_Reference) const
 	{
 		DMibFastCheck(o_Reference.m_pCallstack);
 		{
@@ -74,7 +74,7 @@ namespace NMib::NStorage
 		return Return;
 	}
 
-	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RefCountIncrease
+	smint TCIntrusiveRefCount<ESharedPointerOption_None>::f_Increase
 		(
 			CRefCountDebugReference &o_Reference
 #if DMibEnableSafeCheck > 0
@@ -95,7 +95,7 @@ namespace NMib::NStorage
 		return Return;
 	}
 
-	void TCSharedPointerIntrusiveBase<ESharedPointerOption_None>::f_RefCountMove
+	void TCIntrusiveRefCount<ESharedPointerOption_None>::f_Move
 		(
 		 	CRefCountDebugReference &o_SourceReference
 		 	, CRefCountDebugReference &o_DestinationReference
@@ -112,7 +112,7 @@ namespace NMib::NStorage
 		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
 	}
 
-	void TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_InitialRef(CRefCountDebugReference &o_Reference) const
+	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_Initial(CRefCountDebugReference &o_Reference) const
 	{
 		//DMibFastCheck(m_RefCount.f_Load() == 0);
 		DMibFastCheck(!o_Reference.m_pCallstack);
@@ -123,7 +123,7 @@ namespace NMib::NStorage
 		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
 	}
 
-	void TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RemoveRef(CRefCountDebugReference &o_Reference) const
+	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_Remove(CRefCountDebugReference &o_Reference) const
 	{
 		DMibFastCheck(o_Reference.m_pCallstack);
 		{
@@ -133,7 +133,7 @@ namespace NMib::NStorage
 		}
 	}
 
-	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountDecrease(CRefCountDebugReference &o_Reference) const
+	smint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_Decrease(CRefCountDebugReference &o_Reference) const
 	{
 		DMibFastCheck(o_Reference.m_pCallstack);
 		{
@@ -156,7 +156,7 @@ namespace NMib::NStorage
 		return Return;
 	}
 
-	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountIncrease
+	smint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_Increase
 		(
 			CRefCountDebugReference &o_Reference
 #if DMibEnableSafeCheck > 0
@@ -177,7 +177,7 @@ namespace NMib::NStorage
 		return Return;
 	}
 
-	bool TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountIncreaseWhileValid(CRefCountDebugReference &o_Reference) const
+	bool TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_IncreaseWhileValid(CRefCountDebugReference &o_Reference) const
 	{
 		smint CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 		while (CurrentValue >= 0)
@@ -197,7 +197,7 @@ namespace NMib::NStorage
 		return false;
 	}
 
-	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_WeakRefCountDecrease(CRefCountDebugReference *o_pReference) const
+	smint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_WeakDecrease(CRefCountDebugReference *o_pReference) const
 	{
 		if (o_pReference)
 		{
@@ -222,7 +222,7 @@ namespace NMib::NStorage
 		return Return;
 	}
 
-	smint TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_WeakRefCountIncrease(CRefCountDebugReference &o_Reference) const
+	smint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_WeakIncrease(CRefCountDebugReference &o_Reference) const
 	{
 		smint Return = m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
 
@@ -236,7 +236,7 @@ namespace NMib::NStorage
 		return Return;
 	}
 
-	void TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_RefCountMove
+	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_Move
 		(
 		 	CRefCountDebugReference &o_SourceReference
 		 	, CRefCountDebugReference &o_DestinationReference
@@ -253,7 +253,7 @@ namespace NMib::NStorage
 		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
 	}
 
-	void TCSharedPointerIntrusiveBase<ESharedPointerOption_SupportWeakPointer>::f_WeakRefCountMove
+	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_WeakMove
 		(
 		 	CRefCountDebugReference &o_SourceReference
 		 	, CRefCountDebugReference &o_DestinationReference
@@ -271,6 +271,6 @@ namespace NMib::NStorage
 	}
 }
 #else
-mint g_Dummy_RefcountDebug = 0;
+mint g_Dummy_RefCountDebug = 0;
 #endif
 
