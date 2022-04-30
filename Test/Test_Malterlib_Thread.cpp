@@ -250,7 +250,7 @@ namespace
 				Timer.f_Reset();
 				mint nReads = 0;
 				m_ChangingValue = 1112;
-				m_nTests = 250000 / EIncThreads;
+				m_nTests = 25000 / EIncThreads;
 				{
 					{
 
