@@ -2194,17 +2194,20 @@ namespace NMib::NStorage
 			t_CType m_Data;
 		};
 
-		template <typename t_CType, CSharedPointerOptionUnderlying t_Options>
-		struct TCSharedPointerCounter<t_CType, true, t_Options>
+		struct CSharedPointerCounterVirtualBase
 		{
 #ifdef DCompiler_MSVC_Workaround
-			virtual ~TCSharedPointerCounter()
+			virtual ~CSharedPointerCounterVirtualBase()
 			{
 			}
 #else
-			virtual ~TCSharedPointerCounter() = default;
+			virtual ~CSharedPointerCounterVirtualBase() = default;
 #endif
+		};
 
+		template <typename t_CType, CSharedPointerOptionUnderlying t_Options>
+		struct TCSharedPointerCounter<t_CType, true, t_Options> : public CSharedPointerCounterVirtualBase
+		{
 			TCSharedPointerCounter(TCSharedPointerCounter const &_Other) = default;
 			TCSharedPointerCounter(TCSharedPointerCounter &&_Other) = default;
 
