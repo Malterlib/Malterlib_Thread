@@ -584,7 +584,7 @@ namespace NMib::NThread
 		virtual void f_LockRead() = 0;
 		virtual void f_UnlockRead() = 0;
 	};
-#if defined(DPlatformFamily_Linux) || defined(DPlatformFamily_Windows) || defined(DPlatformFamily_OSX)
+#if defined(DPlatformFamily_Linux) || defined(DPlatformFamily_Windows) || defined(DPlatformFamily_macOS)
 	using CLowLevelLockAggregateLockType = uint32;
 #endif
 
@@ -612,7 +612,7 @@ namespace NMib::NThread
 
 #		if DMibEnableSafeCheck > 0
 			mint m_ThreadID;				// On windows this is the thread id, unix the pthread
-			mint m_AlternateThreadID;	// On windows this is also the thread id, on osx and linux this is the kernel thread id that can be used to match threads in the debugger
+			mint m_AlternateThreadID;	// On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
 #		endif
 
 		void f_ForkedChildUnlocked();
@@ -761,7 +761,7 @@ namespace NMib::NThread
 		DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nLocked;
 		NAtomic::TCAtomic<mint> m_ThreadID;				// On windows this is the thread id, unix the pthread
 #		if DMibEnableSafeCheck > 0
-			mint m_AlternateThreadID;	// On windows this is also the thread id, on osx and linux this is the kernel thread id that can be used to match threads in the debugger
+			mint m_AlternateThreadID;	// On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
 #		endif
 		aint m_nRecurse;
 		t_CEvent m_Event;
