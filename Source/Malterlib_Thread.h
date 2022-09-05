@@ -1102,10 +1102,16 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant, 1);
 		}
 
-		bool f_OwnsLock()
+		bool f_OwnsLock() const
 		{
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 			return m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread;
+		}
+
+		bool f_Contended() const
+		{
+			DMibFastCheck(f_OwnsLock());
+			return (m_nLocked.f_Load(NAtomic::EMemoryOrder_Relaxed) & mcp_AtomicMask) > 1;
 		}
 
 		inline_never void f_Unlock()
