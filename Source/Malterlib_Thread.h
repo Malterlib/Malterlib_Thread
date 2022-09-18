@@ -620,6 +620,7 @@ namespace NMib::NThread
 		void f_Construct();
 		void f_Destruct();
 		void f_Lock();
+		bool f_TryLock();
 		void f_Unlock();
 	};
 
