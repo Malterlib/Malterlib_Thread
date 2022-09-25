@@ -621,6 +621,9 @@ namespace NMib::NThread
 		void f_Lock();
 		bool f_TryLock();
 		void f_Unlock();
+		void f_LockNoSanitize();
+		bool f_TryLockNoSanitize();
+		void f_UnlockNoSanitize();
 	};
 
 	struct CLowLevelContendedLockAggregate : public CLowLevelLockAggregate
@@ -631,6 +634,16 @@ namespace NMib::NThread
 			{
 				++m_Contention;
 				CLowLevelLockAggregate::f_Lock();
+				--m_Contention;
+			}
+		}
+
+		void f_LockNoSanitize()
+		{
+			if (!CLowLevelLockAggregate::f_TryLockNoSanitize())
+			{
+				++m_Contention;
+				CLowLevelLockAggregate::f_LockNoSanitize();
 				--m_Contention;
 			}
 		}
