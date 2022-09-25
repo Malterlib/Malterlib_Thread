@@ -588,9 +588,8 @@ namespace NMib::NThread
 	using CLowLevelLockAggregateLockType = uint32;
 #endif
 
-	class CLowLevelLockAggregate
+	struct CLowLevelLockAggregate
 	{
-	public:
 		constexpr CLowLevelLockAggregate(EAggregateInitialization _Init)
 			: m_Lock{0}
 #	if DMibEnableSafeCheck > 0
@@ -624,14 +623,47 @@ namespace NMib::NThread
 		void f_Unlock();
 	};
 
-	class CLowLevelLock : public CLowLevelLockAggregate
+	struct CLowLevelContendedLockAggregate : public CLowLevelLockAggregate
 	{
-	public:
+		void f_Lock()
+		{
+			if (!CLowLevelLockAggregate::f_TryLock())
+			{
+				++m_Contention;
+				CLowLevelLockAggregate::f_Lock();
+				--m_Contention;
+			}
+		}
+
+		bool f_Contended() const
+		{
+			return m_Contention.f_Load(NAtomic::EMemoryOrder_Relaxed) > 0;
+		}
+
+		align_cacheline NAtomic::TCAtomic<uint32> m_Contention;
+	};
+
+	struct CLowLevelLock : public CLowLevelLockAggregate
+	{
 		CLowLevelLock()
 		{
 			f_Construct();
 		}
+
 		~CLowLevelLock()
+		{
+			f_Destruct();
+		}
+	};
+
+	struct CLowLevelContendedLock : public CLowLevelContendedLockAggregate
+	{
+		CLowLevelContendedLock()
+		{
+			f_Construct();
+		}
+
+		~CLowLevelContendedLock()
 		{
 			f_Destruct();
 		}
