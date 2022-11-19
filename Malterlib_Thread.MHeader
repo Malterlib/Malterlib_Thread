@@ -26,12 +26,12 @@ Import "../Core/Lib_Malterlib.MTarget"
 
 Property
 {
-	MalterlibLibrary_Thread define bool = MalterlibLibrary_All
+	MalterlibLibrary_Thread: bool = MalterlibLibrary_All
 	MalterlibSubLibraries =+ "Thread"
 	{
 		!!MalterlibLibrary_Thread true
 	}
-//	MalterlibSubLibrarySeparate_Lib_Malterlib_Thread define bool = true
+//	MalterlibSubLibrarySeparate_Lib_Malterlib_Thread: bool = true
 	MalterlibIncludeRoots =+ "Include"->MakeAbsolute()
 	{
 		!!MalterlibLibrary_Thread true
@@ -43,6 +43,6 @@ Property
 	!!MalterlibEnableInternalTests true
 	
 	MalterlibTests =+ "Malterlib_Thread"
-	MalterlibTestFiles_Malterlib_Thread define [type(CEntity)] = ["Test/*"->MakeAbsolute()]
+	MalterlibTestFiles_Malterlib_Thread: [type(CEntity)] = ["Test/*"->MakeAbsolute()]
 }
 
