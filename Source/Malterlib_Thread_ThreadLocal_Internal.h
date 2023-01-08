@@ -49,7 +49,7 @@ namespace NMib
 			};
 
 			using CAllocationPool
-				= NMemory::TCPool<NContainer::TCMapTreeMember<mint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>
+				= NMemory::TCPool<NContainer::TCMapNode<mint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>
 			;
 			
 			class CPerThread
