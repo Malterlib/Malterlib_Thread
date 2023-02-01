@@ -595,6 +595,7 @@ namespace NMib::NThread
 #	if DMibEnableSafeCheck > 0
 			, m_ThreadID{0}
 			, m_AlternateThreadID{0}
+			, m_nForked{0}
 #	endif
 		{
 		}
@@ -603,6 +604,7 @@ namespace NMib::NThread
 #	if DMibEnableSafeCheck > 0
 			, m_ThreadID{0}
 			, m_AlternateThreadID{0}
+			, m_nForked{0}
 #	endif
 		{
 		}
@@ -612,6 +614,7 @@ namespace NMib::NThread
 #		if DMibEnableSafeCheck > 0
 			mint m_ThreadID;				// On windows this is the thread id, unix the pthread
 			mint m_AlternateThreadID;	// On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
+			mint m_nForked;
 #		endif
 
 		void f_ForkedChildUnlocked();
@@ -651,6 +654,19 @@ namespace NMib::NThread
 		bool f_Contended() const
 		{
 			return m_Contention.f_Load(NAtomic::EMemoryOrder_Relaxed) > 0;
+		}
+
+
+		void f_ForkedChildUnlocked()
+		{
+			CLowLevelLockAggregate::f_ForkedChildUnlocked();
+			m_Contention = 0;
+		}
+
+		void f_ForkedChildLocked()
+		{
+			CLowLevelLockAggregate::f_ForkedChildLocked();
+			m_Contention = 0;
 		}
 
 		align_cacheline NAtomic::TCAtomic<uint32> m_Contention;
