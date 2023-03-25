@@ -97,8 +97,8 @@ namespace NMib::NStorage
 
 	void TCIntrusiveRefCount<ESharedPointerOption_None>::f_Move
 		(
-		 	CRefCountDebugReference &o_SourceReference
-		 	, CRefCountDebugReference &o_DestinationReference
+			CRefCountDebugReference &o_SourceReference
+			, CRefCountDebugReference &o_DestinationReference
 		) const
 	{
 		DMibFastCheck(o_SourceReference.m_pCallstack);
@@ -238,8 +238,8 @@ namespace NMib::NStorage
 
 	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_Move
 		(
-		 	CRefCountDebugReference &o_SourceReference
-		 	, CRefCountDebugReference &o_DestinationReference
+			CRefCountDebugReference &o_SourceReference
+			, CRefCountDebugReference &o_DestinationReference
 		) const
 	{
 		DMibFastCheck(o_SourceReference.m_pCallstack);
@@ -255,8 +255,8 @@ namespace NMib::NStorage
 
 	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_WeakMove
 		(
-		 	CRefCountDebugReference &o_SourceReference
-		 	, CRefCountDebugReference &o_DestinationReference
+			CRefCountDebugReference &o_SourceReference
+			, CRefCountDebugReference &o_DestinationReference
 		) const
 	{
 		DMibFastCheck(!o_DestinationReference.m_pCallstack);
