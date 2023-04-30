@@ -622,7 +622,7 @@ namespace NMib::NThread
 		)
 		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
-		class CCallerObjectImp : public CCallerObject
+		class CCallerObjectImp final : public CCallerObject
 		{
 		public:
 			tf_CFunctionType *m_pFunctionObject;

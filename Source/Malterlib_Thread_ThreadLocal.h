@@ -135,7 +135,7 @@ namespace NMib
 			// Disable copy
 			TCThreadLocal(TCThreadLocal const &);
 			TCThreadLocal &operator =(TCThreadLocal const &);
-			t_CData *fp_GetNew();
+			inline_never t_CData *fp_GetNew();
 			
 		public:
 			void f_DeleteItem(void *_pItem) override;
@@ -176,7 +176,7 @@ namespace NMib
 			// Disable copy
 			TCThreadLocalDynamic(TCThreadLocalDynamic const &);
 			TCThreadLocalDynamic&operator =(TCThreadLocalDynamic const &);
-			t_CData *fp_GetNew();
+			inline_never t_CData *fp_GetNew();
 
 		public:
 			void f_DeleteItem(void *_pItem) override;

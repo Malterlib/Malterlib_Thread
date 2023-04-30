@@ -1901,7 +1901,7 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CAllocator, typename t_CStr>
-	class TCThreadObject : private CThread
+	class TCThreadObject final : private CThread
 	{
 		TCThreadObject(TCThreadObject const &) = delete;
 		TCThreadObject &operator = (TCThreadObject const &) = delete;
