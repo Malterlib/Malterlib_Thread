@@ -703,6 +703,7 @@ namespace NMib
 	void CSystem::f_ThreadLocalCreateThread(mint _ThreadID, mint _ParentThreadID)
 	{
 		NPrivate::g_ThreadLocalContext->f_CreateThread(_ThreadID, _ParentThreadID);
+		fg_SystemThreadInit();
 	}
 
 	void CSystem::f_ThreadLocalReinitForThread(void *_pStorageIndex)
