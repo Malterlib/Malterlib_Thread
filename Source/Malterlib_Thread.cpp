@@ -3,6 +3,23 @@
 
 #include <Mib/Core/Core>
 
+#if DMibConfig_RefCountDebugging && DMibConfig_RefCountLeakDebugging
+namespace NMib::NStorage
+{
+	constinit mint CRefCountDebug::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>();
+	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::ms_Magic
+		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
+	;
+	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None>::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>();
+
+	CRefCountDebug::CRefCountDebug() = default;
+	CRefCountDebug::~CRefCountDebug()
+	{
+		m_Magic = 0;
+	}
+}
+#endif
+
 namespace NMib::NThread
 {
 	/***************************************************************************************************\
@@ -10,7 +27,6 @@ namespace NMib::NThread
 	| CThread																							|
 	|___________________________________________________________________________________________________|
 	\***************************************************************************************************/
-
 
 	CThread::CThread()
 	{

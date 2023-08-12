@@ -2001,6 +2001,15 @@ namespace NMib::NStorage
 #if DMibConfig_RefCountDebugging
 	struct CRefCountDebug
 	{
+#if DMibConfig_RefCountLeakDebugging
+		CRefCountDebug();
+		~CRefCountDebug();
+
+		static mint ms_Magic;
+
+		mint m_Magic = ms_Magic;
+		NAtomic::TCAtomic<mint> m_DestroyLocation = 0b100000000000000000000000000000000u;
+#endif
 		NThread::CLowLevelLock m_Lock;
 		NContainer::TCLinkedList<NException::CCallstack, NMemory::CAllocator_NonTrackedHeap> m_Callstacks;
 		NContainer::TCLinkedList<NException::CCallstack, NMemory::CAllocator_NonTrackedHeap> m_WeakCallstacks;
@@ -2089,6 +2098,10 @@ namespace NMib::NStorage
 		}
 
 #if DMibConfig_RefCountDebugging
+#if DMibConfig_RefCountLeakDebugging
+		static mint ms_Magic;
+		mint m_Magic = ms_Magic;
+#endif
 		mutable NStorage::TCAggregateSimple<CRefCountDebug> m_Debug;
 #endif
 	};
@@ -2098,7 +2111,7 @@ namespace NMib::NStorage
 	{
 		mutable NAtomic::TCAtomic<smint> m_RefCount; // -1 means no references
 		mutable NAtomic::TCAtomic<smint> m_WeakRefCount; // -1 means no references
-
+		
 		~TCIntrusiveRefCount();
 		TCIntrusiveRefCount()
 			: m_RefCount(0)
@@ -2233,6 +2246,10 @@ namespace NMib::NStorage
 		}
 
 #if DMibConfig_RefCountDebugging
+#if DMibConfig_RefCountLeakDebugging
+		static mint ms_Magic;
+		mint m_Magic = ms_Magic;
+#endif
 		mutable NStorage::TCAggregateSimple<CRefCountDebug> m_Debug;
 #endif
 	};
