@@ -2262,8 +2262,9 @@ namespace NMib::NStorage
 			TCSharedPointerCounter(TCSharedPointerCounter const &_Other) = default;
 			TCSharedPointerCounter(TCSharedPointerCounter &&_Other) = default;
 
-			template <typename... tfp_CParams, TCEnableIfType<NTraits::TCIsConstructorCallableWith<t_CType, void (tfp_CParams...)>::mc_Value> * = nullptr>
+			template <typename... tfp_CParams>
 			TCSharedPointerCounter(tfp_CParams &&...p_Params)
+				requires (NTraits::cConstructibleWith<t_CType, tfp_CParams...>)
 				: m_Data(fg_Forward<tfp_CParams>(p_Params)...)
 			{
 			}
@@ -2296,8 +2297,9 @@ namespace NMib::NStorage
 			TCSharedPointerCounter(TCSharedPointerCounter const &_Other) = default;
 			TCSharedPointerCounter(TCSharedPointerCounter &&_Other) = default;
 
-			template <typename... tfp_CParams, TCEnableIfType<NTraits::TCIsConstructorCallableWith<t_CType, void (tfp_CParams...)>::mc_Value> * = nullptr>
+			template <typename... tfp_CParams>
 			TCSharedPointerCounter(tfp_CParams &&...p_Params)
+				requires (NTraits::cConstructibleWith<t_CType, tfp_CParams...>)
 				: m_Data(fg_Forward<tfp_CParams>(p_Params)...)
 			{
 			}
