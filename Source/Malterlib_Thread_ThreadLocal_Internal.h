@@ -11,7 +11,7 @@ namespace NMib
 	{
 		class CThreadLocalContext
 		{
-			friend class CSystem;
+			friend class NMib::CSystem;
 			friend class NStorage::TCAggregateSimple<CThreadLocalContext>;
 			CThreadLocalContext();
 

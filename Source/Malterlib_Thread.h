@@ -712,7 +712,7 @@ namespace NMib::NThread
 		t_CEvent m_Event;
 
 		constexpr TCMutualSimpleAggregate(EAggregateInitialization _Init)
-			: m_nLocked{_Init}
+			: m_nLocked{0}
 			, m_Event{_Init}
 		{
 		}
