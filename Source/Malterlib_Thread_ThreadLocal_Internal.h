@@ -97,8 +97,8 @@ namespace NMib
 						mint _ThreadID
 						, CThreadLocalContext * _pContext
 					)
-					: m_Created(NMemory::CAllocatorConstructTag(), _pContext->m_PoolAllocation)
-					, m_CreatedAlwaysCreate(NMemory::CAllocatorConstructTag(), _pContext->m_PoolAllocation)
+					: m_Created(CAllocatorConstructTag(), _pContext->m_PoolAllocation)
+					, m_CreatedAlwaysCreate(CAllocatorConstructTag(), _pContext->m_PoolAllocation)
 					, m_ThreadID(_ThreadID)
 					, m_DestroyingID(-1)
 					, m_bOnThreadCreated(false)
