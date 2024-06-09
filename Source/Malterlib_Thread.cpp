@@ -52,7 +52,7 @@ namespace NMib::NThread
 
 	bool CThread::f_DestroyThread()
 	{
-		delete this;
+		fg_DeleteObject(NMemory::CDefaultAllocator(), this);
 		return true;
 	}
 

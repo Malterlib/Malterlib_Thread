@@ -103,8 +103,6 @@ namespace NMib
 		CThreadLocalContext::CPerThread::CPointer::~CPointer()
 		{
 			DMibSafeCheck(!m_pPtr, "Pointer must already be deleted");
-	//		if (m_pPtr)
-		//		delete m_pPtr;
 		}
 
 		void CThreadLocalContext::f_PrepareFork()
