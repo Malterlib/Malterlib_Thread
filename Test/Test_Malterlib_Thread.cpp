@@ -45,9 +45,9 @@ namespace
 		NMib::NThread::CEventAutoReset m_IncEvent;
 
 		bool m_bDummy0;
-		NMib::NTraits::TCAlign<NMib::NThread::CMutualManyRead, ECacheLineSize>::CType m_IncLock;
-		NMib::NTraits::TCAlign<NMib::NThread::CMutual, ECacheLineSize>::CType m_IncLockMutual;
-		NMib::NTraits::TCAlign<NMib::NThread::CMutual, ECacheLineSize>::CType m_IncDoneLock;
+		alignas(ECacheLineSize) NMib::NThread::CMutualManyRead m_IncLock;
+		alignas(ECacheLineSize) NMib::NThread::CMutual m_IncLockMutual;
+		alignas(ECacheLineSize) NMib::NThread::CMutual m_IncDoneLock;
 		bool m_bDummy1;
 		NMib::NAtomic::TCAtomic<aint> m_ChangingValue;
 		aint m_IncDone;
