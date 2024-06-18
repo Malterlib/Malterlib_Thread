@@ -36,6 +36,8 @@ Property
 	{
 		!!MalterlibLibrary_Thread true
 	}
+
+	MalterlibThread_DebugThreadLocals: bool = false // User(Debug)=true: Enable debug support to detect thread local leaks.
 }
 
 Property
