@@ -2086,7 +2086,7 @@ namespace NMib::NStorage
 #endif
 			) const
 		{
-			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
+			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
 			DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 			return Return;
 		}
@@ -2185,7 +2185,7 @@ namespace NMib::NStorage
 #endif
 			) const
 		{
-			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
+			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
 			DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 
 			return Return;
@@ -2196,7 +2196,7 @@ namespace NMib::NStorage
 			smint CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 			while (CurrentValue >= 0)
 			{
-				if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::EMemoryOrder_Release, NAtomic::EMemoryOrder_Relaxed))
+				if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::EMemoryOrder_Relaxed, NAtomic::EMemoryOrder_Relaxed))
 					return true;
 			}
 
@@ -2219,7 +2219,7 @@ namespace NMib::NStorage
 
 		smint f_WeakIncrease() const
 		{
-			return m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
+			return m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
 		}
 #endif
 
