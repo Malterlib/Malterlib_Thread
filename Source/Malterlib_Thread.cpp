@@ -322,7 +322,7 @@ namespace NMib::NStorage
 		smint RefCount = f_Get();
 #endif
 		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
-		DMibRefCountDebuggingOnly(if (RefCount == 0) m_Debug.f_Destruct());
+		DIfRefCountDebugging(if (RefCount == 0) m_Debug.f_Destruct());
 	}
 
 	TCIntrusiveRefCount<ESharedPointerOption_None>::~TCIntrusiveRefCount()
@@ -331,6 +331,6 @@ namespace NMib::NStorage
 		smint RefCount = f_Get();
 #endif
 		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
-		DMibRefCountDebuggingOnly(if (RefCount == 0) m_Debug.f_Destruct());
+		DIfRefCountDebugging(if (RefCount == 0) m_Debug.f_Destruct());
 	}
 }

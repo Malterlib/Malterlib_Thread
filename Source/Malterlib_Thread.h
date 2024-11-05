@@ -2026,19 +2026,19 @@ namespace NMib::NStorage
 		TCIntrusiveRefCount()
 			: m_RefCount(0)
 		{
-			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
+			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
 		TCIntrusiveRefCount(TCIntrusiveRefCount const &)
 			: m_RefCount(0)
 		{
-			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
+			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
 		TCIntrusiveRefCount(TCIntrusiveRefCount &&)
 			: m_RefCount(0)
 		{
-			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
+			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
 		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount const &)
@@ -2117,21 +2117,21 @@ namespace NMib::NStorage
 			: m_RefCount(0)
 			, m_WeakRefCount(0)
 		{
-			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
+			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
 		TCIntrusiveRefCount(TCIntrusiveRefCount const &)
 			: m_RefCount(0)
 			, m_WeakRefCount(0)
 		{
-			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
+			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
 		TCIntrusiveRefCount(TCIntrusiveRefCount &&)
 			: m_RefCount(0)
 			, m_WeakRefCount(0)
 		{
-			DMibRefCountDebuggingOnly(m_Debug.f_Construct());
+			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
 		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount const &)
