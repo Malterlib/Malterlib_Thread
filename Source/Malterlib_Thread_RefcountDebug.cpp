@@ -269,6 +269,26 @@ namespace NMib::NStorage
 		}
 		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
 	}
+
+	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_WeakInitial(CRefCountDebugReference &o_Reference) const
+	{
+		DMibFastCheck(!o_Reference.m_pCallstack);
+		{
+			DMibLock(m_Debug->m_Lock);
+			o_Reference.m_pCallstack = &m_Debug->m_WeakCallstacks.f_Insert();
+		}
+		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
+	}
+
+	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::f_WeakRemove(CRefCountDebugReference &o_Reference) const
+	{
+		DMibFastCheck(o_Reference.m_pCallstack);
+		{
+			DMibLock(m_Debug->m_Lock);
+			m_Debug->m_WeakCallstacks.f_Remove(*o_Reference.m_pCallstack);
+			o_Reference.m_pCallstack = nullptr;
+		}
+	}
 }
 #else
 mint g_Dummy_RefCountDebug = 0;

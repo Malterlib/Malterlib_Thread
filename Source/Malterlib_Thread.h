@@ -2156,6 +2156,8 @@ namespace NMib::NStorage
 #endif
 			) const
 		;
+		void f_WeakInitial(CRefCountDebugReference &o_Reference) const;
+		void f_WeakRemove(CRefCountDebugReference &o_Reference) const;
 		bool f_IncreaseWhileValid(CRefCountDebugReference &o_Reference) const;
 		smint f_WeakDecrease(CRefCountDebugReference *o_pReference) const;
 		smint f_WeakIncrease(CRefCountDebugReference &o_Reference) const;
