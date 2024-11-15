@@ -77,14 +77,20 @@ namespace NMib::NThread
 		if constexpr ((mc_Flags & EThreadLocalFlag_FastThreadLocal) != 0)
 		{
 			if constexpr ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0)
+			{
 				pData = (t_CData *)NSys::fg_Thread_GetLocalAlwaysSetFast(m_ThreadLocalLocal);
+				DMibFastCheck(pData);
+			}
 			else
 				pData = (t_CData *)NSys::fg_Thread_GetLocalFast(m_ThreadLocalLocal);
 		}
 		else
 		{
 			if constexpr ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0)
+			{
 				pData = (t_CData *)NSys::fg_Thread_GetLocalAlwaysSet(m_ThreadLocalLocal);
+				DMibFastCheck(pData);
+			}
 			else
 				pData = (t_CData *)NSys::fg_Thread_GetLocal(m_ThreadLocalLocal);
 		}
@@ -381,14 +387,20 @@ namespace NMib::NThread
 		if constexpr ((mc_Flags & EThreadLocalFlag_FastThreadLocal) != 0)
 		{
 			if constexpr ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0)
+			{
 				pData = (t_CData *)NSys::fg_Thread_GetLocalAlwaysSetFast(m_ThreadLocalLocal);
+				DMibFastCheck(pData);
+			}
 			else
 				pData = (t_CData *)NSys::fg_Thread_GetLocalFast(m_ThreadLocalLocal);
 		}
 		else
 		{
 			if constexpr ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0)
+			{
 				pData = (t_CData *)NSys::fg_Thread_GetLocalAlwaysSet(m_ThreadLocalLocal);
+				DMibFastCheck(pData);
+			}
 			else
 				pData = (t_CData *)NSys::fg_Thread_GetLocal(m_ThreadLocalLocal);
 		}
