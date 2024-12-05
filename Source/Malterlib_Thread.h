@@ -2029,6 +2029,12 @@ namespace NMib::NStorage
 			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
+		TCIntrusiveRefCount(smint _RefCount)
+			: m_RefCount(_RefCount)
+		{
+			DIfRefCountDebugging(m_Debug.f_Construct());
+		}
+
 		TCIntrusiveRefCount(TCIntrusiveRefCount const &)
 			: m_RefCount(0)
 		{
