@@ -1992,7 +1992,7 @@ namespace NMib::NStorage
 	/////////////////////////////////////////////////////////////////////////
 	// Intrusive refcount base
 
-	template <CSharedPointerOptionUnderlying t_Options>
+	template <CSharedPointerOptionUnderlying t_Options, typename t_CCountType>
 	struct TCIntrusiveRefCount;
 
 	using CIntrusiveRefCount = TCIntrusiveRefCount<>;
@@ -2016,10 +2016,10 @@ namespace NMib::NStorage
 	};
 #endif
 
-	template <>
-	struct TCIntrusiveRefCount<ESharedPointerOption_None>
+	template <typename t_CCountType>
+	struct TCIntrusiveRefCount<ESharedPointerOption_None, t_CCountType>
 	{
-		mutable NAtomic::TCAtomic<smint> m_RefCount; // -1 means no references
+		mutable NAtomic::TCAtomic<t_CCountType> m_RefCount; // -1 means no references
 
 		~TCIntrusiveRefCount();
 
@@ -2029,7 +2029,7 @@ namespace NMib::NStorage
 			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
-		TCIntrusiveRefCount(smint _RefCount)
+		TCIntrusiveRefCount(t_CCountType _RefCount)
 			: m_RefCount(_RefCount)
 		{
 			DIfRefCountDebugging(m_Debug.f_Construct());
@@ -2060,8 +2060,8 @@ namespace NMib::NStorage
 #if DMibConfig_RefCountDebugging
 		void f_Initial(CRefCountDebugReference &o_Reference) const;
 		void f_Remove(CRefCountDebugReference &o_Reference) const;
-		smint f_Decrease(CRefCountDebugReference &o_Reference) const;
-		smint f_Increase
+		t_CCountType f_Decrease(CRefCountDebugReference &o_Reference) const;
+		t_CCountType f_Increase
 			(
 				CRefCountDebugReference &o_Reference
 #if DMibEnableSafeCheck > 0
@@ -2070,9 +2070,9 @@ namespace NMib::NStorage
 			) const;
 		void f_Move(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 #else
-		smint f_Decrease() const
+		t_CCountType f_Decrease() const
 		{
-			smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 			DMibFastCheck(Return >= 0);
 			if (Return == 0)
 			{
@@ -2085,20 +2085,21 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		smint f_Increase
+		t_CCountType f_Increase
 			(
 #if DMibEnableSafeCheck > 0
 				bool _bAllowRevive = false
 #endif
 			) const
 		{
-			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+			t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
 			DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
+			DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 			return Return;
 		}
 #endif
 
-		smint f_Get() const
+		t_CCountType f_Get() const
 		{
 			return m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 		}
@@ -2112,11 +2113,11 @@ namespace NMib::NStorage
 #endif
 	};
 
-	template <>
-	struct TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>
+	template <typename t_CCountType>
+	struct TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, t_CCountType>
 	{
-		mutable NAtomic::TCAtomic<smint> m_RefCount; // -1 means no references
-		mutable NAtomic::TCAtomic<smint> m_WeakRefCount; // -1 means no references
+		mutable NAtomic::TCAtomic<t_CCountType> m_RefCount; // -1 means no references
+		mutable NAtomic::TCAtomic<t_CCountType> m_WeakRefCount; // -1 means no references
 		
 		~TCIntrusiveRefCount();
 		TCIntrusiveRefCount()
@@ -2153,8 +2154,8 @@ namespace NMib::NStorage
 #if DMibConfig_RefCountDebugging
 		void f_Initial(CRefCountDebugReference &o_Reference) const;
 		void f_Remove(CRefCountDebugReference &o_Reference) const;
-		smint f_Decrease(CRefCountDebugReference &o_Reference) const;
-		smint f_Increase
+		t_CCountType f_Decrease(CRefCountDebugReference &o_Reference) const;
+		t_CCountType f_Increase
 			(
 				CRefCountDebugReference &o_Reference
 #if DMibEnableSafeCheck > 0
@@ -2165,15 +2166,15 @@ namespace NMib::NStorage
 		void f_WeakInitial(CRefCountDebugReference &o_Reference) const;
 		void f_WeakRemove(CRefCountDebugReference &o_Reference) const;
 		bool f_IncreaseWhileValid(CRefCountDebugReference &o_Reference) const;
-		smint f_WeakDecrease(CRefCountDebugReference *o_pReference) const;
-		smint f_WeakIncrease(CRefCountDebugReference &o_Reference) const;
+		t_CCountType f_WeakDecrease(CRefCountDebugReference *o_pReference) const;
+		t_CCountType f_WeakIncrease(CRefCountDebugReference &o_Reference) const;
 
 		void f_Move(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 		void f_WeakMove(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const;
 #else
-		smint f_Decrease() const
+		t_CCountType f_Decrease() const
 		{
-			smint Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 			DMibFastCheck(Return >= 0);
 			if (Return == 0)
 			{
@@ -2186,22 +2187,24 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		smint f_Increase
+		t_CCountType f_Increase
 			(
 #if DMibEnableSafeCheck > 0
 				bool _bAllowRevive = false
 #endif
 			) const
 		{
-			smint Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+			t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
 			DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
+			DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 
 			return Return;
 		}
 
 		bool f_IncreaseWhileValid() const
 		{
-			smint CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			t_CCountType CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			DMibFastCheck(CurrentValue < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 			while (CurrentValue >= 0)
 			{
 				if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::EMemoryOrder_Relaxed, NAtomic::EMemoryOrder_Relaxed))
@@ -2211,9 +2214,9 @@ namespace NMib::NStorage
 			return false;
 		}
 
-		smint f_WeakDecrease() const
+		t_CCountType f_WeakDecrease() const
 		{
-			smint Return = m_WeakRefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			t_CCountType Return = m_WeakRefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
 			if (Return == 0)
 			{
 #ifdef DMibSanitizerEnabled_Thread
@@ -2225,30 +2228,33 @@ namespace NMib::NStorage
 			return Return;
 		}
 
-		smint f_WeakIncrease() const
+		t_CCountType f_WeakIncrease() const
 		{
-			return m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+			auto Return = m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+			DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
+
+			return Return;
 		}
 #endif
 
 		void f_WeakSetCapturedDelete(NMemory::CCapturedDelete const &_CapturedDelete) const
 		{
 			*((void **)(this+1)) = _CapturedDelete.m_pMemory;
-			[[maybe_unused]] smint CurrentValue = m_RefCount.f_Exchange(smint(-1) - smint(_CapturedDelete.m_Size));
+			[[maybe_unused]] t_CCountType CurrentValue = m_RefCount.f_Exchange(t_CCountType(-1) - t_CCountType(_CapturedDelete.m_Size));
 			DMibFastCheck(CurrentValue == -1);
 		}
 
 		NMemory::CCapturedDelete f_WeakGetCapturedDelete() const
 		{
-			return {*((void * const *)(this+1)), mint(smint(-1) -m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire))};
+			return {*((void * const *)(this+1)), mint(t_CCountType(-1) -m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire))};
 		}
 
-		smint f_Get() const
+		t_CCountType f_Get() const
 		{
 			return m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 		}
 
-		smint f_WeakGet() const
+		t_CCountType f_WeakGet() const
 		{
 			return m_WeakRefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
 		}

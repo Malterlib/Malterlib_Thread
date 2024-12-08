@@ -661,3 +661,5 @@ namespace NMib::NThread
 		return pThread;
 	}
 }
+
+#include "Malterlib_Thread_RefcountDebug.hpp"

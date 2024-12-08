@@ -3,14 +3,50 @@
 
 #include <Mib/Core/Core>
 
+#if DMibConfig_RefCountDebugging
+namespace NMib::NStorage
+{
+	CRefCountDebugReference::CRefCountDebugReference() = default;
+
+	CRefCountDebugReference::~CRefCountDebugReference()
+	{
+		DMibFastCheck(!m_pCallstack);
+	}
+
+	CRefCountDebugReference::CRefCountDebugReference(CRefCountDebugReference &&_Other)
+	{
+		m_pCallstack = _Other.m_pCallstack;
+		_Other.m_pCallstack = nullptr;
+	}
+
+	CRefCountDebugReference &CRefCountDebugReference::operator =(CRefCountDebugReference &&_Other)
+	{
+		m_pCallstack = _Other.m_pCallstack;
+		_Other.m_pCallstack = nullptr;
+
+		return *this;
+	}
+}
+#endif
+
 #if DMibConfig_RefCountDebugging && DMibConfig_RefCountLeakDebugging
 namespace NMib::NStorage
 {
 	constinit mint CRefCountDebug::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>();
-	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::ms_Magic
+	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic
 		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
 	;
-	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None>::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>();
+	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic
+		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
+	;
+
+	constinit mint CRefCountDebug::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>();
+	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic
+		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
+	;
+	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic
+		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
+	;
 
 	CRefCountDebug::CRefCountDebug() = default;
 	CRefCountDebug::~CRefCountDebug()
@@ -316,7 +352,8 @@ namespace NMib::NThread
 
 namespace NMib::NStorage
 {
-	TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer>::~TCIntrusiveRefCount()
+	template <>
+	TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::~TCIntrusiveRefCount()
 	{
 #if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefCountDebugging
 		smint RefCount = f_Get();
@@ -325,10 +362,31 @@ namespace NMib::NStorage
 		DIfRefCountDebugging(if (RefCount == 0) m_Debug.f_Destruct());
 	}
 
-	TCIntrusiveRefCount<ESharedPointerOption_None>::~TCIntrusiveRefCount()
+	template <>
+	TCIntrusiveRefCount<ESharedPointerOption_None, smint>::~TCIntrusiveRefCount()
 	{
 #if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefCountDebugging
-		smint RefCount = f_Get();
+		int32 RefCount = f_Get();
+#endif
+		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
+		DIfRefCountDebugging(if (RefCount == 0) m_Debug.f_Destruct());
+	}
+
+	template <>
+	TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::~TCIntrusiveRefCount()
+	{
+#if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefCountDebugging
+		int32 RefCount = f_Get();
+#endif
+		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
+		DIfRefCountDebugging(if (RefCount == 0) m_Debug.f_Destruct());
+	}
+
+	template <>
+	TCIntrusiveRefCount<ESharedPointerOption_None, int32>::~TCIntrusiveRefCount()
+	{
+#if defined(DMibContractConfigure_CheckEnabled) || DMibConfig_RefCountDebugging
+		int32 RefCount = f_Get();
 #endif
 		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
 		DIfRefCountDebugging(if (RefCount == 0) m_Debug.f_Destruct());
