@@ -2283,7 +2283,7 @@ namespace NMib::NStorage
 			{
 			}
 
-			mark_artificial inline_always t_CType *f_Get()
+			mark_nodebug mark_artificial inline_always t_CType *f_Get()
 			{
 				return &m_Data;
 			}
@@ -2318,7 +2318,7 @@ namespace NMib::NStorage
 			{
 			}
 
-			mark_artificial inline_always t_CType *f_Get()
+			mark_nodebug mark_artificial inline_always t_CType *f_Get()
 			{
 				return &m_Data;
 			}
