@@ -33,17 +33,23 @@ namespace NMib::NStorage
 namespace NMib::NStorage
 {
 	constinit mint CRefCountDebug::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>();
+
+	template <>
 	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic
 		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
 	;
+
+	template <>
 	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic
 		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
 	;
 
-	constinit mint CRefCountDebug::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>();
+	template <>
 	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic
 		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
 	;
+	
+	template <>
 	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic
 		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
 	;

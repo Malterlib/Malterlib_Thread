@@ -2268,6 +2268,20 @@ namespace NMib::NStorage
 #endif
 	};
 
+#if DMibConfig_RefCountDebugging && DMibConfig_RefCountLeakDebugging
+	template <>
+	mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic;
+
+	template <>
+	mint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic;
+
+	template <>
+	mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic;
+
+	template <>
+	mint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic;
+#endif
+	
 	namespace NPrivate
 	{
 		template <typename t_CType, bool t_bVirtualDestructor, CSharedPointerOptionUnderlying t_Options>
