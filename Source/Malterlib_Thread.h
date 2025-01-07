@@ -698,6 +698,95 @@ namespace NMib::NThread
 		}
 	};
 
+	struct CLowLevelRecursiveLockAggregate : public CLowLevelLockAggregate
+	{
+		void f_Lock()
+		{
+			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+
+			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			{
+				++m_nRecurse;
+				return;
+			}
+
+			CLowLevelLockAggregate::f_Lock();
+
+			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::EMemoryOrder_Relaxed);
+			m_nRecurse = 1;
+		}
+
+		void f_LockNoSanitize()
+		{
+			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+
+			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			{
+				++m_nRecurse;
+				return;
+			}
+
+			CLowLevelLockAggregate::f_LockNoSanitize();
+
+			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::EMemoryOrder_Relaxed);
+			m_nRecurse = 1;
+		}
+
+		void f_ForkedChildUnlocked()
+		{
+			CLowLevelLockAggregate::f_ForkedChildUnlocked();
+
+			m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+			m_nRecurse = 0;
+		}
+
+		void f_ForkedChildLocked()
+		{
+			CLowLevelLockAggregate::f_ForkedChildLocked();
+
+			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::EMemoryOrder_Relaxed);
+			m_nRecurse = 1;
+		}
+
+		void f_Unlock()
+		{
+			DMibFastCheck(m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
+
+			if ((--m_nRecurse) == 0) [[likely]]
+			{
+				m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+				CLowLevelLockAggregate::f_Unlock();
+			}
+		}
+
+		void f_UnlockNoSanitize()
+		{
+			DMibFastCheck(m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
+
+			if ((--m_nRecurse) == 0) [[likely]]
+			{
+				m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+				CLowLevelLockAggregate::f_UnlockNoSanitize();
+			}
+		}
+
+		NAtomic::TCAtomic<mint> m_ThreadID;
+		mint m_nRecurse = 0;
+	};
+
+	struct CLowLevelRecursiveLock : public CLowLevelRecursiveLockAggregate
+	{
+		CLowLevelRecursiveLock()
+		{
+			f_Construct();
+		}
+
+		~CLowLevelRecursiveLock()
+		{
+			f_Destruct();
+		}
+	};
+	
 	template <typename t_CEvent>
 	class TCMutualSimpleAggregate
 	{
