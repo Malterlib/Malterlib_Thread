@@ -18,7 +18,7 @@ namespace NMib::NStorage
 			DMibLock(m_Debug->m_Lock);
 			o_Reference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
 		}
-		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
+		o_Reference.m_pCallstack->f_Capture();
 	}
 
 	template <typename t_CCountType>
@@ -74,7 +74,7 @@ namespace NMib::NStorage
 			DMibLock(m_Debug->m_Lock);
 			o_Reference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
 		}
-		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
+		o_Reference.m_pCallstack->f_Capture();
 
 		return Return;
 	}
@@ -94,7 +94,7 @@ namespace NMib::NStorage
 			o_SourceReference.m_pCallstack = nullptr;
 			o_DestinationReference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
 		}
-		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
+		o_DestinationReference.m_pCallstack->f_Capture();
 	}
 
 	template <typename t_CCountType>
@@ -106,7 +106,7 @@ namespace NMib::NStorage
 			DMibLock(m_Debug->m_Lock);
 			o_Reference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
 		}
-		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
+		o_Reference.m_pCallstack->f_Capture();
 	}
 
 	template <typename t_CCountType>
@@ -162,7 +162,7 @@ namespace NMib::NStorage
 			DMibLock(m_Debug->m_Lock);
 			o_Reference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
 		}
-		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
+		o_Reference.m_pCallstack->f_Capture();
 
 		return Return;
 	}
@@ -182,7 +182,7 @@ namespace NMib::NStorage
 					DMibLock(m_Debug->m_Lock);
 					o_Reference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
 				}
-				o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
+				o_Reference.m_pCallstack->f_Capture();
 				return true;
 			}
 		}
@@ -227,7 +227,7 @@ namespace NMib::NStorage
 			DMibLock(m_Debug->m_Lock);
 			o_Reference.m_pCallstack = &m_Debug->m_WeakCallstacks.f_Insert();
 		}
-		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
+		o_Reference.m_pCallstack->f_Capture();
 
 		return Return;
 	}
@@ -247,7 +247,7 @@ namespace NMib::NStorage
 			o_SourceReference.m_pCallstack = nullptr;
 			o_DestinationReference.m_pCallstack = &m_Debug->m_Callstacks.f_Insert();
 		}
-		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
+		o_DestinationReference.m_pCallstack->f_Capture();
 	}
 
 	template <typename t_CCountType>
@@ -265,7 +265,7 @@ namespace NMib::NStorage
 			o_SourceReference.m_pCallstack = nullptr;
 			o_DestinationReference.m_pCallstack = &m_Debug->m_WeakCallstacks.f_Insert();
 		}
-		o_DestinationReference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_DestinationReference.m_pCallstack->m_Callstack, 128);
+		o_DestinationReference.m_pCallstack->f_Capture();
 	}
 
 	template <typename t_CCountType>
@@ -276,7 +276,7 @@ namespace NMib::NStorage
 			DMibLock(m_Debug->m_Lock);
 			o_Reference.m_pCallstack = &m_Debug->m_WeakCallstacks.f_Insert();
 		}
-		o_Reference.m_pCallstack->m_CallstackLen = NSys::fg_System_GetStackTrace(o_Reference.m_pCallstack->m_Callstack, 128);
+		o_Reference.m_pCallstack->f_Capture();
 	}
 
 	template <typename t_CCountType>
