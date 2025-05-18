@@ -70,7 +70,7 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CType>
-	using TCAtomicOrSingleWriterAtomic = typename TCChooseType<NAtomic::TCAtomic<t_CType>::mc_bIsAlwaysLockFree, NAtomic::TCAtomic<t_CType>, TCAtomicSingleWriter<t_CType>>::CType;
+	using TCAtomicOrSingleWriterAtomic = TCConditional<NAtomic::TCAtomic<t_CType>::mc_bIsAlwaysLockFree, NAtomic::TCAtomic<t_CType>, TCAtomicSingleWriter<t_CType>>;
 }
 
 #include "Malterlib_Thread_AtomicSingleWriter.hpp"

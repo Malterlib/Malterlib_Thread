@@ -608,7 +608,7 @@ namespace NMib::NThread
 			(
 				NStorage::TCUniquePointer<CCallerObject, t_CAllocator>
 				(
-					fg_Construct<NPrivate::TCCallerObjectImp<typename NTraits::TCRemoveReference<tf_CFunctionType>::CType, t_CStr, CCallerObject, TCThreadObject>>
+					fg_Construct<NPrivate::TCCallerObjectImp<NTraits::TCRemoveReference<tf_CFunctionType>, t_CStr, CCallerObject, TCThreadObject>>
 					(
 						fg_Forward<tf_CFunctionType>(_FunctionObject)
 						, _Name

@@ -2381,7 +2381,7 @@ namespace NMib::NStorage
 
 			template <typename... tfp_CParams>
 			TCSharedPointerCounter(tfp_CParams &&...p_Params)
-				requires (NTraits::cConstructibleWith<t_CType, tfp_CParams...>)
+				requires (NTraits::cIsPlacementNewConstructibleWith<t_CType, tfp_CParams...>)
 				: m_Data(fg_Forward<tfp_CParams>(p_Params)...)
 			{
 			}
@@ -2416,7 +2416,7 @@ namespace NMib::NStorage
 
 			template <typename... tfp_CParams>
 			TCSharedPointerCounter(tfp_CParams &&...p_Params)
-				requires (NTraits::cConstructibleWith<t_CType, tfp_CParams...>)
+				requires (NTraits::cIsPlacementNewConstructibleWith<t_CType, tfp_CParams...>)
 				: m_Data(fg_Forward<tfp_CParams>(p_Params)...)
 			{
 			}
@@ -2437,7 +2437,7 @@ namespace NMib::NStorage
 		class TCChooseSharedPointerTypeImp<t_CType, t_Options, false>
 		{
 		public:
-			typedef TCSharedPointerCounter<t_CType, NTraits::TCHasVirtualDestructor<typename NTraits::TCRemoveQualifiers<t_CType>::CType>::mc_Value, t_Options> CType;
+			typedef TCSharedPointerCounter<t_CType, NTraits::cHasVirtualDestructor<NTraits::TCRemoveQualifiers<t_CType>>, t_Options> CType;
 		};
 
 		template <typename tf_CType, bool t_bVirtualDestructor, CSharedPointerOptionUnderlying t_Options>
@@ -2445,7 +2445,7 @@ namespace NMib::NStorage
 		{
 			static_assert
 				(
-					!TCHasIntrusiveRefCount<tf_CType>::mc_Value
+					!cHasIntrusiveRefCount<tf_CType>
 					, "Use DMibDefineSharedPointerType to define type"
 				)
 			;
@@ -2458,11 +2458,11 @@ namespace NMib::NStorage
 		TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions> *fg_ConvertSharedPointer(TCSharedPointerCounter<tf_CType, tf_bVirtualDestructor, tf_Options> *_pIn, TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions> *_pDummy)
 		{
 			static_assert(TCIsValidConversion<tf_CToType, tf_CType, void, void>::mc_Value, "Not a valid conversion");
-			static_assert(!NTraits::TCHasVirtualDestructor<tf_CToType>::mc_Value || NTraits::TCHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>::mc_Value, "No virtual base");
-			static_assert(NTraits::TCHasVirtualDestructor<tf_CToType>::mc_Value || !NTraits::TCHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>::mc_Value, "Virtual base");
+			static_assert(!NTraits::cHasVirtualDestructor<tf_CToType> || NTraits::cHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>, "No virtual base");
+			static_assert(NTraits::cHasVirtualDestructor<tf_CToType> || !NTraits::cHasVirtualDestructor<TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions>>, "Virtual base");
 			static_assert(tf_ToOptions == tf_Options, "Cannot mix weak support with non-weak support");
 			static_assert(alignof(tf_CToType) == alignof(tf_CType), "Cannot mix alignment, use TCIntrusiveRefCount");
-			static_assert(!NTraits::TCIsVirtualBaseOf<tf_CType, tf_CToType>::mc_Value, "Virtual base classes are not supported, use TCIntrusiveRefCount");
+			static_assert(!NTraits::cIsVirtualBaseOf<tf_CType, tf_CToType>, "Virtual base classes are not supported, use TCIntrusiveRefCount");
 
 			auto pCovertTo = (TCSharedPointerCounter<tf_CToType, tf_bToVirtualDestructor, tf_ToOptions> *)_pIn;
 			DMibFastCheck(pCovertTo->f_Get() == (tf_CToType *)_pIn->f_Get());

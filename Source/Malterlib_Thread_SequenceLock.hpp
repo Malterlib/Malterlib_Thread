@@ -19,7 +19,7 @@ namespace NMib::NThread
 		{
 			auto SequencePreRead = mp_Sequence.f_Load(fg_Max(_Order, NAtomic::EMemoryOrder_Acquire));
 
-			static_assert(NTraits::TCHasTrivialCopyConstructor<t_CData>::mc_Value);
+			static_assert(NTraits::cIsTriviallyCopyConstructible<t_CData>);
 
 			t_CData Data;
 			NMemory::fg_MemCopy(&Data, &mp_Data, sizeof(t_CData));
@@ -37,7 +37,7 @@ namespace NMib::NThread
 	{
 		[[maybe_unused]] auto SequencePreWrite = mp_Sequence.f_FetchAdd(1, fg_Max(_Order, NAtomic::EMemoryOrder_AcquireRelease));
 
-		static_assert(NTraits::TCHasTrivialCopyConstructor<t_CData>::mc_Value);
+		static_assert(NTraits::cIsTriviallyCopyConstructible<t_CData>);
 
 		t_CData Data;
 		NMemory::fg_MemCopy(&Data, &mp_Data, sizeof(t_CData));
