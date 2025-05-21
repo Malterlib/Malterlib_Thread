@@ -14,7 +14,7 @@
 #if defined(DEnableWin32ConCrt)
 #include <concrt.h>
 #endif
-typedef CRITICAL_SECTION CWindowsCriticalSection;
+using CWindowsCriticalSection = CRITICAL_SECTION;
 #endif
 
 #include <thread>
@@ -1300,7 +1300,7 @@ class CWindowsCriticalSection
     ULONG_PTR SpinCount;        // force size on 64-bit systems when packed
 };*/
 
-typedef CRITICAL_SECTION CWindowsCriticalSection;
+using CWindowsCriticalSection = CRITICAL_SECTION;
 
 #endif
 

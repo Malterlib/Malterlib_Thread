@@ -569,8 +569,7 @@ namespace NMib::NThread
 		}
 	};
 
-
-	typedef void (FLock)(void *_pLock);
+	using FLock = void (void *_pLock);
 
 	class CLockVirtual
 	{
@@ -1368,15 +1367,13 @@ namespace NMib::NThread
 		}
 	};
 
-	typedef TCMutualSimpleAggregate<CEventAutoResetAggregate> CMutualSimpleAggregate;
-	typedef TCMutualSimple<CEventAutoResetAggregate> CMutualSimple;
-
-	typedef TCMutualAggregate<CEventAutoResetAggregate, true> CMutualAggregate;
-	typedef TCMutual<CEventAutoResetAggregate, true> CMutual;
-	typedef TCMutual<CEventAutoResetAggregate, false> CMutualNoRecurse;
-
-	typedef TCMutualSpinAggregate<CEventAutoResetAggregate, 64, true> CMutualSpinAggregate;
-	typedef TCMutualSpin<CEventAutoResetAggregate, 64, true> CMutualSpin;
+	using CMutualSimpleAggregate = TCMutualSimpleAggregate<CEventAutoResetAggregate>;
+	using CMutualSimple = TCMutualSimple<CEventAutoResetAggregate>;
+	using CMutualAggregate = TCMutualAggregate<CEventAutoResetAggregate, true>;
+	using CMutual = TCMutual<CEventAutoResetAggregate, true>;
+	using CMutualNoRecurse = TCMutual<CEventAutoResetAggregate, false>;
+	using CMutualSpinAggregate = TCMutualSpinAggregate<CEventAutoResetAggregate, 64, true>;
+	using CMutualSpin = TCMutualSpin<CEventAutoResetAggregate, 64, true>;
 
 	/***************************************************************************************************\
 	|¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|
@@ -1700,8 +1697,8 @@ namespace NMib::NThread
 		}
 	};
 
-	typedef TCMutualManyReadAggregate<CEventAutoResetAggregate, CEventAggregate> CMutualManyReadAggregate;
-	typedef TCMutualManyRead<CEventAutoResetAggregate, CEventAggregate> CMutualManyRead;
+	using CMutualManyReadAggregate = TCMutualManyReadAggregate<CEventAutoResetAggregate, CEventAggregate>;
+	using CMutualManyRead = TCMutualManyRead<CEventAutoResetAggregate, CEventAggregate>;
 
 	class CScopeUnlock
 	{
@@ -2071,9 +2068,8 @@ namespace NMib::NThread
 
 	};
 
-	typedef TCThreadObject<NMemory::CDefaultAllocator, NStr::CStr> CThreadObject;
-	typedef TCThreadObject<NMemory::CAllocator_NonTrackedHeap, NStr::CStrNonTracked> CThreadObjectNonTracked;
-
+	using CThreadObject = TCThreadObject<NMemory::CDefaultAllocator, NStr::CStr>;
+	using CThreadObjectNonTracked = TCThreadObject<NMemory::CAllocator_NonTrackedHeap, NStr::CStrNonTracked>;
 };
 
 namespace NMib::NStorage
@@ -2437,7 +2433,7 @@ namespace NMib::NStorage
 		class TCChooseSharedPointerTypeImp<t_CType, t_Options, false>
 		{
 		public:
-			typedef TCSharedPointerCounter<t_CType, NTraits::cHasVirtualDestructor<NTraits::TCRemoveQualifiers<t_CType>>, t_Options> CType;
+			using CType = TCSharedPointerCounter<t_CType, NTraits::cHasVirtualDestructor<NTraits::TCRemoveQualifiers<t_CType>>, t_Options>;
 		};
 
 		template <typename tf_CType, bool t_bVirtualDestructor, CSharedPointerOptionUnderlying t_Options>
