@@ -1,4 +1,4 @@
-// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #pragma once
@@ -123,7 +123,7 @@ namespace NMib
 			EThreadLocalFlag_Inherit = DMibBit(0),
 	#ifdef DMibPSupportAlwaysCreatedThreadLocal
 			EThreadLocalFlag_AlwaysCreated = DMibBit(1),
-	#else			
+	#else
 			EThreadLocalFlag_AlwaysCreated = 0,
 	#endif
 			EThreadLocalFlag_FastThreadLocal = DMibBit(2),
@@ -136,7 +136,7 @@ namespace NMib
 			TCThreadLocal(TCThreadLocal const &);
 			TCThreadLocal &operator =(TCThreadLocal const &);
 			inline_never t_CData *fp_GetNew();
-			
+
 		public:
 			void f_DeleteItem(void *_pItem) override;
 			CSafeAlloc f_AllocData() override;
@@ -144,11 +144,11 @@ namespace NMib
 			void *f_CreateDataCopy(void *_pSource, void *_pMemory) override;
 			void *f_CreateDataMove(void *_pSource, void *_pMemory) override;
 			void *f_CreateData(void *_pMemory, bool _bInitial) override;
-			
+
 #if DMibEnableSafeCheck > 0
 			ch8 const* f_GetName() override;
 #endif
-			
+
 			TCThreadLocal();
 			~TCThreadLocal();
 
@@ -164,7 +164,7 @@ namespace NMib
 			inline_small operator t_CData *();
 			inline_small t_CData * operator ->();
 			inline_small t_CData & operator &();
-			
+
 			mint m_ThreadLocalLocal;
 			mint m_pStorage; // Index into the thread storage list
 			static constexpr EThreadLocalFlag mc_Flags = t_Flags;

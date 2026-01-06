@@ -1,4 +1,4 @@
-// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #pragma once
@@ -785,7 +785,7 @@ namespace NMib::NThread
 			f_Destruct();
 		}
 	};
-	
+
 	template <typename t_CEvent>
 	class TCMutualSimpleAggregate
 	{
@@ -2203,7 +2203,7 @@ namespace NMib::NStorage
 	{
 		mutable NAtomic::TCAtomic<t_CCountType> m_RefCount; // -1 means no references
 		mutable NAtomic::TCAtomic<t_CCountType> m_WeakRefCount; // -1 means no references
-		
+
 		~TCIntrusiveRefCount();
 		TCIntrusiveRefCount()
 			: m_RefCount(0)
@@ -2366,7 +2366,7 @@ namespace NMib::NStorage
 	template <>
 	mint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic;
 #endif
-	
+
 	namespace NPrivate
 	{
 		template <typename t_CType, bool t_bVirtualDestructor, CSharedPointerOptionUnderlying t_Options>

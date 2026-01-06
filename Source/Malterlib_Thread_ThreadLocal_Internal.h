@@ -1,4 +1,4 @@
-// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #pragma once
@@ -21,7 +21,7 @@ namespace NMib
 
 
 		public:
-			
+
 			class CStorageIndex
 			{
 			public:
@@ -42,7 +42,7 @@ namespace NMib
 
 				DMibListLinkDA_Link(CStorageIndex, m_Link);
 			};
-				
+
 			struct CAllocation
 			{
 				CStorageIndex *m_pStorageIndex;
@@ -51,7 +51,7 @@ namespace NMib
 			using CAllocationPool
 				= NMemory::TCPool<NContainer::TCMapNode<mint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>
 			;
-			
+
 			class CPerThread
 			{
 			public:
@@ -73,7 +73,7 @@ namespace NMib
 					CPointer()
 						: m_pPtr(nullptr)
 					{
-						
+
 					}
 					~CPointer();
 					CPointer(CPointer &&_Copy)
@@ -117,7 +117,7 @@ namespace NMib
 			NIntrusive::TCAVLTree<&CPerThread::m_Link, CPerThread::CCompare> m_PerThreadByThreadID;
 			NMemory::TCPool<CPerThread, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> m_PoolPerThread;
 			CAllocationPool m_PoolAllocation;
-			
+
 #if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
 			mint m_iPerThreadDestructor = TCLimitsInt<mint>::mc_Max;
 #endif
@@ -139,7 +139,7 @@ namespace NMib
 			#ifdef DMibPSupportThreadLocalDestructors
 				static void fs_PerThreadDestructor(void* _pPerThread);
 			#endif
-			
+
 		public:
 			CStorageIndex *f_Alloc(NThread::CThreadLocalInterface &_Interface, mint &_ThreadLocalLocal);
 			void f_Free(NThread::CThreadLocalInterface &_Interface, CStorageIndex *_pStorageIndex);

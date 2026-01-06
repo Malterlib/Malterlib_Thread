@@ -1,4 +1,4 @@
-// Copyright © 2015 Hansoft AB 
+// Copyright © 2015 Hansoft AB
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #include <Mib/Core/Core>
@@ -48,7 +48,7 @@ namespace NMib::NStorage
 	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic
 		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
 	;
-	
+
 	template <>
 	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic
 		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
