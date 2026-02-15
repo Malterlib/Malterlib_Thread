@@ -39,7 +39,7 @@ namespace NMib
 #if DMibEnableSafeCheck > 0
 			for (auto iLocal = m_ThreadLocal_DestroyOrder.f_GetIterator(); iLocal; ++iLocal)
 			{
-				DMibTraceSafe2("{} Thread local for class '{}' not yet destroyed{\n}", this, iLocal->m_pInterface->f_GetName());
+				DMibTraceSafe("{} Thread local for class '{}' not yet destroyed{\n}", this, iLocal->m_pInterface->f_GetName());
 			}
 #endif
 			DMibFastCheck(m_ThreadLocal_DestroyOrder.f_IsEmpty()); // Anything else means that there are ThreadLocal classes that are still using this context
@@ -287,7 +287,7 @@ namespace NMib
 			}
 	#endif
 
-			//DMibDTraceSafe("{} - {} = {}" DMibNewLine, DMibPFunction << pIndex->m_iThreadLocal << m_ThreadLocal_DestroyOrder.f_GetLen());
+			//DMibDTraceSafe("{} - {} = {}" DMibNewLine, DMibPFunction, pIndex->m_iThreadLocal, m_ThreadLocal_DestroyOrder.f_GetLen());
 			_ThreadLocalLocal = pIndex->m_LocalThreadLocal;
 			return pIndex;
 		}
@@ -384,7 +384,7 @@ namespace NMib
 		void CThreadLocalContext::f_Free(NThread::CThreadLocalInterface &_Interface, CStorageIndex *_pStorageIndex)
 		{
 			DMibLock(m_LockContext);
-			//DMibDTraceSafe("{} - {} = {}" DMibNewLine, DMibPFunction << _pStorageIndex->m_iThreadLocal << m_ThreadLocal_DestroyOrder.f_GetLen());
+			//DMibDTraceSafe("{} - {} = {}" DMibNewLine, DMibPFunction, _pStorageIndex->m_iThreadLocal, m_ThreadLocal_DestroyOrder.f_GetLen());
 
 			{
 				// Lock for the pool
@@ -453,7 +453,7 @@ namespace NMib
 			}
 
 			DMibLock(m_LockContext);
-			//DMibDTraceSafe("{} - {} from {}" DMibNewLine, DMibPFunction << NSys::fg_Thread_GetCurrentUID() << _ParentThread);
+			//DMibDTraceSafe("{} - {} from {}" DMibNewLine, DMibPFunction, NSys::fg_Thread_GetCurrentUID(), _ParentThread);
 
 			CPerThread *pCopyTo = fp_GetPerThread(_ThreadID);
 

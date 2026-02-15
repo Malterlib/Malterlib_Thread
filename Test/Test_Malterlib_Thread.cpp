@@ -1643,8 +1643,8 @@ public:
 					}
 				}
 			}
-			DMibConOut("Performance for CMutualManyRead Lock+Unlock from {} threads = {} locks per second IncValue = {}\r\n", int32(EIncThreads) << fp64(m_IncValue) / Timer.f_GetTime() << m_IncValue);
-			DMibConOut("Performance for CMutualManyRead LockRead+UnlockRead from {} threads = {} locks per second nReads = {}\r\n", int32(EReadThreads) << fp64(nReads) / Timer.f_GetTime() << nReads);
+			DMibConOut("Performance for CMutualManyRead Lock+Unlock from {} threads = {} locks per second IncValue = {}\r\n", int32(EIncThreads), fp64(m_IncValue) / Timer.f_GetTime(), m_IncValue);
+			DMibConOut("Performance for CMutualManyRead LockRead+UnlockRead from {} threads = {} locks per second nReads = {}\r\n", int32(EReadThreads), fp64(nReads) / Timer.f_GetTime(), nReads);
 
 		}
 
