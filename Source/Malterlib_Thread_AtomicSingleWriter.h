@@ -16,31 +16,31 @@ namespace NMib::NThread
 		constexpr inline_always t_CType operator = (t_CType _Value) noexcept;
 
 		constexpr bool f_IsLockFree() const noexcept;
-		constexpr void f_Store(t_CType _Value, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr void f_Store(t_CType _Value, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
 
-		constexpr t_CType f_Load(NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) const noexcept;
+		constexpr t_CType f_Load(NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) const noexcept;
 		constexpr operator t_CType () const noexcept;
 
-		constexpr t_CType f_Exchange(t_CType _Value, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
-		constexpr bool f_CompareExchangeWeak(t_CType &_Expected, t_CType _Desired, NAtomic::EMemoryOrder _SuccessOrder, NAtomic::EMemoryOrder _FailureOrder) noexcept;
-		constexpr bool f_CompareExchangeWeak(t_CType &_Expected, t_CType _Desired, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
-		constexpr bool f_CompareExchangeStrong(t_CType &_Expected, t_CType _Desired, NAtomic::EMemoryOrder _SuccessOrder, NAtomic::EMemoryOrder _FailureOrder) noexcept;
-		constexpr bool f_CompareExchangeStrong(t_CType &_Expected, t_CType _Desired, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr t_CType f_Exchange(t_CType _Value, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr bool f_CompareExchangeWeak(t_CType &_Expected, t_CType _Desired, NAtomic::CMemoryOrder _SuccessOrder, NAtomic::CMemoryOrder _FailureOrder) noexcept;
+		constexpr bool f_CompareExchangeWeak(t_CType &_Expected, t_CType _Desired, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr bool f_CompareExchangeStrong(t_CType &_Expected, t_CType _Desired, NAtomic::CMemoryOrder _SuccessOrder, NAtomic::CMemoryOrder _FailureOrder) noexcept;
+		constexpr bool f_CompareExchangeStrong(t_CType &_Expected, t_CType _Desired, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
 
 		template <typename tf_CType>
-		constexpr t_CType f_FetchAdd(tf_CType _Value, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr t_CType f_FetchAdd(tf_CType _Value, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
 
 		template <typename tf_CType>
-		constexpr t_CType f_FetchSub(tf_CType _Value, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr t_CType f_FetchSub(tf_CType _Value, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
 
 		template <typename tf_CType>
-		constexpr t_CType f_FetchAnd(tf_CType _Value, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr t_CType f_FetchAnd(tf_CType _Value, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
 
 		template <typename tf_CType>
-		constexpr t_CType f_FetchOr(tf_CType _Value, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr t_CType f_FetchOr(tf_CType _Value, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
 
 		template <typename tf_CType>
-		constexpr t_CType f_FetchXor(tf_CType _Value, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_SequentiallyConsistent) noexcept;
+		constexpr t_CType f_FetchXor(tf_CType _Value, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_SequentiallyConsistent) noexcept;
 
 		constexpr t_CType operator ++ () noexcept;
 		constexpr t_CType operator ++ (int) noexcept;

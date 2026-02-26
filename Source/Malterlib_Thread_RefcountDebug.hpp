@@ -42,14 +42,14 @@ namespace NMib::NStorage
 			o_Reference.m_pCallstack = nullptr;
 		}
 
-		t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+		t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::gc_MemoryOrder_Release);
 		DMibFastCheck(Return >= 0);
 		if (Return == 0)
 		{
 #ifdef DMibSanitizerEnabled_Thread
-			m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+			m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire);
 #else
-			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+			NAtomic::fg_MemoryFence(NAtomic::gc_MemoryOrder_Acquire);
 #endif
 		}
 
@@ -65,7 +65,7 @@ namespace NMib::NStorage
 #endif
 		) const
 	{
-		t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
+		t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Release);
 		DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 		DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 
@@ -130,14 +130,14 @@ namespace NMib::NStorage
 			o_Reference.m_pCallstack = nullptr;
 		}
 
-		t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+		t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::gc_MemoryOrder_Release);
 		DMibFastCheck(Return >= 0);
 		if (Return == 0)
 		{
 #ifdef DMibSanitizerEnabled_Thread
-			m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+			m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire);
 #else
-			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+			NAtomic::fg_MemoryFence(NAtomic::gc_MemoryOrder_Acquire);
 #endif
 		}
 
@@ -153,7 +153,7 @@ namespace NMib::NStorage
 #endif
 		) const
 	{
-		t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
+		t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Release);
 		DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 		DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 
@@ -170,12 +170,12 @@ namespace NMib::NStorage
 	template <typename t_CCountType>
 	bool TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, t_CCountType>::f_IncreaseWhileValid(CRefCountDebugReference &o_Reference) const
 	{
-		t_CCountType CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+		t_CCountType CurrentValue = m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 		DMibFastCheck(CurrentValue < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 
 		while (CurrentValue >= 0)
 		{
-			if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::EMemoryOrder_Release, NAtomic::EMemoryOrder_Relaxed))
+			if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::gc_MemoryOrder_Release, NAtomic::gc_MemoryOrder_Relaxed))
 			{
 				DMibFastCheck(!o_Reference.m_pCallstack);
 				{
@@ -203,13 +203,13 @@ namespace NMib::NStorage
 			}
 		}
 
-		t_CCountType Return = m_WeakRefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+		t_CCountType Return = m_WeakRefCount.f_FetchSub(1, NAtomic::gc_MemoryOrder_Release);
 		if (Return == 0)
 		{
 #ifdef DMibSanitizerEnabled_Thread
-			m_WeakRefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+			m_WeakRefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire);
 #else
-			NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+			NAtomic::fg_MemoryFence(NAtomic::gc_MemoryOrder_Acquire);
 #endif
 		}
 
@@ -219,7 +219,7 @@ namespace NMib::NStorage
 	template <typename t_CCountType>
 	t_CCountType TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, t_CCountType>::f_WeakIncrease(CRefCountDebugReference &o_Reference) const
 	{
-		t_CCountType Return = m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Release);
+		t_CCountType Return = m_WeakRefCount.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Release);
 		DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 
 		DMibFastCheck(!o_Reference.m_pCallstack);

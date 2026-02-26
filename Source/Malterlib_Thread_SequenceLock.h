@@ -16,10 +16,10 @@ namespace NMib::NThread
 		constexpr TCSequenceLock(tf_CValue &&_Value);
 		~TCSequenceLock() = default;
 
-		constexpr t_CData f_Load(NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_Acquire) const;
+		constexpr t_CData f_Load(NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_Acquire) const;
 
 		template <typename tf_FFunctor>
-		constexpr void f_Mutate(tf_FFunctor &&_fMutate, NAtomic::EMemoryOrder _Order = NAtomic::EMemoryOrder_Acquire);
+		constexpr void f_Mutate(tf_FFunctor &&_fMutate, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_Acquire);
 
 	private:
 		NAtomic::TCAtomic<mint> mp_Sequence;

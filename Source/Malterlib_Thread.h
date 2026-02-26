@@ -80,7 +80,7 @@ namespace NMib::NThread
 
 		void f_ForkedChild()
 		{
-			NSys::fg_Semaphore_ForkedChild(m_pSemaphore.f_Load(NAtomic::EMemoryOrder_Relaxed));
+			NSys::fg_Semaphore_ForkedChild(m_pSemaphore.f_Load(NAtomic::gc_MemoryOrder_Relaxed));
 		}
 
 		void f_ForkedParent()
@@ -99,27 +99,27 @@ namespace NMib::NThread
 		}
 		inline_small void f_Signal(int _nToSignal)
 		{
-			NSys::fg_Semaphore_Increase(m_pSemaphore.f_Load(NAtomic::EMemoryOrder_Relaxed), _nToSignal);
+			NSys::fg_Semaphore_Increase(m_pSemaphore.f_Load(NAtomic::gc_MemoryOrder_Relaxed), _nToSignal);
 		}
 		inline_small void f_Signal()
 		{
-			NSys::fg_Semaphore_Increase(m_pSemaphore.f_Load(NAtomic::EMemoryOrder_Relaxed), 1);
+			NSys::fg_Semaphore_Increase(m_pSemaphore.f_Load(NAtomic::gc_MemoryOrder_Relaxed), 1);
 		}
 
 		inline_small void f_Wait()
 		{
-			NSys::fg_Semaphore_Wait(m_pSemaphore.f_Load(NAtomic::EMemoryOrder_Relaxed));
+			NSys::fg_Semaphore_Wait(m_pSemaphore.f_Load(NAtomic::gc_MemoryOrder_Relaxed));
 		}
 
 		// Returns true if the wait timed out
 		inline_small bool f_WaitTimeout(fp64 _Timeout)
 		{
-			return NSys::fg_Semaphore_WaitTimeout(m_pSemaphore.f_Load(NAtomic::EMemoryOrder_Relaxed), _Timeout);
+			return NSys::fg_Semaphore_WaitTimeout(m_pSemaphore.f_Load(NAtomic::gc_MemoryOrder_Relaxed), _Timeout);
 		}
 
 		inline_small bool f_TryWait()
 		{
-			return NSys::fg_Semaphore_TryWait(m_pSemaphore.f_Load(NAtomic::EMemoryOrder_Relaxed));
+			return NSys::fg_Semaphore_TryWait(m_pSemaphore.f_Load(NAtomic::gc_MemoryOrder_Relaxed));
 		}
 	};
 
@@ -652,7 +652,7 @@ namespace NMib::NThread
 
 		bool f_Contended() const
 		{
-			return m_Contention.f_Load(NAtomic::EMemoryOrder_Relaxed) > 0;
+			return m_Contention.f_Load(NAtomic::gc_MemoryOrder_Relaxed) > 0;
 		}
 
 
@@ -703,7 +703,7 @@ namespace NMib::NThread
 		{
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				++m_nRecurse;
 				return;
@@ -711,7 +711,7 @@ namespace NMib::NThread
 
 			CLowLevelLockAggregate::f_Lock();
 
-			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::EMemoryOrder_Relaxed);
+			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::gc_MemoryOrder_Relaxed);
 			m_nRecurse = 1;
 		}
 
@@ -719,7 +719,7 @@ namespace NMib::NThread
 		{
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				++m_nRecurse;
 				return;
@@ -727,7 +727,7 @@ namespace NMib::NThread
 
 			CLowLevelLockAggregate::f_LockNoSanitize();
 
-			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::EMemoryOrder_Relaxed);
+			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::gc_MemoryOrder_Relaxed);
 			m_nRecurse = 1;
 		}
 
@@ -735,7 +735,7 @@ namespace NMib::NThread
 		{
 			CLowLevelLockAggregate::f_ForkedChildUnlocked();
 
-			m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+			m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 			m_nRecurse = 0;
 		}
 
@@ -743,28 +743,28 @@ namespace NMib::NThread
 		{
 			CLowLevelLockAggregate::f_ForkedChildLocked();
 
-			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::EMemoryOrder_Relaxed);
+			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::gc_MemoryOrder_Relaxed);
 			m_nRecurse = 1;
 		}
 
 		void f_Unlock()
 		{
-			DMibFastCheck(m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
+			DMibFastCheck(m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
 
 			if ((--m_nRecurse) == 0) [[likely]]
 			{
-				m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+				m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 				CLowLevelLockAggregate::f_Unlock();
 			}
 		}
 
 		void f_UnlockNoSanitize()
 		{
-			DMibFastCheck(m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
+			DMibFastCheck(m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
 
 			if ((--m_nRecurse) == 0) [[likely]]
 			{
-				m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+				m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 				CLowLevelLockAggregate::f_UnlockNoSanitize();
 			}
 		}
@@ -814,7 +814,7 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexCreate(this, __tsan_mutex_not_static);
 
 			m_Event.f_Construct();
-			m_nLocked.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+			m_nLocked.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 		}
 
 		void f_Construct(void * _pSemaphore)
@@ -822,7 +822,7 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexCreate(this, __tsan_mutex_not_static);
 
 			m_Event.f_Construct(_pSemaphore);
-			m_nLocked.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+			m_nLocked.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 		}
 
 		void f_Destruct()
@@ -834,7 +834,7 @@ namespace NMib::NThread
 		void f_Lock()
 		{
 			DMibSanitizerAnnotate_MutexPreLock(this, 0);
-			if (m_nLocked.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire) > 0)
+			if (m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire) > 0)
 				fp_WaitForIt();
 			DMibSanitizerAnnotate_MutexPostLock(this, 0, 1);
 		}
@@ -842,7 +842,7 @@ namespace NMib::NThread
 		void f_Unlock()
 		{
 			DMibSanitizerAnnotate_MutexPreUnlock(this, 0);
-			if (m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_Release) > 1)
+			if (m_nLocked.f_FetchSub(1, NAtomic::gc_MemoryOrder_Release) > 1)
 			{
 				// Someone is waiting
 				m_Event.f_Signal();
@@ -918,7 +918,7 @@ namespace NMib::NThread
 
 		void f_PrepareFork()
 		{
-			DMibFastCheck(m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID()); // Must already be locked
+			DMibFastCheck(m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID()); // Must already be locked
 			DMibFastCheck(m_nRecurse == 1); // Must already be locked
 
 			f_CreateEvent();
@@ -931,7 +931,7 @@ namespace NMib::NThread
 
 			// Clear out any other threads that might have been waiting for the lock
 			//m_nRecurse = 1; // This should be safe to keep
-			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::EMemoryOrder_Relaxed);
+			m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::gc_MemoryOrder_Relaxed);
 			m_nLocked.f_FetchAnd(~mcp_AtomicMask);
 			m_nLocked.f_FetchAdd(1);
 		}
@@ -943,17 +943,17 @@ namespace NMib::NThread
 
 		inline_never void f_CreateEvent()
 		{
-			mint Original = m_nLocked.f_FetchOr((mint(1) << (EAtomicBits-2)), NAtomic::EMemoryOrder_SequentiallyConsistent);
+			mint Original = m_nLocked.f_FetchOr((mint(1) << (EAtomicBits-2)), NAtomic::gc_MemoryOrder_SequentiallyConsistent);
 			if (!(Original & (mint(1) << (EAtomicBits-2))))
 			{
 				m_Event.f_ConstructIfNotCreated();
-				m_nLocked.f_FetchOr((mint(2) << (EAtomicBits-2)), NAtomic::EMemoryOrder_Release);
+				m_nLocked.f_FetchOr((mint(2) << (EAtomicBits-2)), NAtomic::gc_MemoryOrder_Release);
 			}
 			else
 			{
 				CThreadSpinWaiter SpinWaiter;
 
-				while (!(m_nLocked.f_Load(NAtomic::EMemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
+				while (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
 					SpinWaiter.f_Wait();
 			}
 		}
@@ -968,11 +968,11 @@ namespace NMib::NThread
 		inline_never void fp_SignalIt()
 		{
 			// Wait for it to be created, because it should be
-			if (!(m_nLocked.f_Load(NAtomic::EMemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
+			if (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
 			{
 				CThreadSpinWaiter SpinWaiter;
 
-				while (!(m_nLocked.f_Load(NAtomic::EMemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
+				while (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
 					SpinWaiter.f_Wait();
 			}
 			// Someone is waiting
@@ -1004,7 +1004,7 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexCreate(this, __tsan_mutex_write_reentrant | __tsan_mutex_not_static);
 
 			m_Event.f_ConstructDontCreate();
-			m_nLocked.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+			m_nLocked.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 			m_nRecurse = 0;
 			m_ThreadID = 0;
 #		if DMibEnableSafeCheck > 0
@@ -1017,9 +1017,9 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexCreate(this, __tsan_mutex_write_reentrant | __tsan_mutex_not_static);
 
 			if (_pSemaphore)
-				m_nLocked.f_Store(mint(3) << (EAtomicBits-2), NAtomic::EMemoryOrder_Relaxed);
+				m_nLocked.f_Store(mint(3) << (EAtomicBits-2), NAtomic::gc_MemoryOrder_Relaxed);
 			else
-				m_nLocked.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+				m_nLocked.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 			m_nRecurse = 0;
 			m_ThreadID = 0;
 #		if DMibEnableSafeCheck > 0
@@ -1033,7 +1033,7 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexDestroy(this, 0);
 
 			DMibFastCheck((m_nLocked.f_Load() & mcp_AtomicMask) == 0);
-			DMibFastCheck(m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == 0);
+			DMibFastCheck(m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == 0);
 			m_Event.f_Destruct();
 		}
 
@@ -1043,23 +1043,23 @@ namespace NMib::NThread
 
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				++m_nRecurse;
 				DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock, 1);
 				return true;
 			}
 
-			mint Original = m_nLocked.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			mint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 			if (Original & mcp_AtomicMask)
 			{
 				DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock | __tsan_mutex_try_lock_failed, 1);
 				return false;
 			}
 
-			if (m_nLocked.f_CompareExchangeStrong(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
+			if (m_nLocked.f_CompareExchangeStrong(Original, Original + 1, NAtomic::gc_MemoryOrder_Acquire, NAtomic::gc_MemoryOrder_Relaxed))
 			{
-				m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
+				m_ThreadID.f_Store(CurrentThread, NAtomic::gc_MemoryOrder_Relaxed);
 				m_nRecurse = 1;
 				DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock, 1);
 
@@ -1081,7 +1081,7 @@ namespace NMib::NThread
 
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				DMibFastCheck(t_bAllowRecursive);
 				++m_nRecurse;
@@ -1092,14 +1092,14 @@ namespace NMib::NThread
 
 			while (_SpinCount--)
 			{
-				mint Original = m_nLocked.f_Load(NAtomic::EMemoryOrder_Relaxed);
+				mint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 				if (Original & mcp_AtomicMask)
 				{
 					continue;
 				}
-				if (m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
+				if (m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::gc_MemoryOrder_Acquire, NAtomic::gc_MemoryOrder_Relaxed))
 				{
-					m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
+					m_ThreadID.f_Store(CurrentThread, NAtomic::gc_MemoryOrder_Relaxed);
 #		if DMibEnableSafeCheck > 0
 					m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #		endif
@@ -1118,7 +1118,7 @@ namespace NMib::NThread
 		{
 			mint CurrentThread = _ThreadID;
 
-			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				DMibFastCheck(t_bAllowRecursive);
 				++m_nRecurse;
@@ -1141,7 +1141,7 @@ namespace NMib::NThread
 					fp_WaitForIt();
 			}
 
-			m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
+			m_ThreadID.f_Store(CurrentThread, NAtomic::gc_MemoryOrder_Relaxed);
 #		if DMibEnableSafeCheck > 0
 			m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #		endif
@@ -1154,7 +1154,7 @@ namespace NMib::NThread
 
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				DMibFastCheck(t_bAllowRecursive);
 				++m_nRecurse;
@@ -1163,7 +1163,7 @@ namespace NMib::NThread
 			}
 
 			// Try to take the lock
-			mint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire);
+			mint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
 			mint nLocked = nLockedValue & mcp_AtomicMask;
 
 			if (nLocked > 0) [[unlikely]]
@@ -1178,7 +1178,7 @@ namespace NMib::NThread
 					fp_WaitForIt();
 			}
 
-			m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
+			m_ThreadID.f_Store(CurrentThread, NAtomic::gc_MemoryOrder_Relaxed);
 #			if DMibEnableSafeCheck > 0
 				m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #			endif
@@ -1194,7 +1194,7 @@ namespace NMib::NThread
 
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
-			if (m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				DMibFastCheck(t_bAllowRecursive);
 				++m_nRecurse;
@@ -1205,16 +1205,16 @@ namespace NMib::NThread
 
 			while (_SpinCount--) [[likely]]
 			{
-				mint Original = m_nLocked.f_Load(NAtomic::EMemoryOrder_Relaxed);
+				mint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 				if (Original & mcp_AtomicMask)
 				{
 					yield_cpu;
 					continue;
 				}
 
-				if (m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed)) [[likely]]
+				if (m_nLocked.f_CompareExchangeWeak(Original, Original + 1, NAtomic::gc_MemoryOrder_Acquire, NAtomic::gc_MemoryOrder_Relaxed)) [[likely]]
 				{
-					m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
+					m_ThreadID.f_Store(CurrentThread, NAtomic::gc_MemoryOrder_Relaxed);
 #		if DMibEnableSafeCheck > 0
 					m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #		endif
@@ -1228,7 +1228,7 @@ namespace NMib::NThread
 
 
 			// Try to take the lock
-			mint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire);
+			mint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
 			mint nLocked = nLockedValue & mcp_AtomicMask;
 
 			if (nLocked > 0)
@@ -1243,7 +1243,7 @@ namespace NMib::NThread
 					fp_WaitForIt();
 			}
 
-			m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
+			m_ThreadID.f_Store(CurrentThread, NAtomic::gc_MemoryOrder_Relaxed);
 #			if DMibEnableSafeCheck > 0
 				m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #			endif
@@ -1255,25 +1255,25 @@ namespace NMib::NThread
 		bool f_OwnsLock() const
 		{
 			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
-			return m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread;
+			return m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread;
 		}
 
 		bool f_Contended() const
 		{
 			DMibFastCheck(f_OwnsLock());
-			return (m_nLocked.f_Load(NAtomic::EMemoryOrder_Relaxed) & mcp_AtomicMask) > 1;
+			return (m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed) & mcp_AtomicMask) > 1;
 		}
 
 		inline_never void f_Unlock()
 		{
 			DMibSanitizerAnnotate_MutexPreUnlock(this, 0);
 
-			DMibFastCheck(m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
+			DMibFastCheck(m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
 
 			if ((--m_nRecurse) == 0) [[likely]]
 			{
-				m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
-				mint nLockedValue = m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_AcquireRelease); // Acquire for m_Event
+				m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
+				mint nLockedValue = m_nLocked.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease); // Acquire for m_Event
 				if ((nLockedValue & mcp_AtomicMask) > 1)
 				{
 					mint nCreate = nLockedValue >> (EAtomicBits - 2);
@@ -1413,11 +1413,11 @@ namespace NMib::NThread
 		void f_Construct()
 		{
 			t_CBase::f_Construct();
-			m_nReading.f_Store(mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone, NAtomic::EMemoryOrder_Relaxed);
+			m_nReading.f_Store(mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone, NAtomic::gc_MemoryOrder_Relaxed);
 			m_ReadOkEvent.f_Construct(0);
 			m_WriteOkEvent.f_Construct();
 #			if DMibEnableSafeCheck > 0
-				m_nReadingDebugCheck.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+				m_nReadingDebugCheck.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 #			endif
 		}
 
@@ -1442,7 +1442,7 @@ namespace NMib::NThread
 			m_WriteOkEvent.f_ForkedChild();
 			m_nReading.f_Store(mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone | mc_FlagReadingNotAllowed);
 #			if DMibEnableSafeCheck > 0
-				m_nReadingDebugCheck.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+				m_nReadingDebugCheck.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 #			endif
 
 			t_CBase::f_ForkedChild();
@@ -1459,7 +1459,7 @@ namespace NMib::NThread
 		{
 			mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
-			if (t_CBase::m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant);
 				++t_CBase::m_nRecurse;
@@ -1470,16 +1470,16 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_read_lock);
 
 	RestartLock:
-			mint nReading = m_nReading.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire);
+			mint nReading = m_nReading.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
 			if (nReading & mc_FlagReadingNotAllowed)
 			{
 				++nReading;
 				while (!(nReading & mc_FlagReadOkEventReset) && (nReading & mc_FlagReadingNotAllowed))
 				{
-					if (m_nReading.f_CompareExchangeStrong(nReading, nReading | mc_FlagReadOkEventReset, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
+					if (m_nReading.f_CompareExchangeStrong(nReading, nReading | mc_FlagReadOkEventReset, NAtomic::gc_MemoryOrder_Acquire, NAtomic::gc_MemoryOrder_Relaxed))
 					{
 						m_ReadOkEvent.f_ResetSignaled();
-						nReading = m_nReading.f_FetchOr(mc_FlagReadOkEventResetDone, NAtomic::EMemoryOrder_Release);
+						nReading = m_nReading.f_FetchOr(mc_FlagReadOkEventResetDone, NAtomic::gc_MemoryOrder_Release);
 						break;
 					}
 				}
@@ -1494,7 +1494,7 @@ namespace NMib::NThread
 				}
 			}
 #			if DMibEnableSafeCheck > 0
-				m_nReadingDebugCheck.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+				m_nReadingDebugCheck.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Relaxed);
 #			endif
 
 			DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_read_lock, 1);
@@ -1503,7 +1503,7 @@ namespace NMib::NThread
 
 		inline_never void f_UnlockReadInternal()
 		{
-			mint nReading = m_nReading.f_FetchSub(1, NAtomic::EMemoryOrder_AcquireRelease);
+			mint nReading = m_nReading.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease);
 			if ((nReading & (mc_FlagReadingNotAllowed | mc_nReadingMask)) == (mc_FlagReadingNotAllowed | 1))
 			{
 				m_WriteOkEvent.f_Signal();
@@ -1515,14 +1515,14 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexPreUnlock(this, __tsan_mutex_read_lock);
 			mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
-			if (t_CBase::m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				f_Unlock();
 				return;
 			}
 
 #			if DMibEnableSafeCheck > 0
-				m_nReadingDebugCheck.f_FetchSub(1, NAtomic::EMemoryOrder_Relaxed);
+				m_nReadingDebugCheck.f_FetchSub(1, NAtomic::gc_MemoryOrder_Relaxed);
 #			endif
 			f_UnlockReadInternal();
 			DMibSanitizerAnnotate_MutexPostUnlock(this, __tsan_mutex_read_lock);
@@ -1535,7 +1535,7 @@ namespace NMib::NThread
 
 			mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
-			if (t_CBase::m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				++t_CBase::m_nRecurse;
 				DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant, 1);
@@ -1543,7 +1543,7 @@ namespace NMib::NThread
 			}
 
 			// Try to take the lock
-			mint nLockedValue = t_CBase::m_nLocked.f_FetchAdd(1, NAtomic::EMemoryOrder_Acquire);
+			mint nLockedValue = t_CBase::m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
 			mint nLocked = nLockedValue & mcp_AtomicMask;
 
 			if (nLocked > 0)
@@ -1559,12 +1559,12 @@ namespace NMib::NThread
 			}
 
 
-			mint nReading = m_nReading.f_FetchOr(mc_FlagReadingNotAllowed, NAtomic::EMemoryOrder_Acquire);
+			mint nReading = m_nReading.f_FetchOr(mc_FlagReadingNotAllowed, NAtomic::gc_MemoryOrder_Acquire);
 			if ((nReading & mc_nReadingMask) > 0)
 			{
 				while (1)
 				{
-					mint nReading = m_nReading.f_FetchOr(mc_FlagReadingNotAllowed, NAtomic::EMemoryOrder_Acquire);
+					mint nReading = m_nReading.f_FetchOr(mc_FlagReadingNotAllowed, NAtomic::gc_MemoryOrder_Acquire);
 
 					if ((nReading & mc_nReadingMask) > 0)
 					{
@@ -1575,7 +1575,7 @@ namespace NMib::NThread
 						break;
 				}
 			}
-			t_CBase::m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
+			t_CBase::m_ThreadID.f_Store(CurrentThread, NAtomic::gc_MemoryOrder_Relaxed);
 #		if DMibEnableSafeCheck > 0
 			t_CBase::m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #		endif
@@ -1592,23 +1592,23 @@ namespace NMib::NThread
 
 			mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
-			if (t_CBase::m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == CurrentThread)
+			if (t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
 				++t_CBase::m_nRecurse;
 				DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock, 1);
 				return true;
 			}
 
-			mint Original = t_CBase::m_nLocked.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			mint Original = t_CBase::m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 			if (Original & mcp_AtomicMask)
 			{
 				DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock_failed, 1);
 				return false;
 			}
 
-			if (t_CBase::m_nLocked.f_CompareExchangeStrong(Original, Original + 1, NAtomic::EMemoryOrder_Acquire, NAtomic::EMemoryOrder_Relaxed))
+			if (t_CBase::m_nLocked.f_CompareExchangeStrong(Original, Original + 1, NAtomic::gc_MemoryOrder_Acquire, NAtomic::gc_MemoryOrder_Relaxed))
 			{
-				t_CBase::m_ThreadID.f_Store(CurrentThread, NAtomic::EMemoryOrder_Relaxed);
+				t_CBase::m_ThreadID.f_Store(CurrentThread, NAtomic::gc_MemoryOrder_Relaxed);
 #		if DMibEnableSafeCheck > 0
 				t_CBase::m_AlternateThreadID = NSys::fg_Thread_GetCurrentUIDAlternate();
 #		endif
@@ -1622,7 +1622,7 @@ namespace NMib::NThread
 				return false;
 			}
 
-			Original = m_nReading.f_Load(NAtomic::EMemoryOrder_Acquire);
+			Original = m_nReading.f_Load(NAtomic::gc_MemoryOrder_Acquire);
 
 			if ((Original & mc_nReadingMask) > 0)
 			{
@@ -1630,7 +1630,7 @@ namespace NMib::NThread
 				return false;
 			}
 
-			if (!m_nReading.f_CompareExchangeStrong(Original, Original | mc_FlagReadingNotAllowed, NAtomic::EMemoryOrder_Acquire))
+			if (!m_nReading.f_CompareExchangeStrong(Original, Original | mc_FlagReadingNotAllowed, NAtomic::gc_MemoryOrder_Acquire))
 			{
 				t_CBase::f_Unlock();
 				return false;
@@ -1643,23 +1643,23 @@ namespace NMib::NThread
 		{
 			DMibSanitizerAnnotate_MutexPreUnlock(this, 0);
 
-			DMibFastCheck(t_CBase::m_ThreadID.f_Load(NAtomic::EMemoryOrder_Relaxed) == NMib::NSys::fg_Thread_GetCurrentUID());
+			DMibFastCheck(t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == NMib::NSys::fg_Thread_GetCurrentUID());
 
 			if ((--t_CBase::m_nRecurse) == 0)
 			{
-				t_CBase::m_ThreadID.f_Store(0, NAtomic::EMemoryOrder_Relaxed);
+				t_CBase::m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 				//mint Bit_Signaled = DMibBitTyped(sizeof(m_nReading)*8-2, mint);
-				mint OldReading = m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::EMemoryOrder_AcquireRelease);
+				mint OldReading = m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::gc_MemoryOrder_AcquireRelease);
 				DMibFastCheck((OldReading & mc_FlagReadingNotAllowed));
 				if (OldReading & mc_FlagReadOkEventReset)
 				{
 					while (!(OldReading & mc_FlagReadOkEventResetDone))
-						OldReading = m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::EMemoryOrder_Acquire);
+						OldReading = m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::gc_MemoryOrder_Acquire);
 					m_ReadOkEvent.f_SetSignaled();
-					m_nReading.f_FetchAnd(~(mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone), NAtomic::EMemoryOrder_Release);
+					m_nReading.f_FetchAnd(~(mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone), NAtomic::gc_MemoryOrder_Release);
 				}
 
-				mint nLockedValue = t_CBase::m_nLocked.f_FetchSub(1, NAtomic::EMemoryOrder_AcquireRelease); // Acquire for m_Event
+				mint nLockedValue = t_CBase::m_nLocked.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease); // Acquire for m_Event
 				if ((nLockedValue & mcp_AtomicMask) > 1)
 				{
 					mint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
@@ -2157,14 +2157,14 @@ namespace NMib::NStorage
 #else
 		t_CCountType f_Decrease() const
 		{
-			t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::gc_MemoryOrder_Release);
 			DMibFastCheck(Return >= 0);
 			if (Return == 0)
 			{
 #ifdef DMibSanitizerEnabled_Thread
-				m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+				m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire);
 #else
-				NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+				NAtomic::fg_MemoryFence(NAtomic::gc_MemoryOrder_Acquire);
 #endif
 			}
 			return Return;
@@ -2177,7 +2177,7 @@ namespace NMib::NStorage
 #endif
 			) const
 		{
-			t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+			t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Relaxed);
 			DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 			DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 			return Return;
@@ -2186,7 +2186,7 @@ namespace NMib::NStorage
 
 		t_CCountType f_Get() const
 		{
-			return m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			return m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 		}
 
 #if DMibConfig_RefCountDebugging
@@ -2259,14 +2259,14 @@ namespace NMib::NStorage
 #else
 		t_CCountType f_Decrease() const
 		{
-			t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			t_CCountType Return = m_RefCount.f_FetchSub(1, NAtomic::gc_MemoryOrder_Release);
 			DMibFastCheck(Return >= 0);
 			if (Return == 0)
 			{
 #ifdef DMibSanitizerEnabled_Thread
-				m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+				m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire);
 #else
-				NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+				NAtomic::fg_MemoryFence(NAtomic::gc_MemoryOrder_Acquire);
 #endif
 			}
 			return Return;
@@ -2279,7 +2279,7 @@ namespace NMib::NStorage
 #endif
 			) const
 		{
-			t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+			t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Relaxed);
 			DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
 			DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 
@@ -2288,11 +2288,11 @@ namespace NMib::NStorage
 
 		bool f_IncreaseWhileValid() const
 		{
-			t_CCountType CurrentValue = m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			t_CCountType CurrentValue = m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 			DMibFastCheck(CurrentValue < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 			while (CurrentValue >= 0)
 			{
-				if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::EMemoryOrder_Relaxed, NAtomic::EMemoryOrder_Relaxed))
+				if (m_RefCount.f_CompareExchangeStrong(CurrentValue, CurrentValue + 1, NAtomic::gc_MemoryOrder_Relaxed, NAtomic::gc_MemoryOrder_Relaxed))
 					return true;
 			}
 
@@ -2301,13 +2301,13 @@ namespace NMib::NStorage
 
 		t_CCountType f_WeakDecrease() const
 		{
-			t_CCountType Return = m_WeakRefCount.f_FetchSub(1, NAtomic::EMemoryOrder_Release);
+			t_CCountType Return = m_WeakRefCount.f_FetchSub(1, NAtomic::gc_MemoryOrder_Release);
 			if (Return == 0)
 			{
 #ifdef DMibSanitizerEnabled_Thread
-				m_WeakRefCount.f_Load(NAtomic::EMemoryOrder_Acquire);
+				m_WeakRefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire);
 #else
-				NAtomic::fg_MemoryFence(NAtomic::EMemoryOrder_Acquire);
+				NAtomic::fg_MemoryFence(NAtomic::gc_MemoryOrder_Acquire);
 #endif
 			}
 			return Return;
@@ -2315,7 +2315,7 @@ namespace NMib::NStorage
 
 		t_CCountType f_WeakIncrease() const
 		{
-			auto Return = m_WeakRefCount.f_FetchAdd(1, NAtomic::EMemoryOrder_Relaxed);
+			auto Return = m_WeakRefCount.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Relaxed);
 			DMibFastCheck(Return < (TCLimitsInt<t_CCountType>::mc_Max - 1));
 
 			return Return;
@@ -2331,17 +2331,17 @@ namespace NMib::NStorage
 
 		NMemory::CCapturedDelete f_WeakGetCapturedDelete() const
 		{
-			return {*((void * const *)(this+1)), mint(t_CCountType(-1) -m_RefCount.f_Load(NAtomic::EMemoryOrder_Acquire))};
+			return {*((void * const *)(this+1)), mint(t_CCountType(-1) -m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire))};
 		}
 
 		t_CCountType f_Get() const
 		{
-			return m_RefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			return m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 		}
 
 		t_CCountType f_WeakGet() const
 		{
-			return m_WeakRefCount.f_Load(NAtomic::EMemoryOrder_Relaxed);
+			return m_WeakRefCount.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 		}
 
 #if DMibConfig_RefCountDebugging

@@ -193,7 +193,7 @@ namespace
 								NMib::fg_Volatile(m_pTest->m_pIncValue) = &m_pTest->m_IncValue;
 								DMibFastCheck(!m_pTest->m_IncLock.f_IsLocked());
 #endif
-								m_nReads.f_FetchAdd(1, NMib::NAtomic::EMemoryOrder_Relaxed);
+								m_nReads.f_FetchAdd(1, NMib::NAtomic::gc_MemoryOrder_Relaxed);
 
 								m_pTest->m_IncLock.f_UnlockRead();
 							}
@@ -280,7 +280,7 @@ namespace
 							}
 							for (mint i = 0; i < EReadThreads; ++i)
 							{
-								nReads += ReadThreads[i].m_nReads.f_Load(NMib::NAtomic::EMemoryOrder_Relaxed);
+								nReads += ReadThreads[i].m_nReads.f_Load(NMib::NAtomic::gc_MemoryOrder_Relaxed);
 								ReadThreads[i].m_bStop.f_Exchange(1);
 								ReadThreads[i].m_EventWantQuit.f_Signal();
 							}
