@@ -608,7 +608,7 @@ namespace NMib::NThread
 		{
 		}
 
-		DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<CLowLevelLockAggregateLockType> m_Lock;
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<CLowLevelLockAggregateLockType> m_Lock;
 
 #		if DMibEnableSafeCheck > 0
 			mint m_ThreadID;				// On windows this is the thread id, unix the pthread
@@ -796,7 +796,7 @@ namespace NMib::NThread
 			m_Event.f_Wait();
 		}
 
-		DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nLocked;
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<mint> m_nLocked;
 		t_CEvent m_Event;
 
 		constexpr TCMutualSimpleAggregate(EAggregateInitialization _Init)
@@ -908,7 +908,7 @@ namespace NMib::NThread
 			EAtomicBits = sizeof(aint) * 8
 		};
 
-		DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nLocked;
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<mint> m_nLocked;
 		NAtomic::TCAtomic<mint> m_ThreadID;				// On windows this is the thread id, unix the pthread
 #		if DMibEnableSafeCheck > 0
 			mint m_AlternateThreadID;	// On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
@@ -1397,16 +1397,16 @@ namespace NMib::NThread
 		}
 
 		// Lock for write access
-		DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nReading;
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<mint> m_nReading;
 		t_CEvent m_ReadOkEvent;
 		t_CEventAutoreset m_WriteOkEvent;
 #		if DMibEnableSafeCheck > 0
-			DMibThreadAtomicsAlignment NAtomic::TCAtomicAggregate<mint> m_nReadingDebugCheck;
+			DMibThreadAtomicsAlignment NAtomic::TCAtomic<mint> m_nReadingDebugCheck;
 #		endif
 
-		const static mint mc_FlagReadingNotAllowed = DMibBitTyped(sizeof(NAtomic::TCAtomicAggregate<mint>)*8-1, mint);
-		const static mint mc_FlagReadOkEventReset = DMibBitTyped(sizeof(NAtomic::TCAtomicAggregate<mint>)*8-2, mint);
-		const static mint mc_FlagReadOkEventResetDone = DMibBitTyped(sizeof(NAtomic::TCAtomicAggregate<mint>)*8-3, mint);
+		const static mint mc_FlagReadingNotAllowed = DMibBitTyped(sizeof(NAtomic::TCAtomic<mint>)*8-1, mint);
+		const static mint mc_FlagReadOkEventReset = DMibBitTyped(sizeof(NAtomic::TCAtomic<mint>)*8-2, mint);
+		const static mint mc_FlagReadOkEventResetDone = DMibBitTyped(sizeof(NAtomic::TCAtomic<mint>)*8-3, mint);
 		const static mint mc_nReadingMask = ~(mc_FlagReadingNotAllowed | mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone);
 
 
