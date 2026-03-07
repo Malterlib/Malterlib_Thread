@@ -2,6 +2,7 @@
 // Distributed under the MIT license, see license text in LICENSE.Malterlib
 
 #include <Mib/Test/Performance>
+#include <Mib/Time/PerfTimeMeasure>
 
 #if 1
 #if defined(DPlatformFamily_Windows)
@@ -235,7 +236,7 @@ namespace
 			}
 #endif
 			NMib::NThread::CMutual Lock;
-			NMib::NTime::CCyclesMin Timer;
+			NMib::NTime::CPrefCyclesTimeMeasureMin Timer;
 
 			{
 				CIncThread IncThreads[EIncThreads];
@@ -303,7 +304,7 @@ namespace
 
 				DMibTest(DMibExpr(m_IncValue) == DMibExpr(m_nTests*EIncThreads));
 
-				NMib::NTime::CCyclesMin TimerRead = Timer;
+				NMib::NTime::CPrefCyclesTimeMeasureMin TimerRead = Timer;
 				TimerRead /= nReads;
 				Timer /= m_IncValue;
 
@@ -491,17 +492,17 @@ namespace
 
 				g_LocalArrayIndex = NMib::NStr::CStr((NMib::NStr::CStr::CFormat("{}") << (12))).f_ToInt();
 
-				CCyclesMin NativeTime;
-				CCyclesMin NativeArrayTime;
+				CPrefCyclesTimeMeasureMin NativeTime;
+				CPrefCyclesTimeMeasureMin NativeArrayTime;
 #				if defined(DEnableWin32ThreadTest)
-					CCyclesMin TlsTime;
-					CCyclesMin FlsTime;
+					CPrefCyclesTimeMeasureMin TlsTime;
+					CPrefCyclesTimeMeasureMin FlsTime;
 #				endif
 
-				CCyclesMin MalterlibTime;
-				CCyclesMin MalterlibFastTime;
-				CCyclesMin MalterlibStorageFastTime;
-				CCyclesMin MalterlibStorageTime;
+				CPrefCyclesTimeMeasureMin MalterlibTime;
+				CPrefCyclesTimeMeasureMin MalterlibFastTime;
+				CPrefCyclesTimeMeasureMin MalterlibStorageFastTime;
+				CPrefCyclesTimeMeasureMin MalterlibStorageTime;
 
 				auto Native = [&] ()
 				{
@@ -713,8 +714,8 @@ namespace
 			{
 				const static mint nTests = 100;
 				const static mint nLoops = 1000000;
-				CCyclesMin NativeTime;
-				CCyclesMin MalterlibTime;
+				CPrefCyclesTimeMeasureMin NativeTime;
+				CPrefCyclesTimeMeasureMin MalterlibTime;
 
 				volatile mint ThreadResultMalterlib = 0;
 				volatile mint ThreadResultNative = 0;
@@ -1578,7 +1579,7 @@ public:
 		return "";
 
 		NMib::NThread::CMutual Lock;
-		NMib::NTime::CTimerMin Timer;
+		NMib::NTime::CPerfTimeMeasureMin Timer;
 
 		{
 			enum
@@ -1609,7 +1610,7 @@ public:
 					m_pIncValue = &m_IncValue;
 					m_IncDone = 0;
 					{
-						DMibScopeTimerMin(Timer);
+						DMibScopePerfTimeMeasureMin(Timer);
 						for (mint i = 0; i < EReadThreads; ++i)
 						{
 							ReadThreads[i].m_EventWantQuit.f_Signal();
@@ -1658,7 +1659,7 @@ public:
 			for (aint j = 0; j < NumTests; ++j)
 			{
 				{
-					DMibScopeTimerMin(Timer);
+					DMibScopePerfTimeMeasureMin(Timer);
 
 					for (aint i = 0; i < Tests; ++i)
 					{
@@ -1676,7 +1677,7 @@ public:
 			for (aint j = 0; j < NumTests; ++j)
 			{
 				{
-					DMibScopeTimerMin(Timer);
+					DMibScopePerfTimeMeasureMin(Timer);
 
 					for (aint i = 0; i < Tests; ++i)
 					{
