@@ -37,8 +37,8 @@ namespace NMib
 
 				NThread::CThreadLocalInterface *m_pInterface;
 
-				mint m_iThreadLocal;
-				mint m_LocalThreadLocal;
+				umint m_iThreadLocal;
+				umint m_LocalThreadLocal;
 
 				DMibListLinkDA_Link(CStorageIndex, m_Link);
 			};
@@ -49,7 +49,7 @@ namespace NMib
 			};
 
 			using CAllocationPool
-				= NMemory::TCPool<NContainer::TCMapNode<mint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>
+				= NMemory::TCPool<NContainer::TCMapNode<umint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>
 			;
 
 			class CPerThread
@@ -58,7 +58,7 @@ namespace NMib
 				class CCompare
 				{
 				public:
-					inline_small mint const &operator () (CPerThread const &_Node) const
+					inline_small umint const &operator () (CPerThread const &_Node) const
 					{
 						return _Node.m_ThreadID;
 					}
@@ -85,16 +85,16 @@ namespace NMib
 					}
 				};
 
-				mint m_ThreadID;
-				mint m_DestroyingID;
+				umint m_ThreadID;
+				umint m_DestroyingID;
 				bool m_bOnThreadCreated;
 
-				NContainer::TCMap<mint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
-				NContainer::TCMap<mint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
+				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
+				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
 
 				CPerThread
 					(
-						mint _ThreadID
+						umint _ThreadID
 						, CThreadLocalContext * _pContext
 					)
 					: m_Created(CAllocatorConstructTag(), _pContext->m_PoolAllocation)
@@ -119,11 +119,11 @@ namespace NMib
 			CAllocationPool m_PoolAllocation;
 
 #if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
-			mint m_iPerThreadDestructor = TCLimitsInt<mint>::mc_Max;
+			umint m_iPerThreadDestructor = TCLimitsInt<umint>::mc_Max;
 #endif
-			mint m_iPerThread = TCLimitsInt<mint>::mc_Max;
+			umint m_iPerThread = TCLimitsInt<umint>::mc_Max;
 
-			mint m_iThreadLocalCurrentLen = 0;
+			umint m_iThreadLocalCurrentLen = 0;
 
 			NMemory::TCPool<CStorageIndex, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> m_PoolStorageIndices;
 
@@ -131,8 +131,8 @@ namespace NMib
 			DMibListLinkD_List(CStorageIndex, m_Link) m_ThreadLocal_DestroyOrder;
 
 			void fp_GrowTable();
-			CPerThread *fp_GetPerThreadNew(mint _ThreadID);
-			CPerThread *fp_GetPerThread(mint _ThreadID);
+			CPerThread *fp_GetPerThreadNew(umint _ThreadID);
+			CPerThread *fp_GetPerThread(umint _ThreadID);
 
 			void fp_FreePerThread(CPerThread* _pPerThread);
 
@@ -141,15 +141,15 @@ namespace NMib
 			#endif
 
 		public:
-			CStorageIndex *f_Alloc(NThread::CThreadLocalInterface &_Interface, mint &_ThreadLocalLocal);
+			CStorageIndex *f_Alloc(NThread::CThreadLocalInterface &_Interface, umint &_ThreadLocalLocal);
 			void f_Free(NThread::CThreadLocalInterface &_Interface, CStorageIndex *_pStorageIndex);
 			void f_ReinitForThread(CStorageIndex *_pStorageIndex);
 			void f_DestroyForThread(CStorageIndex *_pStorageIndex);
-			void f_CreateThread(mint _ThreadID, mint _ParentThread);
+			void f_CreateThread(umint _ThreadID, umint _ParentThread);
 			void f_FreeThread();
 			void f_Set(CStorageIndex *_pStorageIndex, void *_pValue);
 			void *f_Get(CStorageIndex *_pStorageIndex);
-			void f_EnumThreads(NFunction::TCFunction<void (mint _ThreadID)> const &_EnumFunc);
+			void f_EnumThreads(NFunction::TCFunction<void (umint _ThreadID)> const &_EnumFunc);
 			bool f_ThreadDestroyed() const;
 			bool f_ThreadCreated();
 			void f_PrepareFork();

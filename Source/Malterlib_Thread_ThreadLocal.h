@@ -35,14 +35,14 @@ namespace NMib
 
 			struct CSafeAllocMemory
 			{
-				CSafeAllocMemory(void *_pMemory, mint _Size)
+				CSafeAllocMemory(void *_pMemory, umint _Size)
 					: m_pMemory(_pMemory)
 					, m_Size(_Size)
 				{
 				}
 
 				void *m_pMemory;
-				mint m_Size;
+				umint m_Size;
 			};
 
 			struct CSafeAlloc
@@ -158,15 +158,15 @@ namespace NMib
 
 			t_CData *f_Get();
 			t_CData *f_TryGet();
-			t_CData *f_TryGetForThread(mint _ThreadID);
+			t_CData *f_TryGetForThread(umint _ThreadID);
 			bool f_IsValid();
 
 			inline_small operator t_CData *();
 			inline_small t_CData * operator ->();
 			inline_small t_CData & operator &();
 
-			mint m_ThreadLocalLocal;
-			mint m_pStorage; // Index into the thread storage list
+			umint m_ThreadLocalLocal;
+			umint m_pStorage; // Index into the thread storage list
 			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
 		};
 
@@ -204,7 +204,7 @@ namespace NMib
 
 			t_CData *f_Get();
 			t_CData *f_TryGet();
-			t_CData *f_TryGetForThread(mint _ThreadID);
+			t_CData *f_TryGetForThread(umint _ThreadID);
 			bool f_IsValid();
 
 			inline_small operator t_CData *();
@@ -213,8 +213,8 @@ namespace NMib
 
 			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
 
-			mint m_ThreadLocalLocal;
-			mint m_pStorage; // Index into the thread storage list
+			umint m_ThreadLocalLocal;
+			umint m_pStorage; // Index into the thread storage list
 			NFunction::TCFunctionNoAlloc<CSafeAllocMemory ()> m_fAlloc;
 			NFunction::TCFunctionNoAlloc<void (CSafeAllocMemory const &_Alloc)> m_fFree;
 			NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, void *_pMemory, bool _bMove)> m_fConstruct;

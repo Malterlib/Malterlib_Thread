@@ -32,26 +32,26 @@ namespace NMib::NStorage
 #if DMibConfig_RefCountDebugging && DMibConfig_RefCountLeakDebugging
 namespace NMib::NStorage
 {
-	constinit mint CRefCountDebug::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>();
+	constinit umint CRefCountDebug::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>();
 
 	template <>
-	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic
-		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
+	constinit umint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic
+		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>()
 	;
 
 	template <>
-	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic
-		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
+	constinit umint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic
+		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>()
 	;
 
 	template <>
-	constinit mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic
-		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
+	constinit umint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic
+		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>()
 	;
 
 	template <>
-	constinit mint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic
-		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<mint>()
+	constinit umint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic
+		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>()
 	;
 
 	CRefCountDebug::CRefCountDebug() = default;
@@ -179,7 +179,7 @@ namespace NMib::NThread
 		return Return;
 	}
 
-	void CThread::f_Start(EExecutionPriority _Prio, mint _StackSize, mint _Affinity, bool _bAutoDestroy)
+	void CThread::f_Start(EExecutionPriority _Prio, umint _StackSize, umint _Affinity, bool _bAutoDestroy)
 	{
 		// Make sure that no thread is already running
 		{
@@ -214,7 +214,7 @@ namespace NMib::NThread
 	}
 
 
-	mint CThread::f_Stop(bool _bBlock)
+	umint CThread::f_Stop(bool _bBlock)
 	{
 
 		{

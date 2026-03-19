@@ -22,7 +22,7 @@ namespace NMib::NThread
 		constexpr void f_Mutate(tf_FFunctor &&_fMutate, NAtomic::CMemoryOrder _Order = NAtomic::gc_MemoryOrder_Acquire);
 
 	private:
-		NAtomic::TCAtomic<mint> mp_Sequence;
+		NAtomic::TCAtomic<umint> mp_Sequence;
 		t_CData mp_Data;
 	};
 }

@@ -611,9 +611,9 @@ namespace NMib::NThread
 		DMibThreadAtomicsAlignment NAtomic::TCAtomic<CLowLevelLockAggregateLockType> m_Lock;
 
 #		if DMibEnableSafeCheck > 0
-			mint m_ThreadID;				// On windows this is the thread id, unix the pthread
-			mint m_AlternateThreadID;	// On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
-			mint m_nForked;
+			umint m_ThreadID;				// On windows this is the thread id, unix the pthread
+			umint m_AlternateThreadID;	// On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
+			umint m_nForked;
 #		endif
 
 		void f_ForkedChildUnlocked();
@@ -701,7 +701,7 @@ namespace NMib::NThread
 	{
 		void f_Lock()
 		{
-			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
 			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -717,7 +717,7 @@ namespace NMib::NThread
 
 		void f_LockNoSanitize()
 		{
-			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
 			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -769,8 +769,8 @@ namespace NMib::NThread
 			}
 		}
 
-		NAtomic::TCAtomic<mint> m_ThreadID;
-		mint m_nRecurse = 0;
+		NAtomic::TCAtomic<umint> m_ThreadID;
+		umint m_nRecurse = 0;
 	};
 
 	struct CLowLevelRecursiveLock : public CLowLevelRecursiveLockAggregate
@@ -796,7 +796,7 @@ namespace NMib::NThread
 			m_Event.f_Wait();
 		}
 
-		DMibThreadAtomicsAlignment NAtomic::TCAtomic<mint> m_nLocked;
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nLocked;
 		t_CEvent m_Event;
 
 		constexpr TCMutualSimpleAggregate(EAggregateInitialization _Init)
@@ -895,7 +895,7 @@ namespace NMib::NThread
 
 		inline_never void f_WaitSlow();
 
-		mint m_nWaits = 0;
+		umint m_nWaits = 0;
 	};
 
 	template <typename t_CEvent, bool t_bAllowRecursive>
@@ -908,10 +908,10 @@ namespace NMib::NThread
 			EAtomicBits = sizeof(aint) * 8
 		};
 
-		DMibThreadAtomicsAlignment NAtomic::TCAtomic<mint> m_nLocked;
-		NAtomic::TCAtomic<mint> m_ThreadID;				// On windows this is the thread id, unix the pthread
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nLocked;
+		NAtomic::TCAtomic<umint> m_ThreadID;				// On windows this is the thread id, unix the pthread
 #		if DMibEnableSafeCheck > 0
-			mint m_AlternateThreadID;	// On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
+			umint m_AlternateThreadID;	// On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
 #		endif
 		aint m_nRecurse;
 		t_CEvent m_Event;
@@ -943,17 +943,17 @@ namespace NMib::NThread
 
 		inline_never void f_CreateEvent()
 		{
-			mint Original = m_nLocked.f_FetchOr((mint(1) << (EAtomicBits-2)), NAtomic::gc_MemoryOrder_SequentiallyConsistent);
-			if (!(Original & (mint(1) << (EAtomicBits-2))))
+			umint Original = m_nLocked.f_FetchOr((umint(1) << (EAtomicBits-2)), NAtomic::gc_MemoryOrder_SequentiallyConsistent);
+			if (!(Original & (umint(1) << (EAtomicBits-2))))
 			{
 				m_Event.f_ConstructIfNotCreated();
-				m_nLocked.f_FetchOr((mint(2) << (EAtomicBits-2)), NAtomic::gc_MemoryOrder_Release);
+				m_nLocked.f_FetchOr((umint(2) << (EAtomicBits-2)), NAtomic::gc_MemoryOrder_Release);
 			}
 			else
 			{
 				CThreadSpinWaiter SpinWaiter;
 
-				while (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
+				while (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (umint(2) << (EAtomicBits-2))))
 					SpinWaiter.f_Wait();
 			}
 		}
@@ -968,18 +968,18 @@ namespace NMib::NThread
 		inline_never void fp_SignalIt()
 		{
 			// Wait for it to be created, because it should be
-			if (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
+			if (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (umint(2) << (EAtomicBits-2))))
 			{
 				CThreadSpinWaiter SpinWaiter;
 
-				while (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (mint(2) << (EAtomicBits-2))))
+				while (!(m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Acquire) & (umint(2) << (EAtomicBits-2))))
 					SpinWaiter.f_Wait();
 			}
 			// Someone is waiting
 			m_Event.f_Signal();
 		}
 
-		static const mint mcp_AtomicMask = DMibBitRangeOne(0, EAtomicBits-3, mint(1));
+		static const umint mcp_AtomicMask = DMibBitRangeOne(0, EAtomicBits-3, umint(1));
 
 	public:
 		constexpr TCMutualAggregate(EAggregateInitialization _Init)
@@ -1000,7 +1000,7 @@ namespace NMib::NThread
 		void f_Construct()
 		{
 //				m_Event.f_Construct();
-//				m_nLocked.f_Construct(mint(2) << (EAtomicBits-2));
+//				m_nLocked.f_Construct(umint(2) << (EAtomicBits-2));
 			DMibSanitizerAnnotate_MutexCreate(this, __tsan_mutex_write_reentrant | __tsan_mutex_not_static);
 
 			m_Event.f_ConstructDontCreate();
@@ -1017,7 +1017,7 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexCreate(this, __tsan_mutex_write_reentrant | __tsan_mutex_not_static);
 
 			if (_pSemaphore)
-				m_nLocked.f_Store(mint(3) << (EAtomicBits-2), NAtomic::gc_MemoryOrder_Relaxed);
+				m_nLocked.f_Store(umint(3) << (EAtomicBits-2), NAtomic::gc_MemoryOrder_Relaxed);
 			else
 				m_nLocked.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
 			m_nRecurse = 0;
@@ -1041,7 +1041,7 @@ namespace NMib::NThread
 		{
 			DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock);
 
-			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
 			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1050,7 +1050,7 @@ namespace NMib::NThread
 				return true;
 			}
 
-			mint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
+			umint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 			if (Original & mcp_AtomicMask)
 			{
 				DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock | __tsan_mutex_try_lock_failed, 1);
@@ -1079,7 +1079,7 @@ namespace NMib::NThread
 		{
 			DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock);
 
-			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
 			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1092,7 +1092,7 @@ namespace NMib::NThread
 
 			while (_SpinCount--)
 			{
-				mint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
+				umint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 				if (Original & mcp_AtomicMask)
 				{
 					continue;
@@ -1114,9 +1114,9 @@ namespace NMib::NThread
 			return false;
 		}
 
-		inline_never void f_SetLockForThread(mint _ThreadID)
+		inline_never void f_SetLockForThread(umint _ThreadID)
 		{
-			mint CurrentThread = _ThreadID;
+			umint CurrentThread = _ThreadID;
 
 			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1126,12 +1126,12 @@ namespace NMib::NThread
 			}
 
 			// Try to take the lock
-			mint nLockedValue = m_nLocked.f_FetchAdd(1);
-			mint nLocked = nLockedValue & mcp_AtomicMask;
+			umint nLockedValue = m_nLocked.f_FetchAdd(1);
+			umint nLocked = nLockedValue & mcp_AtomicMask;
 
 			if (nLocked > 0)
 			{
-				mint nCreate = nLockedValue >> (EAtomicBits - 2);
+				umint nCreate = nLockedValue >> (EAtomicBits - 2);
 				if (nCreate & 2)
 				{
 					CDisableLazyCheckoutReturnScope DisableLazy;
@@ -1152,7 +1152,7 @@ namespace NMib::NThread
 		{
 			DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant);
 
-			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
 			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1163,12 +1163,12 @@ namespace NMib::NThread
 			}
 
 			// Try to take the lock
-			mint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
-			mint nLocked = nLockedValue & mcp_AtomicMask;
+			umint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
+			umint nLocked = nLockedValue & mcp_AtomicMask;
 
 			if (nLocked > 0) [[unlikely]]
 			{
-				mint nCreate = nLockedValue >> (EAtomicBits - 2);
+				umint nCreate = nLockedValue >> (EAtomicBits - 2);
 				if (nCreate & 2)
 				{
 					CDisableLazyCheckoutReturnScope DisableLazy;
@@ -1192,7 +1192,7 @@ namespace NMib::NThread
 		{
 			DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant);
 
-			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 
 			if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1205,7 +1205,7 @@ namespace NMib::NThread
 
 			while (_SpinCount--) [[likely]]
 			{
-				mint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
+				umint Original = m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 				if (Original & mcp_AtomicMask)
 				{
 					yield_cpu;
@@ -1228,12 +1228,12 @@ namespace NMib::NThread
 
 
 			// Try to take the lock
-			mint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
-			mint nLocked = nLockedValue & mcp_AtomicMask;
+			umint nLockedValue = m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
+			umint nLocked = nLockedValue & mcp_AtomicMask;
 
 			if (nLocked > 0)
 			{
-				mint nCreate = nLockedValue >> (EAtomicBits - 2);
+				umint nCreate = nLockedValue >> (EAtomicBits - 2);
 				if (nCreate & 2)
 				{
 					CDisableLazyCheckoutReturnScope DisableLazy;
@@ -1254,7 +1254,7 @@ namespace NMib::NThread
 
 		bool f_OwnsLock() const
 		{
-			mint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
 			return m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread;
 		}
 
@@ -1273,10 +1273,10 @@ namespace NMib::NThread
 			if ((--m_nRecurse) == 0) [[likely]]
 			{
 				m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
-				mint nLockedValue = m_nLocked.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease); // Acquire for m_Event
+				umint nLockedValue = m_nLocked.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease); // Acquire for m_Event
 				if ((nLockedValue & mcp_AtomicMask) > 1)
 				{
-					mint nCreate = nLockedValue >> (EAtomicBits - 2);
+					umint nCreate = nLockedValue >> (EAtomicBits - 2);
 					if (nCreate & 2)
 						m_Event.f_Signal();
 					else
@@ -1297,7 +1297,7 @@ namespace NMib::NThread
 		}
 	};
 
-	template <typename t_CEvent, mint _nSpins, bool t_bAllowRecursive>
+	template <typename t_CEvent, umint _nSpins, bool t_bAllowRecursive>
 	class TCMutualSpinAggregate : public TCMutualAggregate<t_CEvent, t_bAllowRecursive>
 	{
 	public:
@@ -1345,7 +1345,7 @@ namespace NMib::NThread
 		}
 	};
 
-	template <typename t_CEvent, mint _nSpins, bool t_bAllowRecursive>
+	template <typename t_CEvent, umint _nSpins, bool t_bAllowRecursive>
 	class TCMutualSpin : public TCMutualSpinAggregate<t_CEvent, _nSpins, t_bAllowRecursive>
 	{
 		TCMutualSpin(const TCMutualSpin &);
@@ -1397,17 +1397,17 @@ namespace NMib::NThread
 		}
 
 		// Lock for write access
-		DMibThreadAtomicsAlignment NAtomic::TCAtomic<mint> m_nReading;
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nReading;
 		t_CEvent m_ReadOkEvent;
 		t_CEventAutoreset m_WriteOkEvent;
 #		if DMibEnableSafeCheck > 0
-			DMibThreadAtomicsAlignment NAtomic::TCAtomic<mint> m_nReadingDebugCheck;
+			DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nReadingDebugCheck;
 #		endif
 
-		const static mint mc_FlagReadingNotAllowed = DMibBitTyped(sizeof(NAtomic::TCAtomic<mint>)*8-1, mint);
-		const static mint mc_FlagReadOkEventReset = DMibBitTyped(sizeof(NAtomic::TCAtomic<mint>)*8-2, mint);
-		const static mint mc_FlagReadOkEventResetDone = DMibBitTyped(sizeof(NAtomic::TCAtomic<mint>)*8-3, mint);
-		const static mint mc_nReadingMask = ~(mc_FlagReadingNotAllowed | mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone);
+		const static umint mc_FlagReadingNotAllowed = DMibBitTyped(sizeof(NAtomic::TCAtomic<umint>)*8-1, umint);
+		const static umint mc_FlagReadOkEventReset = DMibBitTyped(sizeof(NAtomic::TCAtomic<umint>)*8-2, umint);
+		const static umint mc_FlagReadOkEventResetDone = DMibBitTyped(sizeof(NAtomic::TCAtomic<umint>)*8-3, umint);
+		const static umint mc_nReadingMask = ~(mc_FlagReadingNotAllowed | mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone);
 
 
 		void f_Construct()
@@ -1457,7 +1457,7 @@ namespace NMib::NThread
 
 		inline_never void f_LockRead()
 		{
-			mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
 			if (t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1470,7 +1470,7 @@ namespace NMib::NThread
 			DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_read_lock);
 
 	RestartLock:
-			mint nReading = m_nReading.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
+			umint nReading = m_nReading.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
 			if (nReading & mc_FlagReadingNotAllowed)
 			{
 				++nReading;
@@ -1503,7 +1503,7 @@ namespace NMib::NThread
 
 		inline_never void f_UnlockReadInternal()
 		{
-			mint nReading = m_nReading.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease);
+			umint nReading = m_nReading.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease);
 			if ((nReading & (mc_FlagReadingNotAllowed | mc_nReadingMask)) == (mc_FlagReadingNotAllowed | 1))
 			{
 				m_WriteOkEvent.f_Signal();
@@ -1513,7 +1513,7 @@ namespace NMib::NThread
 		inline_never void f_UnlockRead()
 		{
 			DMibSanitizerAnnotate_MutexPreUnlock(this, __tsan_mutex_read_lock);
-			mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
 			if (t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1533,7 +1533,7 @@ namespace NMib::NThread
 		{
 			DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant);
 
-			mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
 			if (t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1543,12 +1543,12 @@ namespace NMib::NThread
 			}
 
 			// Try to take the lock
-			mint nLockedValue = t_CBase::m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
-			mint nLocked = nLockedValue & mcp_AtomicMask;
+			umint nLockedValue = t_CBase::m_nLocked.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Acquire);
+			umint nLocked = nLockedValue & mcp_AtomicMask;
 
 			if (nLocked > 0)
 			{
-				mint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
+				umint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
 				if(nCreate & 2)
 				{
 					CDisableLazyCheckoutReturnScope DisableLazy;
@@ -1559,12 +1559,12 @@ namespace NMib::NThread
 			}
 
 
-			mint nReading = m_nReading.f_FetchOr(mc_FlagReadingNotAllowed, NAtomic::gc_MemoryOrder_Acquire);
+			umint nReading = m_nReading.f_FetchOr(mc_FlagReadingNotAllowed, NAtomic::gc_MemoryOrder_Acquire);
 			if ((nReading & mc_nReadingMask) > 0)
 			{
 				while (1)
 				{
-					mint nReading = m_nReading.f_FetchOr(mc_FlagReadingNotAllowed, NAtomic::gc_MemoryOrder_Acquire);
+					umint nReading = m_nReading.f_FetchOr(mc_FlagReadingNotAllowed, NAtomic::gc_MemoryOrder_Acquire);
 
 					if ((nReading & mc_nReadingMask) > 0)
 					{
@@ -1590,7 +1590,7 @@ namespace NMib::NThread
 		{
 			DMibSanitizerAnnotate_MutexPreLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock);
 
-			mint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
+			umint CurrentThread = NMib::NSys::fg_Thread_GetCurrentUID();
 
 			if (t_CBase::m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
 			{
@@ -1599,7 +1599,7 @@ namespace NMib::NThread
 				return true;
 			}
 
-			mint Original = t_CBase::m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
+			umint Original = t_CBase::m_nLocked.f_Load(NAtomic::gc_MemoryOrder_Relaxed);
 			if (Original & mcp_AtomicMask)
 			{
 				DMibSanitizerAnnotate_MutexPostLock(this, __tsan_mutex_write_reentrant | __tsan_mutex_try_lock_failed, 1);
@@ -1648,8 +1648,8 @@ namespace NMib::NThread
 			if ((--t_CBase::m_nRecurse) == 0)
 			{
 				t_CBase::m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
-				//mint Bit_Signaled = DMibBitTyped(sizeof(m_nReading)*8-2, mint);
-				mint OldReading = m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::gc_MemoryOrder_AcquireRelease);
+				//umint Bit_Signaled = DMibBitTyped(sizeof(m_nReading)*8-2, umint);
+				umint OldReading = m_nReading.f_FetchAnd(~(mc_FlagReadingNotAllowed), NAtomic::gc_MemoryOrder_AcquireRelease);
 				DMibFastCheck((OldReading & mc_FlagReadingNotAllowed));
 				if (OldReading & mc_FlagReadOkEventReset)
 				{
@@ -1659,10 +1659,10 @@ namespace NMib::NThread
 					m_nReading.f_FetchAnd(~(mc_FlagReadOkEventReset | mc_FlagReadOkEventResetDone), NAtomic::gc_MemoryOrder_Release);
 				}
 
-				mint nLockedValue = t_CBase::m_nLocked.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease); // Acquire for m_Event
+				umint nLockedValue = t_CBase::m_nLocked.f_FetchSub(1, NAtomic::gc_MemoryOrder_AcquireRelease); // Acquire for m_Event
 				if ((nLockedValue & mcp_AtomicMask) > 1)
 				{
-					mint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
+					umint nCreate = nLockedValue >> (t_CBase::EAtomicBits - 2);
 					if (nCreate & 2)
 						t_CBase::m_Event.f_Signal();
 					else
@@ -1839,8 +1839,8 @@ namespace NMib::NThread
 		align_cacheline mutable CMutual m_Lock;
 		aint m_ReturnValue;
 		void *m_pThread;
-		mint m_ThreadID;
-		mint m_ParentThreadID;
+		umint m_ThreadID;
+		umint m_ParentThreadID;
 		void *m_pThreadDestroyContext;
 		bool m_bAutoDestroy;
 		bool m_bLockHeld;
@@ -1885,7 +1885,7 @@ namespace NMib::NThread
 			return m_pThread;
 		}
 
-		mint f_GetThreadID() const
+		umint f_GetThreadID() const
 		{
 			return m_ThreadID;
 		}
@@ -1904,7 +1904,7 @@ namespace NMib::NThread
 		|																				|
 		|	Comments:			Your overridden Main function will be called			|
 		\*_____________________________________________________________________________*/
-		virtual void f_Start(EExecutionPriority _Prio = EExecutionPriority_Normal, mint _StackSize = 0, mint _Affinity = 0, bool _bAutoDestroy = false);
+		virtual void f_Start(EExecutionPriority _Prio = EExecutionPriority_Normal, umint _StackSize = 0, umint _Affinity = 0, bool _bAutoDestroy = false);
 
 		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Stops the thread										|
@@ -1917,7 +1917,7 @@ namespace NMib::NThread
 		|																				|
 		|	Comments:			Longer_description_not_mandatory						|
 		\*_____________________________________________________________________________*/
-		virtual mint f_Stop(bool _bBlock = true);
+		virtual umint f_Stop(bool _bBlock = true);
 
 		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Returns the return value for a stopped thread			|
@@ -2047,8 +2047,8 @@ namespace NMib::NThread
 				tf_CFunctionType &&_FunctionObject
 				, const t_CStr &_Name
 				, EExecutionPriority _Prio = EExecutionPriority_Normal
-				, mint _StackSize = 0
-				, mint _Affinity = 0
+				, umint _StackSize = 0
+				, umint _Affinity = 0
 				, bool _bAutoDestroy = false
 			)
 		;
@@ -2060,8 +2060,8 @@ namespace NMib::NThread
 				tf_CFunctionType *_pFunctionObject
 				, const t_CStr &_Name
 				, EExecutionPriority _Prio = EExecutionPriority_Normal
-				, mint _StackSize = 0
-				, mint _Affinity = 0
+				, umint _StackSize = 0
+				, umint _Affinity = 0
 				, bool _bAutoDestroy = false
 			)
 		;
@@ -2090,10 +2090,10 @@ namespace NMib::NStorage
 		CRefCountDebug();
 		~CRefCountDebug();
 
-		static mint ms_Magic;
+		static umint ms_Magic;
 
-		mint m_Magic = ms_Magic;
-		NAtomic::TCAtomic<mint> m_DestroyLocation = 0b100000000000000000000000000000000u;
+		umint m_Magic = ms_Magic;
+		NAtomic::TCAtomic<umint> m_DestroyLocation = 0b100000000000000000000000000000000u;
 #endif
 		NThread::CLowLevelLock m_Lock;
 		NContainer::TCLinkedList<NException::CCallstack, NMemory::CAllocator_NonTrackedHeap> m_Callstacks;
@@ -2191,8 +2191,8 @@ namespace NMib::NStorage
 
 #if DMibConfig_RefCountDebugging
 #if DMibConfig_RefCountLeakDebugging
-		static mint ms_Magic;
-		mint m_Magic = ms_Magic;
+		static umint ms_Magic;
+		umint m_Magic = ms_Magic;
 #endif
 		mutable NStorage::TCAggregateSimple<CRefCountDebug> m_Debug;
 #endif
@@ -2331,7 +2331,7 @@ namespace NMib::NStorage
 
 		NMemory::CCapturedDelete f_WeakGetCapturedDelete() const
 		{
-			return {*((void * const *)(this+1)), mint(t_CCountType(-1) -m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire))};
+			return {*((void * const *)(this+1)), umint(t_CCountType(-1) -m_RefCount.f_Load(NAtomic::gc_MemoryOrder_Acquire))};
 		}
 
 		t_CCountType f_Get() const
@@ -2346,8 +2346,8 @@ namespace NMib::NStorage
 
 #if DMibConfig_RefCountDebugging
 #if DMibConfig_RefCountLeakDebugging
-		static mint ms_Magic;
-		mint m_Magic = ms_Magic;
+		static umint ms_Magic;
+		umint m_Magic = ms_Magic;
 #endif
 		mutable NStorage::TCAggregateSimple<CRefCountDebug> m_Debug;
 #endif
@@ -2355,16 +2355,16 @@ namespace NMib::NStorage
 
 #if DMibConfig_RefCountDebugging && DMibConfig_RefCountLeakDebugging
 	template <>
-	mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic;
+	umint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic;
 
 	template <>
-	mint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic;
+	umint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic;
 
 	template <>
-	mint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic;
+	umint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic;
 
 	template <>
-	mint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic;
+	umint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic;
 #endif
 
 	namespace NPrivate
