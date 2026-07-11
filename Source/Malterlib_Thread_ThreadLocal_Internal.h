@@ -147,6 +147,7 @@ namespace NMib
 			void f_DestroyForThread(CStorageIndex *_pStorageIndex);
 			void f_CreateThread(umint _ThreadID, umint _ParentThread);
 			void f_FreeThread();
+			void f_FreeThreadFromNotification();
 			void f_Set(CStorageIndex *_pStorageIndex, void *_pValue);
 			void *f_Get(CStorageIndex *_pStorageIndex);
 			void f_EnumThreads(NFunction::TCFunction<void (umint _ThreadID)> const &_EnumFunc);

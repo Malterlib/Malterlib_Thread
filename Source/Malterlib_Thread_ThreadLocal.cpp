@@ -612,12 +612,36 @@ namespace NMib
 			else
 			{
 				DMibFastCheck(m_PerThreadByThreadID.f_FindEqual(NSys::fg_Thread_GetCurrentUID()) == nullptr);
+
+#ifdef DMibPSupportThreadLocalDestructors
+				// A thread specific destructor round consumed the destroyed marker
+				// and calls this with it; put it back so destructors from other
+				// libraries running after this still see the thread as destroyed
+				if ((umint)_pPerThread == TCLimitsInt<umint>::mc_Max)
+					NSys::fg_Thread_SetLocal(m_iPerThread, (void *)TCLimitsInt<umint>::mc_Max);
+#endif
 			}
 		}
 
 		void CThreadLocalContext::f_FreeThread()
 		{
 			fp_FreePerThread(nullptr);
+		}
+
+		void CThreadLocalContext::f_FreeThreadFromNotification()
+		{
+			// A thread terminate notification arrives after the thread specific
+			// destructors have run, so a record found here was created after they
+			// ran (for example by a module registering existing threads) and would
+			// otherwise leak and dangle
+			CPerThread *pPerThread;
+			{
+				DMibLock(m_LockContext);
+				pPerThread = m_PerThreadByThreadID.f_FindEqual(NSys::fg_Thread_GetCurrentUID());
+			}
+
+			if (pPerThread)
+				fp_FreePerThread(pPerThread);
 		}
 
 		void *CThreadLocalContext::f_Get(CStorageIndex *_pStorageIndex)
@@ -696,6 +720,11 @@ namespace NMib
 	void CSystem::f_ThreadLocalFreeThread()
 	{
 		NPrivate::g_ThreadLocalContext->f_FreeThread();
+	}
+
+	void CSystem::f_ThreadLocalFreeThreadFromNotification()
+	{
+		NPrivate::g_ThreadLocalContext->f_FreeThreadFromNotification();
 	}
 
 	void CSystem::f_ThreadLocalCreateThread(umint _ThreadID, umint _ParentThreadID)
