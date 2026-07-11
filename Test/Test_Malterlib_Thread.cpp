@@ -22,6 +22,11 @@ using CWindowsCriticalSection = CRITICAL_SECTION;
 #include <thread>
 #include <mutex>
 
+#if (defined(DPlatformFamily_macOS) && defined(DMibConfig_PThreadIntrospection)) || (defined(DPlatformFamily_Linux) && defined(DMibConfig_LinuxPThreadMonitoring))
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
+
 using namespace NMib::NTime;
 using namespace NMib::NThread;
 
@@ -1271,6 +1276,18 @@ namespace
 					(void * &)pTestFunction = NMib::NSys::fg_GetLibrarySymbol(pDll, "fg_TestSetAnotherThreadLocal");
 					DMibTest(DMibExpr(pTestFunction))(ETest_FailAndStop);
 					DMibTest(DMibExpr(pTestFunction()) == DMibExpr(uint32(0)));
+
+				#if (defined(DPlatformFamily_macOS) && defined(DMibConfig_PThreadIntrospection)) || (defined(DPlatformFamily_Linux) && defined(DMibConfig_LinuxPThreadMonitoring))
+					pid_t ProcessID = fork();
+					DMibTest(DMibExpr(ProcessID >= 0))(ETest_FailAndStop);
+					if (!ProcessID)
+						_exit((int)pTestFunction());
+
+					int Status = 0;
+					DMibTest(DMibExpr(waitpid(ProcessID, &Status, 0)) == DMibExpr(ProcessID));
+					DMibTest(DMibExpr(WIFEXITED(Status)) == DMibExpr(true));
+					DMibTest(DMibExpr(WEXITSTATUS(Status)) == DMibExpr(0));
+				#endif
 
 					NMib::NSys::fg_FreeLibrary(pDll);
 				};

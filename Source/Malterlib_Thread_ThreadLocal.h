@@ -89,7 +89,7 @@ namespace NMib
 			virtual void f_FreeData(CSafeAllocMemory const &_Alloc) = 0;
 			virtual void *f_CreateDataCopy(void *_pSource, void *_pMemory) = 0;
 			virtual void *f_CreateDataMove(void *_pSource, void *_pMemory) = 0;
-			virtual void *f_CreateData(void *_pMemory, bool _bInitial) = 0;
+			virtual void *f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID) = 0;
 #if DMibEnableSafeCheck > 0
 			virtual ch8 const* f_GetName() = 0;
 #endif
@@ -129,6 +129,11 @@ namespace NMib
 			EThreadLocalFlag_FastThreadLocal = DMibBit(2),
 		};
 
+		struct CThreadLocalConstructionContext
+		{
+			umint m_ThreadID;
+		};
+
 		template <typename t_CData, typename t_CAllocator = NMemory::CAllocator_Heap, EThreadLocalFlag t_Flags = EThreadLocalFlag_None>
 		class TCThreadLocal : CThreadLocalInterface
 		{
@@ -143,7 +148,7 @@ namespace NMib
 			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
 			void *f_CreateDataCopy(void *_pSource, void *_pMemory) override;
 			void *f_CreateDataMove(void *_pSource, void *_pMemory) override;
-			void *f_CreateData(void *_pMemory, bool _bInitial) override;
+			void *f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID) override;
 
 #if DMibEnableSafeCheck > 0
 			ch8 const* f_GetName() override;
@@ -158,6 +163,7 @@ namespace NMib
 
 			t_CData *f_Get();
 			t_CData *f_TryGet();
+			t_CData *f_GetForThread(umint _ThreadID);
 			t_CData *f_TryGetForThread(umint _ThreadID);
 			bool f_IsValid();
 
@@ -184,7 +190,7 @@ namespace NMib
 			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
 			void *f_CreateDataCopy(void *_pSource, void *_pMemory) override;
 			void *f_CreateDataMove(void *_pSource, void *_pMemory) override;
-			void *f_CreateData(void *_pMemory, bool _bInitial) override;
+			void *f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID) override;
 #if DMibEnableSafeCheck > 0
 			ch8 const* f_GetName() override;
 #endif
@@ -204,6 +210,7 @@ namespace NMib
 
 			t_CData *f_Get();
 			t_CData *f_TryGet();
+			t_CData *f_GetForThread(umint _ThreadID);
 			t_CData *f_TryGetForThread(umint _ThreadID);
 			bool f_IsValid();
 
@@ -222,4 +229,3 @@ namespace NMib
 		};
 	}
 }
-

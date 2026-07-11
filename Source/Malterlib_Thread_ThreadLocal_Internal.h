@@ -134,7 +134,8 @@ namespace NMib
 			CPerThread *fp_GetPerThreadNew(umint _ThreadID);
 			CPerThread *fp_GetPerThread(umint _ThreadID);
 
-			void fp_FreePerThread(CPerThread* _pPerThread);
+			void fp_RestorePerThread(CPerThread *_pPerThread);
+			void fp_FreePerThread(CPerThread *_pPerThread);
 
 			#ifdef DMibPSupportThreadLocalDestructors
 				static void fs_PerThreadDestructor(void* _pPerThread);
@@ -147,6 +148,8 @@ namespace NMib
 			void f_DestroyForThread(CStorageIndex *_pStorageIndex);
 			void f_CreateThread(umint _ThreadID, umint _ParentThread);
 			void f_FreeThread();
+			void f_FreeThreadFromNotification();
+			void f_RestoreThread();
 			void f_Set(CStorageIndex *_pStorageIndex, void *_pValue);
 			void *f_Get(CStorageIndex *_pStorageIndex);
 			void f_EnumThreads(NFunction::TCFunction<void (umint _ThreadID)> const &_EnumFunc);
@@ -158,4 +161,3 @@ namespace NMib
 		};
 	}
 };
-

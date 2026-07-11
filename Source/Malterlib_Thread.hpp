@@ -65,7 +65,7 @@ namespace NMib::NThread
 				NSys::fg_Thread_SetLocal(m_ThreadLocalLocal, pData);
 			return pData;
 		}
-		pData = (t_CData *)f_CreateData(nullptr, false);
+		pData = (t_CData *)f_CreateData(nullptr, false, NSys::fg_Thread_GetCurrentUID());
 		fg_GetSys()->f_ThreadLocalSet((void *)m_pStorage, pData);
 		return pData;
 	}
@@ -126,6 +126,14 @@ namespace NMib::NThread
 				return (t_CData *)NSys::fg_Thread_GetLocal(m_ThreadLocalLocal);
 		}
 	}
+	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
+	inline_small t_CData *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_GetForThread(umint _ThreadID)
+	{
+		auto pData = f_TryGetForThread(_ThreadID);
+		DMibFastCheck(pData);
+		return pData;
+	}
+
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	inline_small t_CData *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_TryGetForThread(umint _ThreadID)
 	{
@@ -269,13 +277,19 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
-	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateData(void *_pMemory, bool _bInitial)
+	void *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID)
 	{
 		if ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
 		{
 			if (!_pMemory)
 				_pMemory = t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(umint(DMibPMemoryCacheLineSize), alignof(t_CData)));
-			return new(_pMemory) t_CData();
+			if constexpr (requires { t_CData::mc_bThreadLocalConstructForThread; })
+			{
+				static_assert(t_CData::mc_bThreadLocalConstructForThread);
+				return new(_pMemory) t_CData(CThreadLocalConstructionContext{_ThreadID});
+			}
+			else
+				return new(_pMemory) t_CData();
 		}
 		return nullptr;
 	}
@@ -363,7 +377,7 @@ namespace NMib::NThread
 				NSys::fg_Thread_SetLocal(m_ThreadLocalLocal, pData);
 			return pData;
 		}
-		pData = (t_CData *)f_CreateData(nullptr, false);
+		pData = (t_CData *)f_CreateData(nullptr, false, NSys::fg_Thread_GetCurrentUID());
 		fg_GetSys()->f_ThreadLocalSet((void *)m_pStorage, pData);
 		return pData;
 	}
@@ -436,6 +450,14 @@ namespace NMib::NThread
 			else
 				return (t_CData *)NSys::fg_Thread_GetLocal(m_ThreadLocalLocal);
 		}
+	}
+
+	template <typename t_CData, EThreadLocalFlag t_Flags>
+	inline_small t_CData *TCThreadLocalDynamic<t_CData, t_Flags>::f_GetForThread(umint _ThreadID)
+	{
+		auto pData = f_TryGetForThread(_ThreadID);
+		DMibFastCheck(pData);
+		return pData;
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
@@ -514,7 +536,7 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
-	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateData(void *_pMemory, bool _bInitial)
+	void *TCThreadLocalDynamic<t_CData, t_Flags>::f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID)
 	{
 		if ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0 || !_bInitial)
 		{
