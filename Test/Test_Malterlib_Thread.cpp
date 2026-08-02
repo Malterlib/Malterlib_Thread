@@ -1093,6 +1093,169 @@ namespace
 				Contention.f_DoTest();
 			};
 
+			DMibTestSuite("Event set reset")
+			{
+				// A waiter parked at signal time must complete even when a reset
+				// lands before it is scheduled
+				for (umint i = 0; i < 100; ++i)
+				{
+					NMib::NThread::CEvent Event;
+					NMib::NAtomic::TCAtomic<uint32> nDone{0};
+
+					NMib::NStorage::TCUniquePointer<CThreadObject> pWaiter = CThreadObject::fs_StartThread
+						(
+							[&] (CThreadObject *_pThread) -> aint
+							{
+								Event.f_Wait();
+								nDone.f_FetchAdd(1);
+								return 0;
+							}
+							, "Event set reset waiter"
+						)
+					;
+
+					// Wait until the waiter has registered on the event (the waiters
+					// flag guarantees it captured the pre-signal generation) so the
+					// set/reset pair deterministically races with a parked waiter
+					while (!(Event.m_State.f_Load(NMib::NAtomic::gc_MemoryOrder_Relaxed) & NMib::NThread::CEventAggregate::mcp_FlagWaiters))
+						NMib::NSys::fg_Thread_Yield();
+
+					Event.f_SetSignaled();
+					Event.f_ResetSignaled();
+
+					pWaiter->f_Stop();
+					pWaiter.f_Clear();
+
+					DMibTest(DMibExpr(nDone.f_Load()) == DMibExpr(1u)) (ETestFlag_Aggregated);
+				}
+			};
+
+			DMibTestSuite("Futex")
+			{
+				NMib::NAtomic::TCAtomic<uint32> Word{0};
+				static_assert(sizeof(Word) == sizeof(uint32));
+				uint32 volatile *pWord = (uint32 volatile *)&Word;
+
+				// A wait with a mismatched expected value must return immediately
+				NMib::NSys::fg_Futex_Wait(pWord, 1);
+
+				// Wakes with no waiters are no-ops
+				NMib::NSys::fg_Futex_WakeOne(pWord);
+				NMib::NSys::fg_Futex_WakeAll(pWord);
+
+				// A wait with zero timeout reports a timeout immediately
+				DMibTest(DMibExpr(NMib::NSys::fg_Futex_WaitTimeout(pWord, 0, 0.0)) == DMibExpr(true));
+
+				{
+					// A timed wait on a matching value times out (loop tolerates spurious wakeups)
+					bool bTimedOut = false;
+					for (umint i = 0; i < 100; ++i)
+					{
+						if (NMib::NSys::fg_Futex_WaitTimeout(pWord, 0, 0.02))
+						{
+							bTimedOut = true;
+							break;
+						}
+					}
+
+					DMibTest(DMibExpr(bTimedOut) == DMibExpr(true));
+				}
+
+				{
+					// Cross-thread wake-one releases a parked waiter
+					Word.f_Store(0);
+
+					NMib::NStorage::TCUniquePointer<CThreadObject> pWaker = CThreadObject::fs_StartThread
+						(
+							[&] (CThreadObject *_pThread) -> aint
+							{
+								NMib::NSys::fg_Thread_Sleep(0.02f);
+								Word.f_Store(1);
+								NMib::NSys::fg_Futex_WakeOne(pWord);
+								return 0;
+							}
+							, "Futex test waker"
+						)
+					;
+
+					while (Word.f_Load() == 0)
+						NMib::NSys::fg_Futex_Wait(pWord, 0);
+
+					pWaker->f_Stop();
+					pWaker.f_Clear();
+				}
+
+				{
+					// Wake-all releases every parked waiter
+					Word.f_Store(0);
+
+					NMib::NAtomic::TCAtomic<uint32> nWoken{0};
+
+					enum { EnWaiters = 4 };
+					NMib::NStorage::TCUniquePointer<CThreadObject> pWaiters[EnWaiters];
+					for (umint i = 0; i < EnWaiters; ++i)
+					{
+						pWaiters[i] = CThreadObject::fs_StartThread
+							(
+								[&] (CThreadObject *_pThread) -> aint
+								{
+									while (Word.f_Load() == 0)
+										NMib::NSys::fg_Futex_Wait(pWord, 0);
+									nWoken.f_FetchAdd(1);
+									return 0;
+								}
+								, "Futex test waiter"
+							)
+						;
+					}
+
+					NMib::NSys::fg_Thread_Sleep(0.05f);
+					Word.f_Store(1);
+					NMib::NSys::fg_Futex_WakeAll(pWord);
+
+					for (umint i = 0; i < EnWaiters; ++i)
+					{
+						pWaiters[i]->f_Stop();
+						pWaiters[i].f_Clear();
+					}
+
+					DMibTest(DMibExpr(nWoken.f_Load()) == DMibExpr((uint32)EnWaiters));
+				}
+
+				{
+					// A timed wait that is woken before the timeout must not report a timeout
+					Word.f_Store(0);
+
+					NMib::NStorage::TCUniquePointer<CThreadObject> pWaker = CThreadObject::fs_StartThread
+						(
+							[&] (CThreadObject *_pThread) -> aint
+							{
+								NMib::NSys::fg_Thread_Sleep(0.02f);
+								Word.f_Store(1);
+								NMib::NSys::fg_Futex_WakeAll(pWord);
+								return 0;
+							}
+							, "Futex test timed waker"
+						)
+					;
+
+					bool bTimedOut = false;
+					while (Word.f_Load() == 0)
+					{
+						if (NMib::NSys::fg_Futex_WaitTimeout(pWord, 0, 10.0))
+						{
+							bTimedOut = true;
+							break;
+						}
+					}
+
+					pWaker->f_Stop();
+					pWaker.f_Clear();
+
+					DMibTest(DMibExpr(bTimedOut) == DMibExpr(false));
+				}
+			};
+
 #if DMibConfig_Tests_Enable
 			DMibTestCategory("Thread local")
 			{
