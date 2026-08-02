@@ -8,7 +8,7 @@ namespace NMib::NThread
 	template <typename t_CData>
 	template <typename tf_CValue>
 	constexpr TCSequenceLock<t_CData>::TCSequenceLock(tf_CValue &&_Value)
-		: mp_Data(fg_Format<tf_CValue>(_Value))
+		: mp_Data(fg_Forward<tf_CValue>(_Value))
 	{
 	}
 
