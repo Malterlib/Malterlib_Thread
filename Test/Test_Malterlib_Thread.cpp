@@ -3,6 +3,7 @@
 
 #include <Mib/Test/Performance>
 #include <Mib/Time/PerfTimeMeasure>
+#include <Mib/File/File>
 
 #if 1
 #if defined(DPlatformFamily_Windows)
@@ -1259,6 +1260,67 @@ namespace
 #if DMibConfig_Tests_Enable
 			DMibTestCategory("Thread local")
 			{
+				DMibTestSuite("Set another thread's local storage from dynamic library")
+				{
+					NMib::NStr::CStr DllPath = NMib::NStr::CStr("Test_Malterlib_Helper_Thread") + NMib::NFile::CFile::fs_GetDllExtension();
+					DllPath = NMib::NFile::CFile::fs_AppendPath(NMib::NFile::CFile::fs_GetProgramDirectory(), DllPath);
+					void *pDll = NMib::NSys::fg_LoadLibrary(DllPath);
+					DMibTest(DMibExpr(pDll))(ETest_FailAndStop);
+
+					uint32 (calling_convention_c *pTestFunction)() = nullptr;
+					(void * &)pTestFunction = NMib::NSys::fg_GetLibrarySymbol(pDll, "fg_TestSetAnotherThreadLocal");
+					DMibTest(DMibExpr(pTestFunction))(ETest_FailAndStop);
+					DMibTest(DMibExpr(pTestFunction()) == DMibExpr(uint32(0)));
+
+					NMib::NSys::fg_FreeLibrary(pDll);
+				};
+
+				DMibTestSuite("Set another thread's local storage")
+				{
+					NMib::NContainer::TCVector<umint> ThreadLocals;
+					umint iThreadLocal;
+					do
+					{
+						iThreadLocal = NMib::NSys::fg_Thread_AllocLocal();
+						ThreadLocals.f_InsertLast(iThreadLocal);
+					}
+					while (iThreadLocal < 32 || iThreadLocal % 32);
+
+					NMib::NAtomic::TCAtomic<umint> ThreadID{0};
+					NMib::NAtomic::TCAtomic<void *> pThreadValue{nullptr};
+					umint Value = 0x12345678;
+					CEvent ThreadReady;
+					CEvent ReadValue;
+					auto pThread = CThreadObject::fs_StartThread
+						(
+							[&] (CThreadObject *) -> aint
+							{
+								ThreadID.f_Store(NMib::NSys::fg_Thread_GetCurrentUID(), NMib::NAtomic::gc_MemoryOrder_Release);
+								ThreadReady.f_SetSignaled();
+								ReadValue.f_Wait();
+								pThreadValue.f_Store(NMib::NSys::fg_Thread_GetLocal(iThreadLocal), NMib::NAtomic::gc_MemoryOrder_Release);
+								NMib::NSys::fg_Thread_SetLocal(iThreadLocal, nullptr);
+								return 0;
+							}
+							, "Set another thread's local storage"
+						)
+					;
+
+					ThreadReady.f_Wait();
+					umint TargetThreadID = ThreadID.f_Load(NMib::NAtomic::gc_MemoryOrder_Acquire);
+					NMib::NSys::fg_Thread_SetLocal(TargetThreadID, iThreadLocal, &Value);
+					DMibTest(DMibExpr(NMib::NSys::fg_Thread_GetLocal(TargetThreadID, iThreadLocal)) == DMibExpr((void *)&Value));
+
+					ReadValue.f_SetSignaled();
+					pThread->f_Stop();
+					pThread.f_Clear();
+
+					DMibTest(DMibExpr(pThreadValue.f_Load(NMib::NAtomic::gc_MemoryOrder_Acquire)) == DMibExpr((void *)&Value));
+
+					for (umint iLocal = ThreadLocals.f_GetLen(); iLocal-- > 0;)
+						NMib::NSys::fg_Thread_FreeLocal(ThreadLocals[iLocal]);
+				};
+
 				DMibTestSuite("Always created")
 				{
 					for (umint i = 0; i < 10; ++i)

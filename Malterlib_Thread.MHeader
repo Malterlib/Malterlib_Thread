@@ -40,11 +40,43 @@ Property
 	MalterlibThread_DebugThreadLocals: bool = false // User(Debug)=true: Enable debug support to detect thread local leaks.
 }
 
+%Target "Dll_Test_Malterlib_Helper_Thread"
+{
+	Property
+	{
+		MalterlibHelperTest true
+		MalterlibPostCopyProject "Tests"
+		ProductName "Malterlib Thread Test Dll"
+	}
+	Target
+	{
+		BaseName "Test_Malterlib_Helper_Thread"
+		Type "DynamicLibrary"
+		Group "Helpers"
+	}
+	Compile
+	{
+		!!CompileDialect "C"
+		PrefixHeader undefined
+	}
+	%File "TestHelper/Test_Malterlib_Thread_DllMain.cpp"
+	%Dependency "Lib_Malterlib"
+}
+
+%Group "{Test}/{Malterlib_Thread}"
+{
+	%Dependency "Dll_Test_Malterlib_Helper_Thread"
+	{
+		Dependency.Link false
+		Dependency.Stage "Runtime"
+	}
+}
+
 Property
 {
 	!!MalterlibEnableInternalTests true
-	
+
 	MalterlibTests =+ "Malterlib_Thread"
 	MalterlibTestFiles_Malterlib_Thread: [type(CEntity)] = ["Test/*"->MakeAbsolute()]
+	MalterlibTestExtraGroups_Malterlib_Thread: [string] = ["{Test}/{Malterlib_Thread}"]
 }
-
