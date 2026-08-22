@@ -4,6 +4,7 @@
 #include <Mib/Test/Performance>
 #include <Mib/Time/PerfTimeMeasure>
 #include <Mib/File/File>
+#include <Mib/Process/ProcessLaunch>
 
 #if 1
 #if defined(DPlatformFamily_Windows)
@@ -22,7 +23,7 @@ using CWindowsCriticalSection = CRITICAL_SECTION;
 #include <thread>
 #include <mutex>
 
-#if (defined(DPlatformFamily_macOS) && defined(DMibConfig_PThreadIntrospection)) || (defined(DPlatformFamily_Linux) && defined(DMibConfig_LinuxPThreadMonitoring))
+#if defined(DPlatformFamily_macOS) || defined(DPlatformFamily_Linux)
 #include <sys/wait.h>
 #include <unistd.h>
 #endif
@@ -770,6 +771,45 @@ namespace
 					DMibTest(DMibExpr(NativeTime) / DMibExpr(MalterlibTime) >= DMibExpr(1.0));
 
 			};
+		#if !defined(DPlatformFamily_Linux) || defined(DMibConfig_LinuxPThreadMonitoring)
+			DMibTestSuite("Enumerate other threads")
+			{
+				NMib::NAtomic::TCAtomic<umint> ThreadID{0};
+				CEvent ThreadReady;
+				CEvent FinishThread;
+				auto pThread = CThreadObject::fs_StartThread
+					(
+						[&] (CThreadObject *) -> aint
+						{
+							ThreadID.f_Store(NMib::NSys::fg_Thread_GetCurrentUID(), NMib::NAtomic::gc_MemoryOrder_Release);
+							ThreadReady.f_SetSignaled();
+							FinishThread.f_Wait();
+							return 0;
+						}
+						, "Enumerated thread"
+					)
+				;
+
+				ThreadReady.f_Wait();
+				umint ExpectedThreadID = ThreadID.f_Load(NMib::NAtomic::gc_MemoryOrder_Acquire);
+				bool bFoundThread = false;
+				NMib::NSys::fg_Thread_EnumOtherThreadsInProcess
+					(
+						[&](umint _ThreadID)
+						{
+							if (_ThreadID == ExpectedThreadID)
+								bFoundThread = true;
+						}
+					)
+				;
+
+				FinishThread.f_SetSignaled();
+				pThread->f_Stop();
+				pThread.f_Clear();
+
+				DMibTest(DMibExpr(bFoundThread) == DMibExpr(true));
+			};
+		#endif
 			DMibTestSuite("Lock Performance")
 			{
 				const static umint nTests = 101;
@@ -1269,15 +1309,98 @@ namespace
 				{
 					NMib::NStr::CStr DllPath = NMib::NStr::CStr("Test_Malterlib_Helper_Thread") + NMib::NFile::CFile::fs_GetDllExtension();
 					DllPath = NMib::NFile::CFile::fs_AppendPath(NMib::NFile::CFile::fs_GetProgramDirectory(), DllPath);
+
+					uint32 (calling_convention_c *pTestFunction)() = nullptr;
+					NMib::NThread::CEvent ExistingThreadReady;
+					NMib::NThread::CEvent RunExistingThreadTest;
+					NMib::NAtomic::TCAtomic<uint32> ExistingThreadResult{NMib::TCLimitsInt<uint32>::mc_Max};
+					auto pExistingThread = NMib::NThread::CThreadObject::fs_StartThread
+						(
+							[&](NMib::NThread::CThreadObject *) -> aint
+							{
+								ExistingThreadReady.f_SetSignaled();
+								RunExistingThreadTest.f_Wait();
+								if (pTestFunction)
+									ExistingThreadResult = pTestFunction();
+								return 0;
+							}
+							, "Use dynamically loaded Malterlib from existing thread"
+						)
+					;
+					auto StopExistingThread = NMib::g_OnScopeExit / [&]
+						{
+							RunExistingThreadTest.f_SetSignaled();
+							if (pExistingThread)
+							{
+								pExistingThread->f_Stop();
+								pExistingThread.f_Clear();
+							}
+						}
+					;
+					ExistingThreadReady.f_Wait();
+
 					void *pDll = NMib::NSys::fg_LoadLibrary(DllPath);
 					DMibTest(DMibExpr(pDll))(ETest_FailAndStop);
 
-					uint32 (calling_convention_c *pTestFunction)() = nullptr;
 					(void * &)pTestFunction = NMib::NSys::fg_GetLibrarySymbol(pDll, "fg_TestSetAnotherThreadLocal");
 					DMibTest(DMibExpr(pTestFunction))(ETest_FailAndStop);
 					DMibTest(DMibExpr(pTestFunction()) == DMibExpr(uint32(0)));
 
-				#if (defined(DPlatformFamily_macOS) && defined(DMibConfig_PThreadIntrospection)) || (defined(DPlatformFamily_Linux) && defined(DMibConfig_LinuxPThreadMonitoring))
+					RunExistingThreadTest.f_SetSignaled();
+					pExistingThread->f_Stop();
+					pExistingThread.f_Clear();
+					DMibTest(DMibExpr(ExistingThreadResult.f_Load()) == DMibExpr(uint32(0)));
+
+				#if defined(DPlatformFamily_Windows) || defined(DPlatformFamily_macOS) || !defined(DMibAssumeMalterlibHost)
+					{
+						NMib::NStr::CStr ProgramDirectory = NMib::NFile::CFile::fs_GetProgramDirectory();
+						NMib::NStr::CStr LauncherPath = NMib::NFile::CFile::fs_AppendPath
+							(
+								ProgramDirectory
+								, NMib::NStr::CStr("Test_Malterlib_Helper_Thread_NonMalterlibHost") + NMib::NFile::CFile::mc_ExecutableExtension
+							)
+						;
+						NMib::NContainer::TCVector<NMib::NStr::CStr> LauncherParameters;
+						LauncherParameters.f_Insert(DllPath);
+						NMib::NAtomic::TCAtomic<uint32> ExitCode{NMib::TCLimitsInt<uint32>::mc_Max};
+						NMib::NAtomic::TCAtomic<bool> bLaunchFailed{false};
+						NMib::NProcess::CProcessLaunchParams LaunchParams = NMib::NProcess::CProcessLaunchParams::fs_LaunchExecutable
+							(
+								LauncherPath
+								, LauncherParameters
+								, ProgramDirectory
+								, [&](NMib::NProcess::CProcessLaunchStateChangeVariant const &_State, fp64)
+								{
+									switch (_State.f_GetTypeID())
+									{
+									case NMib::NProcess::EProcessLaunchState_LaunchFailed:
+										bLaunchFailed = true;
+										break;
+									case NMib::NProcess::EProcessLaunchState_Exited:
+										ExitCode = _State.f_Get<NMib::NProcess::EProcessLaunchState_Exited>();
+										break;
+									default:
+										break;
+									}
+								}
+							)
+						;
+						LaunchParams.m_bShowLaunched = false;
+						{
+							NMib::NProcess::CProcessLaunch Launcher
+								(
+									LaunchParams
+									, NMib::NProcess::EProcessLaunchCloseFlag_BlockOnExit
+								)
+							;
+						}
+
+						DMibTest(DMibExpr(bLaunchFailed.f_Load()) == DMibExpr(false));
+						DMibTest(DMibExpr(ExitCode.f_Load()) == DMibExpr(uint32(0)));
+					}
+				#endif
+
+				#if defined(DPlatformFamily_macOS) || defined(DPlatformFamily_Linux)
 					pid_t ProcessID = fork();
 					DMibTest(DMibExpr(ProcessID >= 0))(ETest_FailAndStop);
 					if (!ProcessID)

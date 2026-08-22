@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include <Mib/Core/Core>
+#include <Mib/Concurrency/ConcurrencyManager>
 #include <Mib/Container/Vector>
 #include <Mib/Thread/Event>
 #include <Mib/Thread/ThreadObject>
@@ -13,6 +14,11 @@ extern "C"
 {
 	module_export uint32 calling_convention_c fg_TestSetAnotherThreadLocal()
 	{
+	#ifndef DMibPSupportAlwaysCreatedThreadLocal
+		NMib::fg_SystemThreadInit();
+	#endif
+		(void)NMib::NConcurrency::fg_ConcurrencyManager().f_GetConcurrentActorForThisThread(NMib::NConcurrency::EPriority_Normal);
+
 		NMib::NContainer::TCVector<umint> ThreadLocals;
 		umint iThreadLocal;
 		do

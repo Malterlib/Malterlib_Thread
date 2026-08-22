@@ -63,9 +63,49 @@ Property
 	%Dependency "Lib_Malterlib"
 }
 
+%Target "Com_Test_Malterlib_Helper_Thread_NonMalterlibHost"
+{
+	Property
+	{
+		MalterlibDisableMalterlib true
+		MalterlibEnableBreakpad false
+		MalterlibHelperTest true
+		MalterlibPostCopyProject "Tests"
+		MalterlibTargetNameType "BaseName"
+		ProductName "Malterlib Thread Non-Malterlib Host Test"
+	}
+	Target
+	{
+		BaseName "Test_Malterlib_Helper_Thread_NonMalterlibHost"
+		CharacterSet "MultiByte"
+		{
+			!!PlatformFamily "Windows"
+		}
+		Type "ConsoleExecutable"
+		Group "Helpers"
+		LDFlags =+ "-nostdlib++"
+		{
+			!PlatformFamily "Windows"
+		}
+	}
+	Compile
+	{
+		!!CompileDialect "C"
+		PrefixHeader undefined
+		DefaultHeaders "NoStdIncludeCxx"
+		DefaultLibraries "NoStdLibCxx"
+	}
+	%File "TestHelper/Test_Malterlib_Thread_NonMalterlibHost.c"
+}
+
 %Group "{Test}/{Malterlib_Thread}"
 {
 	%Dependency "Dll_Test_Malterlib_Helper_Thread"
+	{
+		Dependency.Link false
+		Dependency.Stage "Runtime"
+	}
+	%Dependency "Com_Test_Malterlib_Helper_Thread_NonMalterlibHost"
 	{
 		Dependency.Link false
 		Dependency.Stage "Runtime"
@@ -75,6 +115,7 @@ Property
 Property
 {
 	!!MalterlibEnableInternalTests true
+	MalterlibLibrary_Process true
 
 	MalterlibTests =+ "Malterlib_Thread"
 	MalterlibTestFiles_Malterlib_Thread: [type(CEntity)] = ["Test/*"->MakeAbsolute()]
