@@ -156,6 +156,27 @@ namespace NMib::NThread
 			return fp_WaitTimeoutSlow(_Timeout);
 		}
 
+		// Support for a waiter that parks in a kernel facility of its own — an io_uring futex wait
+		// on the count word — instead of f_Wait. Registration is what makes signals issue futex
+		// wakes on the word while the external wait is armed; without it a signal sees no waiters
+		// and skips the wake. The external wait must use the word from f_GetExternalFutexWord and
+		// wait while its value is zero, and the waiter consumes tokens with f_TryWait when it runs
+
+		inline_small uint32 volatile *f_GetExternalFutexWord()
+		{
+			return fp_GetFutexWord();
+		}
+
+		inline_small void f_ExternalWaiterRegister()
+		{
+			m_Data.f_FetchAdd(mcp_WaiterOne, NAtomic::gc_MemoryOrder_Relaxed);
+		}
+
+		inline_small void f_ExternalWaiterUnregister()
+		{
+			m_Data.f_FetchSub(mcp_WaiterOne, NAtomic::gc_MemoryOrder_Relaxed);
+		}
+
 		// Implemented in the Core platform layer
 		void fp_WaitSlow();
 		bool fp_WaitTimeoutSlow(fp64 _Timeout);
