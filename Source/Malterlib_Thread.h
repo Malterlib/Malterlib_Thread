@@ -156,6 +156,24 @@ namespace NMib::NThread
 			return fp_WaitTimeoutSlow(_Timeout);
 		}
 
+		// External waiters must register before waiting on the count word at zero, then consume tokens with f_TryWait.
+		// Registration ensures signals issue futex wakes even when no f_Wait caller is registered.
+
+		inline_small uint32 volatile *f_GetExternalFutexWord()
+		{
+			return fp_GetFutexWord();
+		}
+
+		inline_small void f_ExternalWaiterRegister()
+		{
+			m_Data.f_FetchAdd(mcp_WaiterOne, NAtomic::gc_MemoryOrder_Relaxed);
+		}
+
+		inline_small void f_ExternalWaiterUnregister()
+		{
+			m_Data.f_FetchSub(mcp_WaiterOne, NAtomic::gc_MemoryOrder_Relaxed);
+		}
+
 		// Implemented in the Core platform layer
 		void fp_WaitSlow();
 		bool fp_WaitTimeoutSlow(fp64 _Timeout);
