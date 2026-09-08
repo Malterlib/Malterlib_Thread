@@ -3,6 +3,11 @@
 
 namespace NMib::NThread
 {
+	inline CThreadSpinWaiter::CThreadSpinWaiter(umint _nYieldsBeforeSleep)
+		: m_nYieldsBeforeSleep(_nYieldsBeforeSleep)
+	{
+	}
+
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	TCThreadLocal<t_CData, t_CAllocator, t_Flags>::TCThreadLocal()
 	{

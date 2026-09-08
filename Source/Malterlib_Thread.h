@@ -942,8 +942,14 @@ namespace NMib::NThread
 		}
 	};
 
+	// Pauses, then yields, then sleeps while another thread completes a condition.
+	// A larger yield budget delays sleeping at the cost of CPU time.
 	struct CThreadSpinWaiter
 	{
+		static constexpr umint mc_DefaultYields = 140;
+
+		explicit CThreadSpinWaiter(umint _nYieldsBeforeSleep = mc_DefaultYields);
+
 		inline_always void f_Wait()
 		{
 			if (++m_nWaits < 100)
@@ -958,6 +964,7 @@ namespace NMib::NThread
 		inline_never void f_WaitSlow();
 
 		umint m_nWaits = 0;
+		umint m_nYieldsBeforeSleep;
 	};
 
 	template <typename t_CEvent, bool t_bAllowRecursive>

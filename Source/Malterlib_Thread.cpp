@@ -346,7 +346,7 @@ namespace NMib::NThread
 
 	inline_never void CThreadSpinWaiter::f_WaitSlow()
 	{
-		if (m_nWaits < 140)
+		if (m_nWaits < m_nYieldsBeforeSleep)
 		{
 			NSys::fg_Thread_Yield();
 			return;
