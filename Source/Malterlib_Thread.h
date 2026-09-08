@@ -945,8 +945,20 @@ namespace NMib::NThread
 		}
 	};
 
+	// Waits for a condition another thread is about to satisfy: pauses, then yields, then sleeps.
+	// The yield budget decides how long the waiter stays responsive before it starts paying a
+	// scheduler tick per check. The default suits a wait measured in microseconds; a wait that is
+	// known to take a fraction of a millisecond, and where a spinning core is cheap, such as a
+	// process shutdown, asks for more
 	struct CThreadSpinWaiter
 	{
+		static constexpr umint mc_DefaultYields = 140;
+
+		CThreadSpinWaiter(umint _nYieldsBeforeSleep = mc_DefaultYields)
+			: m_nYieldsBeforeSleep(_nYieldsBeforeSleep)
+		{
+		}
+
 		inline_always void f_Wait()
 		{
 			if (++m_nWaits < 100)
@@ -961,6 +973,7 @@ namespace NMib::NThread
 		inline_never void f_WaitSlow();
 
 		umint m_nWaits = 0;
+		umint m_nYieldsBeforeSleep;
 	};
 
 	template <typename t_CEvent, bool t_bAllowRecursive>
