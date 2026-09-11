@@ -1351,7 +1351,9 @@ namespace
 					pExistingThread.f_Clear();
 					DMibTest(DMibExpr(ExistingThreadResult.f_Load()) == DMibExpr(uint32(0)));
 
-				#if defined(DPlatformFamily_Windows) || defined(DPlatformFamily_macOS) || !defined(DMibAssumeMalterlibHost)
+				// A build that assumes a Malterlib host refuses to load into anything else, except on Windows where
+				// the library needs nothing from its host
+				#if defined(DPlatformFamily_Windows) || !defined(DMibAssumeMalterlibHost)
 					{
 						NMib::NStr::CStr ProgramDirectory = NMib::NFile::CFile::fs_GetProgramDirectory();
 						NMib::NStr::CStr LauncherPath = NMib::NFile::CFile::fs_AppendPath
