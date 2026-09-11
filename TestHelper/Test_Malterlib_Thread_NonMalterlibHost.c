@@ -2,12 +2,36 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
 #include <stdint.h>
+#include <string.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <dlfcn.h>
 #include <pthread.h>
+#endif
+
+#ifdef __APPLE__
+#include <pthread/introspection.h>
+
+static void fg_HostIntrospectionHook(unsigned int _Event, pthread_t _pThread, void *_pAddress, size_t _Size)
+{
+}
+
+// Installing a hook and putting the displaced one straight back reads out what is installed without
+// changing it
+static pthread_introspection_hook_t fg_CurrentIntrospectionHook(void)
+{
+	pthread_introspection_hook_t fCurrent = pthread_introspection_hook_install(&fg_HostIntrospectionHook);
+	(void)pthread_introspection_hook_install(fCurrent);
+
+	return fCurrent;
+}
+
+static void *fg_AfterUnloadThread(void *_pUnused)
+{
+	return NULL;
+}
 #endif
 
 typedef uint32_t (*FTest)(void);
@@ -57,8 +81,26 @@ static void *fg_ExistingThread(void *_pState)
 
 int main(int _nArguments, char **_pArguments)
 {
-	if (_nArguments != 2)
+	if (_nArguments < 2)
 		return 1;
+
+#ifdef __APPLE__
+	int bExpectHook = 0;
+#endif
+	int bExitLoaded = 0;
+	for (int iArgument = 2; iArgument < _nArguments; ++iArgument)
+	{
+		if (strcmp(_pArguments[iArgument], "--expect-hook") == 0)
+		{
+#ifdef __APPLE__
+			bExpectHook = 1;
+#endif
+		}
+		else if (strcmp(_pArguments[iArgument], "--exit-loaded") == 0)
+			bExitLoaded = 1;
+		else
+			return 1;
+	}
 
 	struct CExistingThreadState State = {0};
 	State.m_Result = UINT32_MAX;
@@ -123,11 +165,24 @@ int main(int _nArguments, char **_pArguments)
 		return 3;
 	Result |= State.m_Result;
 
+#ifdef __APPLE__
+	// In a host that is not a Malterlib executable the library chains the process global pthread
+	// introspection hook itself, with a hook that lives in its own image. Whether it was built to
+	// is something the launcher knows and this host cannot
+	if (bExpectHook && !fg_CurrentIntrospectionHook())
+		return 8;
+#endif
+
+	// A host may also exit with the library still loaded, which runs its destructors from exit
+	if (bExitLoaded)
+		return (int)Result;
+
 #ifdef _WIN32
 	// Match NSys::fg_FreeLibrary: on Windows the non-Malterlib host must call the module's pre-unload hook
 	// before FreeLibrary so Malterlib's threads are stopped before the loader lock is taken. Unloading
 	// without it deadlocks in the concurrency-manager shutdown that runs under the loader lock during
-	// DLL_PROCESS_DETACH. dlclose on POSIX runs the destructors without the loader lock, so it needs nothing.
+	// DLL_PROCESS_DETACH. dlclose needs no such hook, although on macOS dyld does hold its loader lock
+	// across the destructors it runs.
 	{
 		FLibraryFunc fFreeExternal = (FLibraryFunc)GetProcAddress(pLibrary, "IdsFreeLibraryExternal");
 		if (fFreeExternal)
@@ -138,6 +193,23 @@ int main(int _nArguments, char **_pArguments)
 #else
 	if (dlclose(pLibrary))
 		return 4;
+#endif
+
+#ifdef __APPLE__
+	// dladdr fails for an address no loaded image covers, so a hook that no longer resolves is one
+	// pthread calls into unmapped memory on the next thread create
+	{
+		pthread_introspection_hook_t fRemaining = fg_CurrentIntrospectionHook();
+		Dl_info Info;
+		memset(&Info, 0, sizeof(Info));
+		if (fRemaining && !dladdr((void *)fRemaining, &Info))
+			return 6;
+
+		pthread_t HookThread;
+		if (pthread_create(&HookThread, NULL, &fg_AfterUnloadThread, NULL))
+			return 7;
+		pthread_join(HookThread, NULL);
+	}
 #endif
 
 	return (int)Result;

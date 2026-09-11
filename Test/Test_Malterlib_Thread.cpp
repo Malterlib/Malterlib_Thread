@@ -1354,7 +1354,10 @@ namespace
 				// A build that assumes a Malterlib host refuses to load into anything else, except on Windows where
 				// the library needs nothing from its host
 				#if defined(DPlatformFamily_Windows) || !defined(DMibAssumeMalterlibHost)
+					for (bool bExitLoaded : {false, true})
 					{
+						DMibTestPath(bExitLoaded ? "Exit with the library loaded" : "Unload");
+
 						NMib::NStr::CStr ProgramDirectory = NMib::NFile::CFile::fs_GetProgramDirectory();
 						NMib::NStr::CStr LauncherPath = NMib::NFile::CFile::fs_AppendPath
 							(
@@ -1364,6 +1367,11 @@ namespace
 						;
 						NMib::NContainer::TCVector<NMib::NStr::CStr> LauncherParameters;
 						LauncherParameters.f_Insert(DllPath);
+					#if defined(DPlatformFamily_macOS) && defined(DMibConfig_PThreadIntrospection)
+						LauncherParameters.f_Insert("--expect-hook");
+					#endif
+						if (bExitLoaded)
+							LauncherParameters.f_Insert("--exit-loaded");
 						NMib::NAtomic::TCAtomic<uint32> ExitCode{NMib::TCLimitsInt<uint32>::mc_Max};
 						NMib::NAtomic::TCAtomic<bool> bLaunchFailed{false};
 						NMib::NProcess::CProcessLaunchParams LaunchParams = NMib::NProcess::CProcessLaunchParams::fs_LaunchExecutable
