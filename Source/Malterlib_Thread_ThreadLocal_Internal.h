@@ -88,6 +88,12 @@ namespace NMib
 				umint m_ThreadID;
 				umint m_DestroyingID;
 				bool m_bOnThreadCreated;
+#if DMibEnableSafeCheck > 0
+				void const *m_pStartAddress = nullptr; // Where the thread started; identifies a foreign thread once it is gone
+				ch8 m_Name[64] = {}; // The last name Malterlib gave the thread; empty for one it only saw attach
+				ch8 m_StartSymbol[128] = {}; // Function at the start address, resolved by f_DescribeOtherThreads
+				ch8 m_StartModule[128] = {}; // Module of the start address, resolved by f_DescribeOtherThreads
+#endif
 
 				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
 				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
@@ -147,6 +153,10 @@ namespace NMib
 			void f_ReinitForThread(CStorageIndex *_pStorageIndex);
 			void f_DestroyForThread(CStorageIndex *_pStorageIndex);
 			void f_CreateThread(umint _ThreadID, umint _ParentThread);
+#if DMibEnableSafeCheck > 0
+			void f_SetThreadName(umint _ThreadID, ch8 const *_pName);
+			void f_DescribeOtherThreads();
+#endif
 			void f_FreeThread();
 			void f_FreeThreadFromNotification();
 			void f_RestoreThread();

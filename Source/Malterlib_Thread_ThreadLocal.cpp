@@ -68,6 +68,19 @@ namespace NMib
 				NContainer::TCVector<umint, NMemory::CAllocator_VirtualNoTracking> LocalThreads;
 				for (auto &PerThread : m_PerThreadByThreadID)
 				{
+					if (SystemThreads.f_BinarySearch(PerThread.m_ThreadID) < 0)
+					{
+						DMibTraceSafe
+							(
+								"Thread {} '{}' is still registered but no longer exists; it started at {} in {} ({}){\n}"
+								, PerThread.m_ThreadID
+								, PerThread.m_Name
+								, PerThread.m_pStartAddress
+								, PerThread.m_StartSymbol
+								, PerThread.m_StartModule
+							)
+						;
+					}
 					DMibFastCheck(SystemThreads.f_BinarySearch(PerThread.m_ThreadID) >= 0);
 					LocalThreads.f_Insert(PerThread.m_ThreadID);
 				}
@@ -210,6 +223,9 @@ namespace NMib
 				)
 			;
 			pThreadLocal->m_ThreadLocals.f_SetLen(m_iThreadLocalCurrentLen);
+#if DMibEnableSafeCheck > 0
+			pThreadLocal->m_pStartAddress = NSys::fg_Thread_GetStartAddress(_ThreadID);
+#endif
 			m_PerThreadByThreadID.f_Insert(pThreadLocal);
 			NAtomic::fg_MemoryFence();
 #if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals) && !defined(DUseThreadDestroyNotifications)
@@ -668,6 +684,83 @@ namespace NMib
 			}
 		}
 
+#if DMibEnableSafeCheck > 0
+		namespace
+		{
+			template <umint t_Size>
+			void fg_CopyName(ch8 (&_Dest)[t_Size], ch8 const *_pSource)
+			{
+				umint i = 0;
+				if (_pSource)
+				{
+					for (; _pSource[i] && i + 1 < t_Size; ++i)
+						_Dest[i] = _pSource[i];
+				}
+				_Dest[i] = 0;
+			}
+		}
+
+		void CThreadLocalContext::f_SetThreadName(umint _ThreadID, ch8 const *_pName)
+		{
+			DMibLock(m_LockContext);
+
+			auto pPerThread = m_PerThreadByThreadID.f_FindEqual(_ThreadID);
+			if (pPerThread)
+				fg_CopyName(pPerThread->m_Name, _pName);
+		}
+
+		// Resolving needs the debug subsystem, which is destroyed before the thread local context; the caller runs this
+		// before the system is marked deleted so that a record left behind can still be described. Resolving can also load
+		// the debugger help library under the loader lock, which a thread exiting at the same time holds while its detach
+		// waits for m_LockContext, so the records are copied out and resolved with the lock released
+		void CThreadLocalContext::f_DescribeOtherThreads()
+		{
+			struct CEntry
+			{
+				umint m_ThreadID;
+				void const *m_pStartAddress;
+				CStackTraceInfo *m_pInfo;
+			};
+			constexpr umint c_MaxEntries = 64;
+			CEntry Entries[c_MaxEntries];
+			umint nEntries = 0;
+			umint ThisUID = NSys::fg_Thread_GetCurrentUID();
+
+			{
+				DMibLock(m_LockContext);
+				for (auto &PerThread : m_PerThreadByThreadID)
+				{
+					if (PerThread.m_ThreadID == ThisUID || !PerThread.m_pStartAddress || nEntries == c_MaxEntries)
+						continue;
+
+					Entries[nEntries++] = {PerThread.m_ThreadID, PerThread.m_pStartAddress, nullptr};
+				}
+			}
+
+			for (umint i = 0; i < nEntries; ++i)
+				Entries[i].m_pInfo = NSys::fg_Debug_AquireStackTraceInfo((CMibCodeAddress)Entries[i].m_pStartAddress);
+
+			{
+				DMibLock(m_LockContext);
+				for (umint i = 0; i < nEntries; ++i)
+				{
+					auto pPerThread = Entries[i].m_pInfo ? m_PerThreadByThreadID.f_FindEqual(Entries[i].m_ThreadID) : nullptr;
+					if (!pPerThread)
+						continue;
+
+					fg_CopyName(pPerThread->m_StartSymbol, Entries[i].m_pInfo->m_pFunctionName);
+					fg_CopyName(pPerThread->m_StartModule, Entries[i].m_pInfo->m_pModuleName);
+				}
+			}
+
+			for (umint i = 0; i < nEntries; ++i)
+			{
+				if (Entries[i].m_pInfo)
+					NSys::fg_Debug_ReleaseStackTraceInfo(Entries[i].m_pInfo);
+			}
+		}
+#endif
+
 		void CThreadLocalContext::f_FreeThread()
 		{
 			fp_FreePerThread(nullptr);
@@ -792,6 +885,18 @@ namespace NMib
 		NPrivate::g_ThreadLocalContext->f_CreateThread(_ThreadID, _ParentThreadID);
 		fg_SystemThreadInit();
 	}
+
+#if DMibEnableSafeCheck > 0
+	void CSystem::f_ThreadLocalSetThreadName(umint _ThreadID, ch8 const *_pName)
+	{
+		NPrivate::g_ThreadLocalContext->f_SetThreadName(_ThreadID, _pName);
+	}
+
+	void CSystem::f_ThreadLocalDescribeOtherThreads()
+	{
+		NPrivate::g_ThreadLocalContext->f_DescribeOtherThreads();
+	}
+#endif
 
 	void CSystem::f_ThreadLocalReinitForThread(void *_pStorageIndex)
 	{
