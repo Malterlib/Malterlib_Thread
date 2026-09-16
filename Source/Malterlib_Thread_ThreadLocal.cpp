@@ -952,8 +952,17 @@ namespace NMib
 	}
 	void CSystem::fp_ThreadLocalDestroy()
 	{
-		if (!g_bMemoryManagerNeededAfterDestroy)
-			NPrivate::g_ThreadLocalContext.f_Destruct();
+		auto fDestroy = []
+			{
+				if (!g_bMemoryManagerNeededAfterDestroy)
+					NPrivate::g_ThreadLocalContext.f_Destruct();
+			}
+		;
+#if defined(DPlatformFamily_Windows) || defined(DPlatformFamily_Linux) || defined(DPlatformFamily_macOS)
+		NSys::fg_Thread_DestroyLocalContext(fDestroy);
+#else
+		fDestroy();
+#endif
 	}
 
 	void CSystem::f_ThreadEnum(NFunction::TCFunction<void (umint _ThreadID)> const &_EnumFunc)
