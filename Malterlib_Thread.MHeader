@@ -87,6 +87,11 @@ Property
 		{
 			!PlatformFamily "Windows"
 		}
+		// The static C++ sanitizer runtime throws std::bad_alloc and so needs the C++ ABI library this host does not link
+		LDFlags =+ "-fno-sanitize-link-c++-runtime"
+		{
+			!PlatformFamily "Windows"
+		}
 	}
 	Compile
 	{
