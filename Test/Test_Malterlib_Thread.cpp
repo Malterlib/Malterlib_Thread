@@ -28,6 +28,11 @@ using CWindowsCriticalSection = CRITICAL_SECTION;
 #include <unistd.h>
 #endif
 
+#ifdef DPlatformFamily_Linux
+#include <sched.h>
+#include <sys/resource.h>
+#endif
+
 using namespace NMib::NTime;
 using namespace NMib::NThread;
 
@@ -808,6 +813,189 @@ namespace
 				pThread.f_Clear();
 
 				DMibTest(DMibExpr(bFoundThread) == DMibExpr(true));
+			};
+		#endif
+		#ifdef DPlatformFamily_Linux
+			DMibTestSuite("LinuxPriority")
+			{
+				struct CSchedule
+				{
+					int m_Policy = -1;
+					int m_Nice = 100;
+				};
+
+				auto fGetSchedule = []
+					{
+						CSchedule Schedule;
+						Schedule.m_Policy = sched_getscheduler(0) & ~0x40000000; // SCHED_RESET_ON_FORK
+						Schedule.m_Nice = getpriority(PRIO_PROCESS, 0);
+
+						return Schedule;
+					}
+				;
+
+				// Starts a thread at _Priority, which in turn starts one at _ChildPriority
+				auto fRun = [&](NMib::EExecutionPriority _Priority, NMib::EExecutionPriority _ChildPriority, CSchedule &o_Schedule, CSchedule &o_ChildSchedule)
+					{
+						auto pThread = CThreadObject::fs_StartThread
+							(
+								[&](CThreadObject *) -> aint
+								{
+									o_Schedule = fGetSchedule();
+
+									auto pChildThread = CThreadObject::fs_StartThread
+										(
+											[&](CThreadObject *) -> aint
+											{
+												o_ChildSchedule = fGetSchedule();
+												return 0;
+											}
+											, "Priority child"
+											, _ChildPriority
+										)
+									;
+									pChildThread->f_Stop();
+
+									return 0;
+								}
+								, "Priority parent"
+								, _Priority
+							)
+						;
+						pThread->f_Stop();
+					}
+				;
+
+				// A process that was started lowered cannot reach the priorities above its starting point
+				int BaseNice = fGetSchedule().m_Nice;
+
+				auto fCheck = [&](NMib::NStr::CStr const &_Case, NMib::EExecutionPriority _Priority, int _Policy, int _Nice)
+					{
+						DMibTestPath(_Case);
+
+						CSchedule Schedule;
+						CSchedule ChildSchedule;
+						fRun(_Priority, NMib::EExecutionPriority_Normal, Schedule, ChildSchedule);
+
+						DMibExpect(Schedule.m_Policy, ==, _Policy);
+						if (_Policy == SCHED_OTHER)
+							DMibExpect(Schedule.m_Nice, ==, NMib::fg_Max(_Nice, BaseNice));
+
+						DMibExpect(ChildSchedule.m_Policy, ==, SCHED_OTHER);
+						DMibExpect(ChildSchedule.m_Nice, ==, NMib::fg_Max(0, BaseNice));
+					}
+				;
+
+				fCheck("Lowest", NMib::EExecutionPriority_Lowest, SCHED_IDLE, 0);
+				fCheck("Low", NMib::EExecutionPriority_Low, SCHED_OTHER, 10);
+				fCheck("BelowNormal", NMib::EExecutionPriority_BelowNormal, SCHED_OTHER, 5);
+				fCheck("Normal", NMib::EExecutionPriority_Normal, SCHED_OTHER, 0);
+
+				rlimit NiceLimit = {};
+				bool bGranted = !getrlimit(RLIMIT_NICE, &NiceLimit) && 20 - (int)NMib::fg_Min(NiceLimit.rlim_cur, rlim_t(40)) <= BaseNice;
+
+				DMibTestCategory("Fork")
+				{
+					// Neither the spawn helper nor a spawn server exists in the child, so the thread is created directly
+					pid_t ProcessID = fork();
+					DMibAssertTrue(ProcessID >= 0);
+					if (!ProcessID)
+					{
+						alarm(60);
+
+						CSchedule Schedule;
+						CSchedule ChildSchedule;
+						fRun(NMib::EExecutionPriority_Low, NMib::EExecutionPriority_Normal, Schedule, ChildSchedule);
+
+						bool bSuccess = Schedule.m_Policy == SCHED_OTHER
+							&& Schedule.m_Nice == NMib::fg_Max(10, BaseNice)
+							&& ChildSchedule.m_Policy == SCHED_OTHER
+							&& (!bGranted || ChildSchedule.m_Nice == NMib::fg_Max(0, BaseNice))
+						;
+
+						_exit(bSuccess ? 0 : 1);
+					}
+
+					int Status = 0;
+					DMibExpect(waitpid(ProcessID, &Status, 0), ==, ProcessID);
+					DMibExpectTrue(WIFEXITED(Status));
+					DMibExpect(WEXITSTATUS(Status), ==, 0);
+
+					fCheck("ParentAfterFork", NMib::EExecutionPriority_Low, SCHED_OTHER, 10);
+				};
+
+				DMibTestCategory("ForkDuringHandoff")
+				{
+					// The fork hooks take the lock that thread creation hands off under
+					NMib::NAtomic::TCAtomic<bool> bStop{false};
+					NMib::NAtomic::TCAtomic<umint> nHandoffs{0};
+					auto pHandoffThread = CThreadObject::fs_StartThread
+						(
+							[&](CThreadObject *) -> aint
+							{
+								while (!bStop.f_Load())
+								{
+									CSchedule Schedule;
+									CSchedule ChildSchedule;
+									fRun(NMib::EExecutionPriority_Low, NMib::EExecutionPriority_Normal, Schedule, ChildSchedule);
+									++nHandoffs;
+								}
+
+								return 0;
+							}
+							, "Handoff loop"
+						)
+					;
+
+					NMib::NStr::CStr Failures;
+					for (umint iFork = 0; iFork < 20; ++iFork)
+					{
+						pid_t ProcessID = fork();
+						if (ProcessID < 0)
+						{
+							Failures += NMib::NStr::CStr::CFormat("fork: {}\n") << strerror(errno);
+							continue;
+						}
+
+						if (!ProcessID)
+						{
+							alarm(60);
+
+							CSchedule Schedule;
+							CSchedule ChildSchedule;
+							fRun(NMib::EExecutionPriority_Low, NMib::EExecutionPriority_Normal, Schedule, ChildSchedule);
+
+							_exit(ChildSchedule.m_Policy == SCHED_OTHER ? 0 : 1);
+						}
+
+						int Status = 0;
+						if (waitpid(ProcessID, &Status, 0) != ProcessID)
+							Failures += NMib::NStr::CStr::CFormat("waitpid: {}\n") << strerror(errno);
+						else if (WIFSIGNALED(Status))
+							Failures += NMib::NStr::CStr::CFormat("child terminated by signal {}\n") << WTERMSIG(Status);
+						else if (!WIFEXITED(Status) || WEXITSTATUS(Status) != 0)
+							Failures += NMib::NStr::CStr::CFormat("child exited with status {}\n") << Status;
+					}
+
+					bStop = true;
+					pHandoffThread->f_Stop();
+
+					DMibExpect(Failures, ==, "");
+					DMibExpect(nHandoffs.f_Load(), >, umint(0));
+				};
+
+				// With the grant every thread corrects itself, so creation must never have been handed off
+				if (bGranted)
+				{
+					bool bFoundSpawnHelper = false;
+					for (auto &CommFile : NMib::NFile::CFile::fs_FindFiles("/proc/self/task/*/comm"))
+					{
+						if (NMib::NFile::CFile::fs_ReadStringFromFile(CommFile).f_Trim() == "Thread spawner")
+							bFoundSpawnHelper = true;
+					}
+
+					DMibExpectFalse(bFoundSpawnHelper);
+				}
 			};
 		#endif
 			DMibTestSuite("Lock Performance")

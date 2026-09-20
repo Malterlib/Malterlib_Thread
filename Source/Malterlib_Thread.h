@@ -1856,7 +1856,14 @@ namespace NMib::NThread
 		|																				|
 		|	Comments:			Your overridden Main function will be called			|
 		\*_____________________________________________________________________________*/
-		virtual void f_Start(EExecutionPriority _Prio = EExecutionPriority_Normal, umint _StackSize = 0, umint _Affinity = 0, bool _bAutoDestroy = false);
+		virtual void f_Start
+			(
+				EExecutionPriority _Prio = EExecutionPriority_Normal
+				, umint _StackSize = 0
+				, umint _Affinity = 0
+				, EThreadCreateFlag _Flags = EThreadCreateFlag_None
+			)
+		;
 
 		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			Stops the thread										|
@@ -2016,7 +2023,7 @@ namespace NMib::NThread
 				, EExecutionPriority _Prio = EExecutionPriority_Normal
 				, umint _StackSize = 0
 				, umint _Affinity = 0
-				, bool _bAutoDestroy = false
+				, EThreadCreateFlag _Flags = EThreadCreateFlag_None
 			)
 		;
 
@@ -2029,7 +2036,7 @@ namespace NMib::NThread
 				, EExecutionPriority _Prio = EExecutionPriority_Normal
 				, umint _StackSize = 0
 				, umint _Affinity = 0
-				, bool _bAutoDestroy = false
+				, EThreadCreateFlag _Flags = EThreadCreateFlag_None
 			)
 		;
 

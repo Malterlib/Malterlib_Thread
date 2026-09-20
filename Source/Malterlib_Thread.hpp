@@ -626,7 +626,7 @@ namespace NMib::NThread
 			, EExecutionPriority _Prio
 			, umint _StackSize
 			, umint _Affinity
-			, bool _bAutoDestroy
+			, EThreadCreateFlag _Flags
 		)
 		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
@@ -643,7 +643,7 @@ namespace NMib::NThread
 				)
 			)
 		;
-		pThread->f_Start(_Prio, _StackSize, _Affinity, _bAutoDestroy);
+		pThread->f_Start(_Prio, _StackSize, _Affinity, _Flags);
 
 		return pThread;
 	}
@@ -657,7 +657,7 @@ namespace NMib::NThread
 			, EExecutionPriority _Prio
 			, umint _StackSize
 			, umint _Affinity
-			, bool _bAutoDestroy
+			, EThreadCreateFlag _Flags
 		)
 		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
@@ -683,7 +683,7 @@ namespace NMib::NThread
 		NStorage::TCUniquePointer<TCThreadObject, t_CAllocator> pThread
 			= fg_Construct(NStorage::TCUniquePointer<CCallerObject, t_CAllocator>(fg_Construct<CCallerObjectImp>(_pFunctionObject, _Name)))
 		;
-		pThread->f_Start(_Prio, _StackSize, _Affinity, _bAutoDestroy);
+		pThread->f_Start(_Prio, _StackSize, _Affinity, _Flags);
 
 		return pThread;
 	}

@@ -179,7 +179,7 @@ namespace NMib::NThread
 		return Return;
 	}
 
-	void CThread::f_Start(EExecutionPriority _Prio, umint _StackSize, umint _Affinity, bool _bAutoDestroy)
+	void CThread::f_Start(EExecutionPriority _Prio, umint _StackSize, umint _Affinity, EThreadCreateFlag _Flags)
 	{
 		// Make sure that no thread is already running
 		{
@@ -192,7 +192,7 @@ namespace NMib::NThread
 			m_ThreadQuitEvent.f_ResetSignaled();
 			m_ReturnValue = 0;
 			m_ParentThreadID = NSys::fg_Thread_GetCurrentUID();
-			m_bAutoDestroy = _bAutoDestroy;
+			m_bAutoDestroy = (_Flags & EThreadCreateFlag_AutoDestroy) != EThreadCreateFlag_None;
 			NStr::CStr ThreadName;
 			auto *pName = f_GetThreadNameRaw();
 			if (!pName)
