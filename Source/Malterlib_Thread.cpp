@@ -315,6 +315,13 @@ namespace NMib::NThread
 		NSys::fg_Thread_SetPriority(m_pThread, _Prio);
 	}
 
+	bool CThread::f_TrySetPriority(EExecutionPriority _Prio)
+	{
+		DMibLockTyped(CMutual, m_Lock);
+		DMibSafeCheck(m_pThread, "Must be started");
+		return NSys::fg_Thread_TrySetPriority(m_pThread, _Prio);
+	}
+
 	void CThread::f_PrepareFork()
 	{
 		m_Lock.f_Lock();

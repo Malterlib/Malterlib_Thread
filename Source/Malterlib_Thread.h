@@ -1918,6 +1918,20 @@ namespace NMib::NThread
 		\*_____________________________________________________________________________*/
 		void f_SetPriority(EExecutionPriority _Prio);
 
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
+		|	Function:			Sets the priority of the thread, reporting whether the	|
+		|						OS allowed it											|
+		|																								|
+		|	Parameters:																			|
+		|		_Prio:			The priority @See(EExecutionPriority)					|
+		|																								|
+		|	Returns:			true when the priority was set							|
+		|																								|
+		|	Comments:			For advisory priority changes. Unprivileged processes	|
+		|						cannot raise thread priority on most systems.			|
+		\*_____________________________________________________________________________*/
+		bool f_TrySetPriority(EExecutionPriority _Prio);
+
 		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
 		|	Function:			The main function of the thread. You will have to		|
 		|						override this function to be able to do anything with	|
@@ -1977,6 +1991,7 @@ namespace NMib::NThread
 		using CThread::f_Resume;
 		using CThread::f_Stop;
 		using CThread::f_SetPriority;
+		using CThread::f_TrySetPriority;
 		using CThread::f_GetReturnValue;
 		using CThread::f_CallingFromThread;
 		using CThread::f_GetState;
