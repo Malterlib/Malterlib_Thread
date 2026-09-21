@@ -29,7 +29,10 @@ using CWindowsCriticalSection = CRITICAL_SECTION;
 #endif
 
 #ifdef DPlatformFamily_Linux
+#include <Mib/Core/PlatformSpecific/LinuxProcFS>
+#include <fcntl.h>
 #include <sched.h>
+#include <signal.h>
 #include <sys/resource.h>
 #endif
 
@@ -894,6 +897,88 @@ namespace
 				rlimit NiceLimit = {};
 				bool bGranted = !getrlimit(RLIMIT_NICE, &NiceLimit) && 20 - (int)NMib::fg_Min(NiceLimit.rlim_cur, rlim_t(40)) <= BaseNice;
 
+				// Empty for a thread that exited after the tasks were listed
+				auto fReadProcFile = [](NMib::NStr::CStr const &_Path) -> NMib::NStr::CStr
+					{
+						NMib::NContainer::TCVector<ch8> Data;
+						if (!NMib::NPlatform::fg_ReadProcFS(NMib::NStr::CFStr256(_Path), Data))
+							return {};
+
+						return NMib::NStr::CStr(Data.f_GetArray(), Data.f_GetLen());
+					}
+				;
+
+				// Returns why the child failed. A child that hangs is described before it is killed: what each of its threads
+				// is blocked in, and for a futex the owner the lock word names, which no longer exists when the lock was held
+				// by another thread of the parent at the time of the fork
+				auto fWaitForChild = [&](pid_t _ProcessID) -> NMib::NStr::CStr
+					{
+						int Status = 0;
+						pid_t Waited = 0;
+						for (umint iPoll = 0; iPoll < 3000 && Waited == 0; ++iPoll)
+						{
+							Waited = waitpid(_ProcessID, &Status, WNOHANG);
+							if (Waited == 0)
+								NMib::NSys::fg_Thread_Sleep(0.01f);
+						}
+
+						if (Waited < 0)
+							return NMib::NStr::CStr::CFormat("waitpid: {}\n") << strerror(errno);
+
+						if (Waited == _ProcessID)
+						{
+							if (WIFSIGNALED(Status))
+								return NMib::NStr::CStr::CFormat("child terminated by signal {}\n") << WTERMSIG(Status);
+
+							if (!WIFEXITED(Status) || WEXITSTATUS(Status) != 0)
+								return NMib::NStr::CStr::CFormat("child exited with status {}\n") << Status;
+
+							return {};
+						}
+
+						NMib::NStr::CStr Description = NMib::NStr::CStr::CFormat("child {} hangs\n") << (int)_ProcessID;
+						try
+						{
+							NMib::NStr::CStr ProcessDirectory = NMib::NStr::CStr::CFormat("/proc/{}") << (int)_ProcessID;
+							NMib::NStr::CStr Maps = fReadProcFile(ProcessDirectory + "/maps");
+							Description += NMib::NStr::CStr::CFormat("   maps: {}\n") << Maps.f_Left(NMib::fg_Max(Maps.f_Find("\n"), aint(0)));
+
+							int MemoryFile = open(ProcessDirectory + "/mem", O_RDONLY);
+							for (auto &TaskDirectory : NMib::NFile::CFile::fs_FindFiles(ProcessDirectory + "/task/*", NMib::NFile::EFileAttrib_Directory))
+							{
+								NMib::NStr::CStr SystemCall = fReadProcFile(TaskDirectory + "/syscall").f_Trim();
+								Description += NMib::NStr::CStr::CFormat("   {} {}: wchan {} syscall {}\n")
+									<< NMib::NFile::CFile::fs_GetFile(TaskDirectory)
+									<< fReadProcFile(TaskDirectory + "/comm").f_Trim()
+									<< fReadProcFile(TaskDirectory + "/wchan").f_Trim()
+									<< SystemCall
+								;
+
+								uint64 Number = 0;
+								uint64 Address = 0;
+								uint32 Word = 0;
+								aint nParsed = 0;
+								(NMib::NStr::CStr::CParse("{} 0x{nfh}") >> Number >> Address).f_Parse(SystemCall, nParsed);
+								bool bFutex = nParsed == 2 && (Number == 98 || Number == 202 || Number == 240 || Number == 422); // futex on arm64, x64 and x86
+								if (bFutex && MemoryFile >= 0 && pread(MemoryFile, &Word, sizeof(Word), (off_t)Address) == (ssize_t)sizeof(Word))
+									Description += NMib::NStr::CStr::CFormat("      futex word {nfh} owner {}\n") << Word << (Word & 0x3FFFFFFF);
+							}
+
+							if (MemoryFile >= 0)
+								close(MemoryFile);
+						}
+						catch (NMib::NException::CException const &_Exception)
+						{
+							Description += NMib::NStr::CStr::CFormat("   {}\n") << _Exception.f_GetErrorStr();
+						}
+
+						kill(_ProcessID, SIGKILL);
+						waitpid(_ProcessID, &Status, 0);
+
+						return Description;
+					}
+				;
+
 				DMibTestCategory("Fork")
 				{
 					// Neither the spawn helper nor a spawn server exists in the child, so the thread is created directly
@@ -916,10 +1001,7 @@ namespace
 						_exit(bSuccess ? 0 : 1);
 					}
 
-					int Status = 0;
-					DMibExpect(waitpid(ProcessID, &Status, 0), ==, ProcessID);
-					DMibExpectTrue(WIFEXITED(Status));
-					DMibExpect(WEXITSTATUS(Status), ==, 0);
+					DMibExpect(fWaitForChild(ProcessID), ==, "");
 
 					fCheck("ParentAfterFork", NMib::EExecutionPriority_Low, SCHED_OTHER, 10);
 				};
@@ -968,13 +1050,7 @@ namespace
 							_exit(ChildSchedule.m_Policy == SCHED_OTHER ? 0 : 1);
 						}
 
-						int Status = 0;
-						if (waitpid(ProcessID, &Status, 0) != ProcessID)
-							Failures += NMib::NStr::CStr::CFormat("waitpid: {}\n") << strerror(errno);
-						else if (WIFSIGNALED(Status))
-							Failures += NMib::NStr::CStr::CFormat("child terminated by signal {}\n") << WTERMSIG(Status);
-						else if (!WIFEXITED(Status) || WEXITSTATUS(Status) != 0)
-							Failures += NMib::NStr::CStr::CFormat("child exited with status {}\n") << Status;
+						Failures += fWaitForChild(ProcessID);
 					}
 
 					bStop = true;
@@ -988,12 +1064,18 @@ namespace
 				if (bGranted)
 				{
 					bool bFoundSpawnHelper = false;
-					for (auto &CommFile : NMib::NFile::CFile::fs_FindFiles("/proc/self/task/*/comm"))
+					bool bReadThreadName = false;
+					for (auto &TaskDirectory : NMib::NFile::CFile::fs_FindFiles("/proc/self/task/*", NMib::NFile::EFileAttrib_Directory))
 					{
-						if (NMib::NFile::CFile::fs_ReadStringFromFile(CommFile).f_Trim() == "Thread spawner")
+						NMib::NStr::CStr ThreadName = fReadProcFile(TaskDirectory + "/comm").f_Trim();
+						if (ThreadName)
+							bReadThreadName = true;
+
+						if (ThreadName == "Thread spawner")
 							bFoundSpawnHelper = true;
 					}
 
+					DMibExpectTrue(bReadThreadName);
 					DMibExpectFalse(bFoundSpawnHelper);
 				}
 			};
