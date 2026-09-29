@@ -6,15 +6,13 @@
 #include "Malterlib_Thread_ThreadLocal_Internal.h"
 
 #if defined(DPlatformFamily_Linux) && defined(DMibConfig_LinuxPThreadMonitoring) && defined(DMibAssumeMalterlibHost)
-	#define DUseThreadDestroyNotifications
+#	define DUseThreadDestroyNotifications
 #elif defined(DPlatformFamily_macOS) && defined(DMibConfig_PThreadIntrospection)
-	#define DUseThreadDestroyNotifications
+#	define DUseThreadDestroyNotifications
 #endif
 
 namespace NMib
 {
-
-
 	namespace NPrivate
 	{
 		constinit NMib::NStorage::TCAggregateSimple<NPrivate::CThreadLocalContext> g_ThreadLocalContext = {DAggregateInit};
@@ -28,16 +26,16 @@ namespace NMib
 		CThreadLocalContext::CThreadLocalContext()
 		{
 			// Alloc the thread storage index from the system
-		#if defined(DUseThreadDestroyNotifications)
-				m_iPerThread = NSys::fg_Thread_AllocLocal();
-		#elif defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
-				m_iPerThreadDestructor = NSys::fg_Thread_AllocLocalWithDestructor(fs_PerThreadDestructor);
-				m_iPerThread = NSys::fg_Thread_AllocLocal();
-			#elif defined(DMibPSupportThreadLocalDestructors)
-				m_iPerThread = NSys::fg_Thread_AllocLocalWithDestructor(fs_PerThreadDestructor);
-			#else
-				m_iPerThread = NSys::fg_Thread_AllocLocal();
-			#endif
+#if defined(DUseThreadDestroyNotifications)
+			m_iPerThread = NSys::fg_Thread_AllocLocal();
+#elif defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
+			m_iPerThreadDestructor = NSys::fg_Thread_AllocLocalWithDestructor(fs_PerThreadDestructor);
+			m_iPerThread = NSys::fg_Thread_AllocLocal();
+#elif defined(DMibPSupportThreadLocalDestructors)
+			m_iPerThread = NSys::fg_Thread_AllocLocalWithDestructor(fs_PerThreadDestructor);
+#else
+			m_iPerThread = NSys::fg_Thread_AllocLocal();
+#endif
 			DMibFastCheck(m_iPerThread > 0); // This must succeed
 		}
 
@@ -46,9 +44,7 @@ namespace NMib
 			f_FreeThread();
 #if DMibEnableSafeCheck > 0
 			for (auto iLocal = m_ThreadLocal_DestroyOrder.f_GetIterator(); iLocal; ++iLocal)
-			{
 				DMibTraceSafe("{} Thread local for class '{}' not yet destroyed{\n}", this, iLocal->m_pInterface->f_GetName());
-			}
 #endif
 			DMibFastCheck(m_ThreadLocal_DestroyOrder.f_IsEmpty()); // Anything else means that there are ThreadLocal classes that are still using this context
 			// Turns out that lots of threads can still be loaded when you unload an dll
@@ -111,16 +107,16 @@ namespace NMib
 			}
 
 			NSys::fg_Thread_SetLocal(m_iPerThread, nullptr);
-		#if defined(DUseThreadDestroyNotifications)
-				NSys::fg_Thread_FreeLocal(m_iPerThread);
-		#elif defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
-				NSys::fg_Thread_FreeLocalWithDestructor(m_iPerThreadDestructor);
-				NSys::fg_Thread_FreeLocal(m_iPerThread);
-		#elif defined(DMibPSupportThreadLocalDestructors)
-				NSys::fg_Thread_FreeLocalWithDestructor(m_iPerThread);
-		#else
-				NSys::fg_Thread_FreeLocal(m_iPerThread);
-		#endif
+#if defined(DUseThreadDestroyNotifications)
+			NSys::fg_Thread_FreeLocal(m_iPerThread);
+#elif defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
+			NSys::fg_Thread_FreeLocalWithDestructor(m_iPerThreadDestructor);
+			NSys::fg_Thread_FreeLocal(m_iPerThread);
+#elif defined(DMibPSupportThreadLocalDestructors)
+			NSys::fg_Thread_FreeLocalWithDestructor(m_iPerThread);
+#else
+			NSys::fg_Thread_FreeLocal(m_iPerThread);
+#endif
 		}
 
 		CThreadLocalContext::CPerThread::CPointer::~CPointer()
@@ -158,17 +154,16 @@ namespace NMib
 			m_LockContext.f_Unlock();
 		}
 
-	#ifdef DMibPSupportThreadLocalDestructors
+#ifdef DMibPSupportThreadLocalDestructors
 
-		void CThreadLocalContext::fs_PerThreadDestructor(void* _pPerThread)
+		void CThreadLocalContext::fs_PerThreadDestructor(void *_pPerThread)
 		{
-			CPerThread* pPerThread = (CPerThread*)_pPerThread;
+			CPerThread *pPerThread = (CPerThread *)_pPerThread;
 
 			g_ThreadLocalContext->fp_FreePerThread(pPerThread);
 		}
 
-	#endif
-
+#endif
 
 		void CThreadLocalContext::fp_GrowTable()
 		{
@@ -206,9 +201,9 @@ namespace NMib
 			{
 				if (_ThreadID == NSys::fg_Thread_GetCurrentUID())
 				{
-				#if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals) && !defined(DUseThreadDestroyNotifications)
+#if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals) && !defined(DUseThreadDestroyNotifications)
 					NSys::fg_Thread_SetLocalDestructor(_ThreadID, m_iPerThreadDestructor, pCurrentThread);
-				#endif
+#endif
 					NSys::fg_Thread_SetLocal(m_iPerThread, pCurrentThread);
 				}
 
@@ -216,12 +211,7 @@ namespace NMib
 			}
 			// Lock for the pool
 			// The thread storage does not exist for this thread, lets create it
-			CPerThread *pThreadLocal = m_PoolPerThread.f_New
-				(
-					_ThreadID
-					, this
-				)
-			;
+			CPerThread *pThreadLocal = m_PoolPerThread.f_New(_ThreadID, this);
 			pThreadLocal->m_ThreadLocals.f_SetLen(m_iThreadLocalCurrentLen);
 #if DMibEnableSafeCheck > 0
 			pThreadLocal->m_pStartAddress = NSys::fg_Thread_GetStartAddress(_ThreadID);
@@ -237,16 +227,13 @@ namespace NMib
 
 		bool CThreadLocalContext::f_ThreadDestroyed() const
 		{
-		#ifdef DPlatformFamily_Linux
+#ifdef DPlatformFamily_Linux
 			return NSys::fg_Thread_GetLocalsDestroyed(m_iPerThread);
-		#elif defined(DPlatformFamily_macOS) && defined(DMibConfig_PThreadIntrospection)
-			return
-				NSys::fg_Thread_GetLocalsDestroyed(m_iPerThread)
-				|| (umint)NSys::fg_Thread_GetLocal(m_iPerThread) == TCLimitsInt<umint>::mc_Max
-			;
-		#else
+#elif defined(DPlatformFamily_macOS) && defined(DMibConfig_PThreadIntrospection)
+			return NSys::fg_Thread_GetLocalsDestroyed(m_iPerThread) || (umint)NSys::fg_Thread_GetLocal(m_iPerThread) == TCLimitsInt<umint>::mc_Max;
+#else
 			return (umint)NSys::fg_Thread_GetLocal(m_iPerThread) == TCLimitsInt<umint>::mc_Max;
-		#endif
+#endif
 		}
 
 		bool CThreadLocalContext::f_ThreadCreated()
@@ -289,7 +276,7 @@ namespace NMib
 			pIndex->m_pInterface = &_Interface;
 			m_ThreadLocal_DestroyOrder.f_InsertFirst(pIndex);
 
-	#ifdef DMibPSupportAlwaysCreatedThreadLocal
+#ifdef DMibPSupportAlwaysCreatedThreadLocal
 			umint iThreadLocal = pIndex->m_iThreadLocal;
 			auto Iter = m_PerThreadByThreadID.f_GetIterator();
 			while (Iter)
@@ -320,7 +307,7 @@ namespace NMib
 				}
 				++Iter;
 			}
-	#endif
+#endif
 
 			//DMibDTraceSafe("{} - {} = {}" DMibNewLine, DMibPFunction, pIndex->m_iThreadLocal, m_ThreadLocal_DestroyOrder.f_GetLen());
 			_ThreadLocalLocal = pIndex->m_LocalThreadLocal;
@@ -472,9 +459,7 @@ namespace NMib
 			DMibLock(m_LockContext);
 
 			for (auto iThread = m_PerThreadByThreadID.f_GetIterator(); iThread; ++iThread)
-			{
 				_EnumFunc(iThread->m_ThreadID);
-			}
 		}
 
 		void CThreadLocalContext::f_CreateThread(umint _ThreadID, umint _ParentThread)
@@ -570,7 +555,7 @@ namespace NMib
 		{
 			NSys::fg_Thread_SetLocal(m_iPerThread, _pPerThread);
 
-		#ifdef DPlatformFamily_macOS
+#ifdef DPlatformFamily_macOS
 			// The introspection terminate fallback runs after pthread has cleared
 			// native TSD. Restore the retained values so destruction has the same
 			// thread-local view as the earlier fallback levels.
@@ -590,7 +575,7 @@ namespace NMib
 			;
 			fRestore(_pPerThread->m_Created);
 			fRestore(_pPerThread->m_CreatedAlwaysCreate);
-		#endif
+#endif
 		}
 
 		void CThreadLocalContext::fp_FreePerThread(CPerThread *_pPerThread)
@@ -599,11 +584,11 @@ namespace NMib
 
 			if (!_pPerThread)
 			{
-				#if defined(DUseThreadDestroyNotifications) || !defined(DMibPSupportThreadLocalDestructors)
-					_pPerThread = (CPerThread *)NSys::fg_Thread_GetLocal(m_iPerThread);
-				#else
-					return;
-				#endif
+#if defined(DUseThreadDestroyNotifications) || !defined(DMibPSupportThreadLocalDestructors)
+				_pPerThread = (CPerThread *)NSys::fg_Thread_GetLocal(m_iPerThread);
+#else
+				return;
+#endif
 			}
 
 			if (_pPerThread && ((umint)_pPerThread != TCLimitsInt<umint>::mc_Max))
@@ -661,7 +646,6 @@ namespace NMib
 					//#endif
 						Pointer.m_pPtr = nullptr;
 					}
-
 				}
 
 			//#ifndef DMibPSupportThreadLocalDestructors
@@ -671,16 +655,16 @@ namespace NMib
 				m_PerThreadByThreadID.f_Remove(_pPerThread);
 				m_PoolPerThread.f_Delete(_pPerThread);
 
-			#ifdef DPlatformFamily_Linux
+#ifdef DPlatformFamily_Linux
 				NSys::fg_Thread_SetLocalsDestroyed(true);
-			#endif
+#endif
 			}
 			else
 			{
 				DMibFastCheck(m_PerThreadByThreadID.f_FindEqual(NSys::fg_Thread_GetCurrentUID()) == nullptr);
-			#ifdef DPlatformFamily_macOS
+#ifdef DPlatformFamily_macOS
 				NSys::fg_Thread_SetLocal(m_iPerThread, (void *)TCLimitsInt<umint>::mc_Max);
-			#endif
+#endif
 			}
 		}
 
@@ -721,6 +705,7 @@ namespace NMib
 				void const *m_pStartAddress;
 				CStackTraceInfo *m_pInfo;
 			};
+
 			constexpr umint c_MaxEntries = 64;
 			CEntry Entries[c_MaxEntries];
 			umint nEntries = 0;
@@ -933,23 +918,24 @@ namespace NMib
 
 	void CSystem::f_OnThreadDestroyed()
 	{
-	#ifdef DUseThreadDestroyNotifications
-		#ifdef DPlatformFamily_macOS
-			f_ThreadLocalFreeThreadFromNotification();
-		#else
-		f_ThreadLocalFreeThread();
-		#endif
-	#elif defined(DMibPSupportThreadLocalDestructors)
+#ifdef DUseThreadDestroyNotifications
+#	ifdef DPlatformFamily_macOS
 		f_ThreadLocalFreeThreadFromNotification();
-	#else
+#	else
 		f_ThreadLocalFreeThread();
-	#endif
+#	endif
+#elif defined(DMibPSupportThreadLocalDestructors)
+		f_ThreadLocalFreeThreadFromNotification();
+#else
+		f_ThreadLocalFreeThread();
+#endif
 	}
 
 	void CSystem::fp_ThreadLocalCreate()
 	{
 		NPrivate::g_ThreadLocalContext.f_Construct();
 	}
+
 	void CSystem::fp_ThreadLocalDestroy()
 	{
 		auto fDestroy = []

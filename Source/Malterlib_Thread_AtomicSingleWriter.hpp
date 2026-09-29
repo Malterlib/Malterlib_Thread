@@ -73,7 +73,8 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CType>
-	constexpr bool TCAtomicSingleWriter<t_CType>::f_CompareExchangeWeak(t_CType &_Expected, t_CType _Desired, NAtomic::CMemoryOrder _SuccessOrder, NAtomic::CMemoryOrder _FailureOrder) noexcept
+	constexpr bool TCAtomicSingleWriter<t_CType>::f_CompareExchangeWeak(t_CType &_Expected, t_CType _Desired, NAtomic::CMemoryOrder _SuccessOrder, NAtomic::CMemoryOrder _FailureOrder)
+		noexcept
 	{
 		return f_CompareExchangeStrong(_Expected, _Desired, fg_Max(_SuccessOrder, _FailureOrder));
 	}
@@ -85,7 +86,8 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CType>
-	constexpr bool TCAtomicSingleWriter<t_CType>::f_CompareExchangeStrong(t_CType &_Expected, t_CType _Desired, NAtomic::CMemoryOrder _SuccessOrder, NAtomic::CMemoryOrder _FailureOrder) noexcept
+	constexpr bool TCAtomicSingleWriter<t_CType>::f_CompareExchangeStrong(t_CType &_Expected, t_CType _Desired, NAtomic::CMemoryOrder _SuccessOrder, NAtomic::CMemoryOrder _FailureOrder)
+		noexcept
 	{
 		return f_CompareExchangeStrong(_Expected, _Desired, fg_Max(_SuccessOrder, _FailureOrder));
 	}
@@ -219,7 +221,7 @@ namespace NMib::NThread
 	template <typename t_CType>
 	constexpr t_CType TCAtomicSingleWriter<t_CType>::operator -- () noexcept
 	{
-		return f_FetchSub(1)-1;
+		return f_FetchSub(1) - 1;
 	}
 
 	template <typename t_CType>

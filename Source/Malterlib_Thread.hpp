@@ -100,9 +100,7 @@ namespace NMib::NThread
 				pData = (t_CData *)NSys::fg_Thread_GetLocal(m_ThreadLocalLocal);
 		}
 		if constexpr ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0)
-		{
 			return pData;
-		}
 		else
 		{
 			if (pData) [[likely]]
@@ -113,6 +111,7 @@ namespace NMib::NThread
 			return fp_GetNew();
 		}
 	}
+
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	inline_small t_CData *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_TryGet()
 	{
@@ -131,6 +130,7 @@ namespace NMib::NThread
 				return (t_CData *)NSys::fg_Thread_GetLocal(m_ThreadLocalLocal);
 		}
 	}
+
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	inline_small t_CData *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_GetForThread(umint _ThreadID)
 	{
@@ -158,7 +158,6 @@ namespace NMib::NThread
 		}
 	}
 
-
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
 	inline_small void TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_ReinitForThread()
 	{
@@ -171,21 +170,20 @@ namespace NMib::NThread
 		return fg_GetSys()->f_ThreadLocalDestroyForThread((void *)m_pStorage);
 	}
 
-
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
-	inline_small TCThreadLocal<t_CData, t_CAllocator, t_Flags>::operator t_CData *()
+	inline_small TCThreadLocal<t_CData, t_CAllocator, t_Flags>::operator t_CData * ()
 	{
 		return f_Get();
 	}
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
-	inline_small t_CData * TCThreadLocal<t_CData, t_CAllocator, t_Flags>::operator ->()
+	inline_small t_CData *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::operator -> ()
 	{
 		return f_Get();
 	}
 
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
-	inline_small t_CData & TCThreadLocal<t_CData, t_CAllocator, t_Flags>::operator &()
+	inline_small t_CData &TCThreadLocal<t_CData, t_CAllocator, t_Flags>::operator & ()
 	{
 		return *f_Get();
 	}
@@ -209,6 +207,7 @@ namespace NMib::NThread
 				tf_CType *pData = new(_pDest) tf_CType(*pSource);
 				return pData;
 			}
+
 			template <typename tf_CType>
 			static void *fs_CreateHelperMove(void *_pDest, void *_pSource)
 			{
@@ -226,6 +225,7 @@ namespace NMib::NThread
 			{
 				return nullptr;
 			}
+
 			template <typename tf_CType>
 			static void *fs_CreateHelperMove(void *_pDest, void *_pSource)
 			{
@@ -259,7 +259,7 @@ namespace NMib::NThread
 		if constexpr (c_bInherit)
 		{
 			t_CData const *pSource = (t_CData const *)_pSource;
-			t_CData *pData = new (_pMemory) t_CData(*pSource);
+			t_CData *pData = new(_pMemory) t_CData(*pSource);
 			return pData;
 		}
 
@@ -274,7 +274,7 @@ namespace NMib::NThread
 		if constexpr (c_bInherit)
 		{
 			t_CData *pSource = (t_CData *)_pSource;
-			t_CData *pData = new (_pMemory) t_CData(fg_Move(*pSource));
+			t_CData *pData = new(_pMemory) t_CData(fg_Move(*pSource));
 			return pData;
 		}
 
@@ -288,7 +288,13 @@ namespace NMib::NThread
 		{
 			if (!_pMemory)
 				_pMemory = t_CAllocator::f_AllocAligned(sizeof(t_CData), fg_Max(umint(DMibPMemoryCacheLineSize), alignof(t_CData)));
-			if constexpr (requires { t_CData::mc_bThreadLocalConstructForThread; })
+			if constexpr
+			(
+				requires
+				{
+					t_CData::mc_bThreadLocalConstructForThread;
+				}
+			)
 			{
 				static_assert(t_CData::mc_bThreadLocalConstructForThread);
 				return new(_pMemory) t_CData(CThreadLocalConstructionContext{_ThreadID});
@@ -301,13 +307,13 @@ namespace NMib::NThread
 
 #if DMibEnableSafeCheck > 0
 	template <typename t_CData, typename t_CAllocator, EThreadLocalFlag t_Flags>
-	ch8 const* TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_GetName()
+	ch8 const *TCThreadLocal<t_CData, t_CAllocator, t_Flags>::f_GetName()
 	{
 		return fg_GetTypeName<t_CData>();
 	}
 #endif
 
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
 	TCThreadLocalDynamic<t_CData, t_Flags>::TCThreadLocalDynamic
@@ -341,7 +347,6 @@ namespace NMib::NThread
 			m_pStorage = 0;
 		}
 	}
-
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
 	TCThreadLocalDynamic<t_CData, t_Flags>::~TCThreadLocalDynamic()
@@ -424,9 +429,7 @@ namespace NMib::NThread
 				pData = (t_CData *)NSys::fg_Thread_GetLocal(m_ThreadLocalLocal);
 		}
 		if constexpr ((mc_Flags & EThreadLocalFlag_AlwaysCreated) != 0)
-		{
 			return pData;
-		}
 		else
 		{
 			if (pData) [[likely]]
@@ -484,21 +487,20 @@ namespace NMib::NThread
 		}
 	}
 
-
 	template <typename t_CData, EThreadLocalFlag t_Flags>
-	inline_small TCThreadLocalDynamic<t_CData, t_Flags>::operator t_CData *()
+	inline_small TCThreadLocalDynamic<t_CData, t_Flags>::operator t_CData * ()
 	{
 		return f_Get();
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
-	inline_small t_CData * TCThreadLocalDynamic<t_CData, t_Flags>::operator ->()
+	inline_small t_CData *TCThreadLocalDynamic<t_CData, t_Flags>::operator -> ()
 	{
 		return f_Get();
 	}
 
 	template <typename t_CData, EThreadLocalFlag t_Flags>
-	inline_small t_CData & TCThreadLocalDynamic<t_CData, t_Flags>::operator &()
+	inline_small t_CData &TCThreadLocalDynamic<t_CData, t_Flags>::operator & ()
 	{
 		return *f_Get();
 	}
@@ -563,7 +565,7 @@ namespace NMib::NThread
 
 #if DMibEnableSafeCheck > 0
 	template <typename t_CData, EThreadLocalFlag t_Flags>
-	ch8 const* TCThreadLocalDynamic<t_CData, t_Flags>::f_GetName()
+	ch8 const *TCThreadLocalDynamic<t_CData, t_Flags>::f_GetName()
 	{
 		return fg_GetTypeName<t_CData>();
 	}
@@ -583,43 +585,41 @@ namespace NMib::NThread
 		return m_pCallerObject->f_GetName();
 	}
 
-
 	namespace NPrivate
 	{
-
 		template <typename t_CFunctionType, typename t_CStr, typename t_CCallerObject, typename t_CThreadObject>
 		class TCCallerObjectImp : public t_CCallerObject
 		{
 		public:
 			t_CFunctionType m_FunctionObject;
 			t_CStr m_Name;
-			TCCallerObjectImp(const t_CFunctionType &_FunctionObject, const t_CStr &_Name)
+			TCCallerObjectImp(t_CFunctionType const &_FunctionObject, t_CStr const &_Name)
 				: m_FunctionObject(_FunctionObject)
 				, m_Name(_Name)
 			{
 			}
-			TCCallerObjectImp(t_CFunctionType &&_FunctionObject, const t_CStr &_Name)
+
+			TCCallerObjectImp(t_CFunctionType &&_FunctionObject, t_CStr const &_Name)
 				: m_FunctionObject(fg_Move(_FunctionObject))
 				, m_Name(_Name)
 			{
 			}
+
 			virtual aint f_Call(t_CThreadObject *_pThread)
 			{
 				return m_FunctionObject(_pThread);
 			}
+
 			virtual ch8 const *f_GetName()
 			{
 				return m_Name;
 			}
-
 		};
 	}
 
 	template <typename t_CAllocator, typename t_CStr>
 	template <typename tf_CFunctionType>
-	auto
-	//void
-	TCThreadObject<t_CAllocator, t_CStr>::fs_StartThread
+	auto TCThreadObject<t_CAllocator, t_CStr>::fs_StartThread
 		(
 			tf_CFunctionType &&_FunctionObject
 			, t_CStr const &_Name
@@ -630,8 +630,7 @@ namespace NMib::NThread
 		)
 		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
-		NStorage::TCUniquePointer<TCThreadObject, t_CAllocator> pThread
-			= fg_Construct
+		NStorage::TCUniquePointer<TCThreadObject, t_CAllocator> pThread = fg_Construct
 			(
 				NStorage::TCUniquePointer<CCallerObject, t_CAllocator>
 				(
@@ -666,22 +665,27 @@ namespace NMib::NThread
 		public:
 			tf_CFunctionType *m_pFunctionObject;
 			t_CStr m_Name;
-			CCallerObjectImp(tf_CFunctionType *_pFunctionObject, const t_CStr &_Name) : m_pFunctionObject(_pFunctionObject), m_Name(_Name)
+			CCallerObjectImp(tf_CFunctionType *_pFunctionObject, t_CStr const &_Name)
+				: m_pFunctionObject(_pFunctionObject)
+				, m_Name(_Name)
 			{
 			}
+
 			virtual aint f_Call(TCThreadObject *_pThread)
 			{
 				return (*m_pFunctionObject)(_pThread);
 			}
+
 			virtual ch8 const *f_GetName()
 			{
 				return m_Name;
 			}
-
 		};
 
-		NStorage::TCUniquePointer<TCThreadObject, t_CAllocator> pThread
-			= fg_Construct(NStorage::TCUniquePointer<CCallerObject, t_CAllocator>(fg_Construct<CCallerObjectImp>(_pFunctionObject, _Name)))
+		NStorage::TCUniquePointer<TCThreadObject, t_CAllocator> pThread = fg_Construct
+			(
+				NStorage::TCUniquePointer<CCallerObject, t_CAllocator>(fg_Construct<CCallerObjectImp>(_pFunctionObject, _Name))
+			)
 		;
 		pThread->f_Start(_Prio, _StackSize, _Affinity, _Flags);
 

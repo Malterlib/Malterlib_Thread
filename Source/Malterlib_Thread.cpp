@@ -19,7 +19,7 @@ namespace NMib::NStorage
 		_Other.m_pCallstack = nullptr;
 	}
 
-	CRefCountDebugReference &CRefCountDebugReference::operator =(CRefCountDebugReference &&_Other)
+	CRefCountDebugReference &CRefCountDebugReference::operator = (CRefCountDebugReference &&_Other)
 	{
 		m_pCallstack = _Other.m_pCallstack;
 		_Other.m_pCallstack = nullptr;
@@ -35,23 +35,33 @@ namespace NMib::NStorage
 	constinit umint CRefCountDebug::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>();
 
 	template <>
-	constinit umint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic
-		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>()
+	constinit umint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, smint>::ms_Magic = NMisc::CRandomShiftRNG
+		(
+			123456789 + DMibPLine
+			, 123456789 + DMibPLine
+			, 123456789 + DMibPLine
+		)
+		.f_GetValue<umint>()
 	;
 
 	template <>
-	constinit umint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic
-		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>()
+	constinit umint TCIntrusiveRefCount<ESharedPointerOption_None, smint>::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine)
+		.f_GetValue<umint>()
 	;
 
 	template <>
-	constinit umint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic
-		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>()
+	constinit umint TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, int32>::ms_Magic = NMisc::CRandomShiftRNG
+		(
+			123456789 + DMibPLine
+			, 123456789 + DMibPLine
+			, 123456789 + DMibPLine
+		)
+		.f_GetValue<umint>()
 	;
 
 	template <>
-	constinit umint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic
-		= NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine).f_GetValue<umint>()
+	constinit umint TCIntrusiveRefCount<ESharedPointerOption_None, int32>::ms_Magic = NMisc::CRandomShiftRNG(123456789 + DMibPLine, 123456789 + DMibPLine, 123456789 + DMibPLine)
+		.f_GetValue<umint>()
 	;
 
 	CRefCountDebug::CRefCountDebug() = default;
@@ -136,9 +146,9 @@ namespace NMib::NThread
 
 		aint Return = pThread->f_Main();
 
-	#ifndef DMibPSupportThreadDestroyNotification
+#ifndef DMibPSupportThreadDestroyNotification
 		fg_GetSys()->f_ThreadLocalFreeThread();
-	#endif
+#endif
 
 		pThread->m_Lock.f_Lock();
 
@@ -185,9 +195,7 @@ namespace NMib::NThread
 		{
 			DMibLockTyped(CMutual, m_Lock);
 			if (m_StateAtomic.f_Load() > EThreadState_Stopped)
-			{
 				DMibError("You cannot start a thread that is already running");
-			}
 			fp_Cleanup();
 			m_ThreadQuitEvent.f_ResetSignaled();
 			m_ReturnValue = 0;
@@ -205,7 +213,6 @@ namespace NMib::NThread
 			m_pThreadDestroyContext = NSys::fg_Thread_BeginDestroy(m_pThread);
 			m_StateAtomic.f_Exchange(EThreadState_Running);
 		}
-
 	}
 
 	ch8 const *CThread::f_GetThreadNameRaw()
@@ -213,15 +220,12 @@ namespace NMib::NThread
 		return nullptr;
 	}
 
-
 	umint CThread::f_Stop(bool _bBlock)
 	{
-
 		{
 			m_Lock.f_Lock();
 
-			auto Unlock
-				= fg_OnScopeExit
+			auto Unlock = fg_OnScopeExit
 				(
 					[this]
 					{
@@ -230,11 +234,9 @@ namespace NMib::NThread
 				)
 			;
 
-
 			switch (m_StateAtomic.f_Load())
 			{
-			case EThreadState_None:
-				return 0;
+			case EThreadState_None: return 0;
 			case EThreadState_Stopped:
 				{
 					DMibUnlockTyped(CMutual, m_Lock);
@@ -291,7 +293,6 @@ namespace NMib::NThread
 		}
 
 		return 0;
-
 	}
 
 	void CThread::f_Suspend()

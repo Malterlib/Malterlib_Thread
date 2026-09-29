@@ -5,14 +5,14 @@
 #include <string.h>
 
 #ifdef _WIN32
-#include <windows.h>
+#	include <windows.h>
 #else
-#include <dlfcn.h>
-#include <pthread.h>
+#	include <dlfcn.h>
+#	include <pthread.h>
 #endif
 
 #ifdef __APPLE__
-#include <pthread/introspection.h>
+#	include <pthread/introspection.h>
 
 static void fg_HostIntrospectionHook(unsigned int _Event, pthread_t _pThread, void *_pAddress, size_t _Size)
 {

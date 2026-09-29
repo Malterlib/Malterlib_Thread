@@ -23,7 +23,6 @@ Import "../Core/Lib_Malterlib.MTarget"
 	}
 }
 
-
 Property
 {
 	MalterlibLibrary_Thread: bool = MalterlibLibrary_All
