@@ -60,7 +60,10 @@ namespace NMib
 				NContainer::TCVector<mint, NMemory::CAllocator_VirtualNoTracking> LocalThreads;
 				for (auto &PerThread : m_PerThreadByThreadID)
 				{
-					DMibFastCheck(SystemThreads.f_BinarySearch(PerThread.m_ThreadID) >= 0);
+					// Disabled until the Hansoft Malterlib upgrade (P4 Plan bug 1901871): a thread the application does not own (a
+					// Windows shell worker started by shcore.dll) can end during teardown and leave its record here; newer Malterlib
+					// reports such threads as destroyed.
+					//DMibFastCheck(SystemThreads.f_BinarySearch(PerThread.m_ThreadID) >= 0);
 					LocalThreads.f_Insert(PerThread.m_ThreadID);
 				}
 
