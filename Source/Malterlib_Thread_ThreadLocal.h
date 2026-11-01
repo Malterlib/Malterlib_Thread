@@ -31,7 +31,9 @@ namespace NMib
 			{
 			}
 
-			virtual ~CThreadLocalInterface(){}
+			virtual ~CThreadLocalInterface()
+			{
+			}
 
 			struct CSafeAllocMemory
 			{
@@ -91,16 +93,17 @@ namespace NMib
 			virtual void *f_CreateDataMove(void *_pSource, void *_pMemory) = 0;
 			virtual void *f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID) = 0;
 #if DMibEnableSafeCheck > 0
-			virtual ch8 const* f_GetName() = 0;
+			virtual ch8 const *f_GetName() = 0;
 #endif
 
 			EThreadLocalInterfaceFlag m_Flags;
 		};
-        /*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
-        |	Template:			Implement thread specific storage						|
-        |																				|
-        |	Parameters:																	|
-        |		t_CData:			This is the class you want to store an				|
+
+		/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
+		|	Template:			Implement thread specific storage						|
+		|																				|
+		|	Parameters:																	|
+		|		t_CData:			This is the class you want to store an				|
 		|							instance of. You have to inherit this				|
 		|							class from CThreadLocal so the						|
 		|																				|
@@ -109,24 +112,24 @@ namespace NMib
 		|							want to have a seprate class for every				|
 		|							place you store thread specific data				|
 		|							anyway.												|
-        |																				|
-        |	Comments:			If you want to store this as a static function			|
+		|																				|
+		|	Comments:			If you want to store this as a static function			|
 		|						variable or as a global variable use TAggregate			|
 		|						for this. The thread storage is destroyed when			|
 		|						the last instance of it goes out of scope (for every	|
 		|						thread).												|
-        \*_____________________________________________________________________________*/
+		\*_____________________________________________________________________________*/
 
 		enum EThreadLocalFlag : int32
 		{
-			EThreadLocalFlag_None,
-			EThreadLocalFlag_Inherit = DMibBit(0),
-	#ifdef DMibPSupportAlwaysCreatedThreadLocal
-			EThreadLocalFlag_AlwaysCreated = DMibBit(1),
-	#else
-			EThreadLocalFlag_AlwaysCreated = 0,
-	#endif
-			EThreadLocalFlag_FastThreadLocal = DMibBit(2),
+			EThreadLocalFlag_None
+			, EThreadLocalFlag_Inherit = DMibBit(0)
+#ifdef DMibPSupportAlwaysCreatedThreadLocal
+			, EThreadLocalFlag_AlwaysCreated = DMibBit(1)
+#else
+			, EThreadLocalFlag_AlwaysCreated = 0
+#endif
+			, EThreadLocalFlag_FastThreadLocal = DMibBit(2)
 		};
 
 		struct CThreadLocalConstructionContext
@@ -139,7 +142,7 @@ namespace NMib
 		{
 			// Disable copy
 			TCThreadLocal(TCThreadLocal const &);
-			TCThreadLocal &operator =(TCThreadLocal const &);
+			TCThreadLocal &operator = (TCThreadLocal const &);
 			inline_never t_CData *fp_GetNew();
 
 		public:
@@ -151,7 +154,7 @@ namespace NMib
 			void *f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID) override;
 
 #if DMibEnableSafeCheck > 0
-			ch8 const* f_GetName() override;
+			ch8 const *f_GetName() override;
 #endif
 
 			TCThreadLocal();
@@ -167,9 +170,9 @@ namespace NMib
 			t_CData *f_TryGetForThread(umint _ThreadID);
 			bool f_IsValid();
 
-			inline_small operator t_CData *();
-			inline_small t_CData * operator ->();
-			inline_small t_CData & operator &();
+			inline_small operator t_CData * ();
+			inline_small t_CData *operator -> ();
+			inline_small t_CData &operator & ();
 
 			umint m_ThreadLocalLocal;
 			umint m_pStorage; // Index into the thread storage list
@@ -181,7 +184,7 @@ namespace NMib
 		{
 			// Disable copy
 			TCThreadLocalDynamic(TCThreadLocalDynamic const &);
-			TCThreadLocalDynamic&operator =(TCThreadLocalDynamic const &);
+			TCThreadLocalDynamic &operator = (TCThreadLocalDynamic const &);
 			inline_never t_CData *fp_GetNew();
 
 		public:
@@ -192,7 +195,7 @@ namespace NMib
 			void *f_CreateDataMove(void *_pSource, void *_pMemory) override;
 			void *f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID) override;
 #if DMibEnableSafeCheck > 0
-			ch8 const* f_GetName() override;
+			ch8 const *f_GetName() override;
 #endif
 			TCThreadLocalDynamic
 				(
@@ -214,9 +217,9 @@ namespace NMib
 			t_CData *f_TryGetForThread(umint _ThreadID);
 			bool f_IsValid();
 
-			inline_small operator t_CData *();
-			inline_small t_CData * operator ->();
-			inline_small t_CData & operator &();
+			inline_small operator t_CData * ();
+			inline_small t_CData *operator -> ();
+			inline_small t_CData &operator & ();
 
 			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
 

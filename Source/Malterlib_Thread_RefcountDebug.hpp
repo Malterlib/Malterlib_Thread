@@ -63,7 +63,8 @@ namespace NMib::NStorage
 #if DMibEnableSafeCheck > 0
 			, bool _bAllowRevive
 #endif
-		) const
+		)
+		const
 	{
 		t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Release);
 		DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
@@ -80,11 +81,7 @@ namespace NMib::NStorage
 	}
 
 	template <typename t_CCountType>
-	void TCIntrusiveRefCount<ESharedPointerOption_None, t_CCountType>::f_Move
-		(
-			CRefCountDebugReference &o_SourceReference
-			, CRefCountDebugReference &o_DestinationReference
-		) const
+	void TCIntrusiveRefCount<ESharedPointerOption_None, t_CCountType>::f_Move(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const
 	{
 		DMibFastCheck(o_SourceReference.m_pCallstack);
 		DMibFastCheck(!o_DestinationReference.m_pCallstack);
@@ -151,7 +148,8 @@ namespace NMib::NStorage
 #if DMibEnableSafeCheck > 0
 			, bool _bAllowRevive
 #endif
-		) const
+		)
+		const
 	{
 		t_CCountType Return = m_RefCount.f_FetchAdd(1, NAtomic::gc_MemoryOrder_Release);
 		DMibFastCheck(Return >= 0 || _bAllowRevive && Return == -1);
@@ -233,11 +231,7 @@ namespace NMib::NStorage
 	}
 
 	template <typename t_CCountType>
-	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, t_CCountType>::f_Move
-		(
-			CRefCountDebugReference &o_SourceReference
-			, CRefCountDebugReference &o_DestinationReference
-		) const
+	void TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, t_CCountType>::f_Move(CRefCountDebugReference &o_SourceReference, CRefCountDebugReference &o_DestinationReference) const
 	{
 		DMibFastCheck(o_SourceReference.m_pCallstack);
 		DMibFastCheck(!o_DestinationReference.m_pCallstack);
@@ -255,7 +249,8 @@ namespace NMib::NStorage
 		(
 			CRefCountDebugReference &o_SourceReference
 			, CRefCountDebugReference &o_DestinationReference
-		) const
+		)
+		const
 	{
 		DMibFastCheck(!o_DestinationReference.m_pCallstack);
 		DMibFastCheck(o_SourceReference.m_pCallstack);

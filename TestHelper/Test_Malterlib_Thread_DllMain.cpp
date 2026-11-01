@@ -14,9 +14,9 @@ extern "C"
 {
 	module_export uint32 calling_convention_c fg_TestSetAnotherThreadLocal()
 	{
-	#ifndef DMibPSupportAlwaysCreatedThreadLocal
+#ifndef DMibPSupportAlwaysCreatedThreadLocal
 		NMib::fg_SystemThreadInit();
-	#endif
+#endif
 		(void)NMib::NConcurrency::fg_ConcurrencyManager().f_GetConcurrentActorForThisThread(NMib::NConcurrency::EPriority_Normal);
 
 		NMib::NContainer::TCVector<umint> ThreadLocals;
@@ -41,7 +41,7 @@ extern "C"
 		NMib::NThread::CEvent ReadValue;
 		auto pThread = NMib::NThread::CThreadObject::fs_StartThread
 			(
-				[&] (NMib::NThread::CThreadObject *) -> aint
+				[&](NMib::NThread::CThreadObject *) -> aint
 				{
 					ThreadID.f_Store(NMib::NSys::fg_Thread_GetCurrentUID(), NMib::NAtomic::gc_MemoryOrder_Release);
 					ThreadReady.f_SetSignaled();

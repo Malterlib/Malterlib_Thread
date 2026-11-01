@@ -19,13 +19,10 @@ namespace NMib
 
 			NThread::CMutual m_LockContext;
 
-
 		public:
-
 			class CStorageIndex
 			{
 			public:
-
 				CStorageIndex()
 				{
 				}
@@ -48,9 +45,7 @@ namespace NMib
 				CStorageIndex *m_pStorageIndex;
 			};
 
-			using CAllocationPool
-				= NMemory::TCPool<NContainer::TCMapNode<umint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>
-			;
+			using CAllocationPool = NMemory::TCPool<NContainer::TCMapNode<umint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>;
 
 			class CPerThread
 			{
@@ -68,13 +63,14 @@ namespace NMib
 				class CPointer
 				{
 					CPointer(CPointer const &_Copy);
+
 				public:
 					void *m_pPtr;
 					CPointer()
 						: m_pPtr(nullptr)
 					{
-
 					}
+
 					~CPointer();
 					CPointer(CPointer &&_Copy)
 					{
@@ -90,19 +86,15 @@ namespace NMib
 				bool m_bOnThreadCreated;
 #if DMibEnableSafeCheck > 0
 				void const *m_pStartAddress = nullptr; // Where the thread started; identifies a foreign thread once it is gone
-				ch8 m_Name[64] = {}; // The last name Malterlib gave the thread; empty for one it only saw attach
-				ch8 m_StartSymbol[128] = {}; // Function at the start address, resolved by f_DescribeOtherThreads
-				ch8 m_StartModule[128] = {}; // Module of the start address, resolved by f_DescribeOtherThreads
+				ch8 m_Name[64] = {};                   // The last name Malterlib gave the thread; empty for one it only saw attach
+				ch8 m_StartSymbol[128] = {};           // Function at the start address, resolved by f_DescribeOtherThreads
+				ch8 m_StartModule[128] = {};           // Module of the start address, resolved by f_DescribeOtherThreads
 #endif
 
 				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
 				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
 
-				CPerThread
-					(
-						umint _ThreadID
-						, CThreadLocalContext * _pContext
-					)
+				CPerThread(umint _ThreadID, CThreadLocalContext *_pContext)
 					: m_Created(CAllocatorConstructTag(), _pContext->m_PoolAllocation)
 					, m_CreatedAlwaysCreate(CAllocatorConstructTag(), _pContext->m_PoolAllocation)
 					, m_ThreadID(_ThreadID)
@@ -118,8 +110,8 @@ namespace NMib
 				NContainer::TCVector<CPointer, NMemory::CAllocator_VirtualNoTracking> m_ThreadLocals;
 				NThread::CMutual m_Lock;
 			};
-		private:
 
+		private:
 			NIntrusive::TCAVLTree<&CPerThread::m_Link, CPerThread::CCompare> m_PerThreadByThreadID;
 			NMemory::TCPool<CPerThread, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> m_PoolPerThread;
 			CAllocationPool m_PoolAllocation;
@@ -143,9 +135,9 @@ namespace NMib
 			void fp_RestorePerThread(CPerThread *_pPerThread);
 			void fp_FreePerThread(CPerThread *_pPerThread);
 
-			#ifdef DMibPSupportThreadLocalDestructors
-				static void fs_PerThreadDestructor(void* _pPerThread);
-			#endif
+#ifdef DMibPSupportThreadLocalDestructors
+			static void fs_PerThreadDestructor(void *_pPerThread);
+#endif
 
 		public:
 			CStorageIndex *f_Alloc(NThread::CThreadLocalInterface &_Interface, umint &_ThreadLocalLocal);
