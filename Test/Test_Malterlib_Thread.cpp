@@ -1901,8 +1901,8 @@ class CDebugInfo
 	uint32 Spare[ 2 ];
 };
 
-#define RTL_CRITSECT_TYPE 0
-#define RTL_RESOURCE_TYPE 1
+#define RTL_CRITSECT_TYPE 0 // NOLINT(malterlib-macro-naming)
+#define RTL_RESOURCE_TYPE 1 // NOLINT(malterlib-macro-naming)
 
 class CWindowsCriticalSection
 {

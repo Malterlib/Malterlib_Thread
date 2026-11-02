@@ -1757,28 +1757,28 @@ namespace NMib::NThread
 		}
 	};
 
-#define DMibLock(_ToLock) NMib::NThread::TCScopeLock<decltype(_ToLock)> ScopeLockMutual1(_ToLock)
-#define DMibUnlock(_ToUnlock) NMib::NThread::TCScopeUnlock<decltype(_ToUnlock)> ScopeUnlockMutual1(_ToUnlock)
-#define DMibLockRead(_ToLock) NMib::NThread::TCScopeLockRead<decltype(_ToLock)> ScopeLockReadMutual1(_ToLock)
-#define DMibLockReadLocked(_ToLock) NMib::NThread::TCScopeLockReadLocked<decltype(_ToLock)> ScopeLockReadMutual1(_ToLock)
-#define DMibUnlockRead(_ToUnlock) NMib::NThread::TCScopeUnlockRead<decltype(_ToUnlock)> ScopeUnlockReadMutual1(_ToUnlock)
+#define DMibLock(d_ToLock) NMib::NThread::TCScopeLock<decltype(d_ToLock)> ScopeLockMutual1(d_ToLock)
+#define DMibUnlock(d_ToUnlock) NMib::NThread::TCScopeUnlock<decltype(d_ToUnlock)> ScopeUnlockMutual1(d_ToUnlock)
+#define DMibLockRead(d_ToLock) NMib::NThread::TCScopeLockRead<decltype(d_ToLock)> ScopeLockReadMutual1(d_ToLock)
+#define DMibLockReadLocked(d_ToLock) NMib::NThread::TCScopeLockReadLocked<decltype(d_ToLock)> ScopeLockReadMutual1(d_ToLock)
+#define DMibUnlockRead(d_ToUnlock) NMib::NThread::TCScopeUnlockRead<decltype(d_ToUnlock)> ScopeUnlockReadMutual1(d_ToUnlock)
 
-#define DMibLockTyped(_Type, _ToLock) NMib::NThread::TCScopeLock<_Type> ScopeLockMutualTyped1(_ToLock)
-#define DMibUnlockTyped(_Type, _ToUnlock) NMib::NThread::TCScopeUnlock<_Type> ScopeUnlockMutualTyped1(_ToUnlock)
+#define DMibLockTyped(d_Type, d_ToLock) NMib::NThread::TCScopeLock<d_Type> ScopeLockMutualTyped1(d_ToLock)
+#define DMibUnlockTyped(d_Type, d_ToUnlock) NMib::NThread::TCScopeUnlock<d_Type> ScopeUnlockMutualTyped1(d_ToUnlock)
 
-#define DMibLockReadTyped(_Type, _ToLock) NMib::NThread::TCScopeLockRead<_Type> ScopeLockReadMutualTyped1(_ToLock)
-#define DMibUnlockReadTyped(_Type, _ToUnlock) NMib::NThread::TCScopeUnlockRead<_Type> ScopeUnlockReadMutualTyped1(_ToUnlock)
+#define DMibLockReadTyped(d_Type, d_ToLock) NMib::NThread::TCScopeLockRead<d_Type> ScopeLockReadMutualTyped1(d_ToLock)
+#define DMibUnlockReadTyped(d_Type, d_ToUnlock) NMib::NThread::TCScopeUnlockRead<d_Type> ScopeUnlockReadMutualTyped1(d_ToUnlock)
 
 #ifndef DMibPNoShortCuts
-#	define DLock(_ToLock) DMibLock(_ToLock)
-#	define DUnlock(_ToLock) DMibUnlock(_ToLock)
-#	define DLockTyped(_Type, _ToLock) DMibLockTyped(_Type, _ToLock)
-#	define DUnlockTyped(_Type, _ToLock) DMibUnlockTyped(_Type, _ToLock)
-#	define DLockRead(_ToLock) DMibLockRead(_ToLock)
-#	define DLockReadLocked(_ToLock) DMibLockReadLocked(_ToLock)
-#	define DUnlockRead(_ToLock) DMibUnlockRead(_ToLock)
-#	define DLockTypedRead(_Type, _ToLock) DMibLockTypedRead(_Type, _ToLock)
-#	define DUnlockTypedRead(_Type, _ToLock) DMibUnlockTypedRead(_Type, _ToLock)
+#	define DLock(d_ToLock) DMibLock(d_ToLock)
+#	define DUnlock(d_ToLock) DMibUnlock(d_ToLock)
+#	define DLockTyped(d_Type, d_ToLock) DMibLockTyped(d_Type, d_ToLock)
+#	define DUnlockTyped(d_Type, d_ToLock) DMibUnlockTyped(d_Type, d_ToLock)
+#	define DLockRead(d_ToLock) DMibLockRead(d_ToLock)
+#	define DLockReadLocked(d_ToLock) DMibLockReadLocked(d_ToLock)
+#	define DUnlockRead(d_ToLock) DMibUnlockRead(d_ToLock)
+#	define DLockTypedRead(d_Type, d_ToLock) DMibLockTypedRead(d_Type, d_ToLock)
+#	define DUnlockTypedRead(d_Type, d_ToLock) DMibUnlockTypedRead(d_Type, d_ToLock)
 #endif
 
 	template <typename t_tData>
