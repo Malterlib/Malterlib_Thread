@@ -9,20 +9,10 @@ namespace NMib
 {
 	namespace NPrivate
 	{
-		class CThreadLocalContext
+		struct CThreadLocalContext
 		{
-			friend class NMib::CSystem;
-			friend class NStorage::TCAggregateSimple<CThreadLocalContext>;
-			CThreadLocalContext();
-
-			~CThreadLocalContext();
-
-			NThread::CMutual m_LockContext;
-
-		public:
-			class CStorageIndex
+			struct CStorageIndex
 			{
-			public:
 				CStorageIndex()
 				{
 				}
@@ -47,12 +37,10 @@ namespace NMib
 
 			using CAllocationPool = NMemory::TCPool<NContainer::TCMapNode<umint, CAllocation>, 128, NThread::CMutual, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking>;
 
-			class CPerThread
+			struct CPerThread
 			{
-			public:
-				class CCompare
+				struct CCompare
 				{
-				public:
 					inline_small umint const &operator () (CPerThread const &_Node) const
 					{
 						return _Node.m_ThreadID;
@@ -60,11 +48,8 @@ namespace NMib
 				};
 
 				NIntrusive::TCAVLLink<> m_Link;
-				class CPointer
+				struct CPointer
 				{
-					CPointer(CPointer const &_Copy);
-
-				public:
 					void *m_pPtr;
 					CPointer()
 						: m_pPtr(nullptr)
@@ -79,6 +64,9 @@ namespace NMib
 						// Set the ptr to null so the original does not get deleted
 						_Copy.m_pPtr = nullptr;
 					}
+
+				private:
+					CPointer(CPointer const &_Copy);
 				};
 
 				umint m_ThreadID;
@@ -160,6 +148,15 @@ namespace NMib
 			void f_PrepareFork();
 			void f_ForkedChild();
 			void f_ForkedParent();
+
+		private:
+			friend struct NMib::CSystem;
+			friend struct NStorage::TCAggregateSimple<CThreadLocalContext>;
+			CThreadLocalContext();
+
+			~CThreadLocalContext();
+
+			NThread::CMutual m_LockContext;
 		};
 	}
 };

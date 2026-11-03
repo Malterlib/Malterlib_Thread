@@ -138,14 +138,8 @@ namespace NMib
 		};
 
 		template <typename t_CData, typename t_CAllocator = NMemory::CAllocator_Heap, EThreadLocalFlag t_Flags = EThreadLocalFlag_None>
-		class TCThreadLocal : CThreadLocalInterface
+		struct TCThreadLocal : private CThreadLocalInterface
 		{
-			// Disable copy
-			TCThreadLocal(TCThreadLocal const &);
-			TCThreadLocal &operator = (TCThreadLocal const &);
-			inline_never t_CData *fp_GetNew();
-
-		public:
 			void f_DeleteItem(void *_pItem) override;
 			CSafeAlloc f_AllocData() override;
 			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
@@ -177,17 +171,17 @@ namespace NMib
 			umint m_ThreadLocalLocal;
 			umint m_pStorage; // Index into the thread storage list
 			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
+
+		private:
+			// Disable copy
+			TCThreadLocal(TCThreadLocal const &);
+			TCThreadLocal &operator = (TCThreadLocal const &);
+			inline_never t_CData *fp_GetNew();
 		};
 
 		template <typename t_CData, EThreadLocalFlag t_Flags = EThreadLocalFlag_None>
-		class TCThreadLocalDynamic : CThreadLocalInterface
+		struct TCThreadLocalDynamic : private CThreadLocalInterface
 		{
-			// Disable copy
-			TCThreadLocalDynamic(TCThreadLocalDynamic const &);
-			TCThreadLocalDynamic &operator = (TCThreadLocalDynamic const &);
-			inline_never t_CData *fp_GetNew();
-
-		public:
 			void f_DeleteItem(void *_pItem) override;
 			CSafeAlloc f_AllocData() override;
 			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
@@ -229,6 +223,12 @@ namespace NMib
 			NFunction::TCFunctionNoAlloc<void (CSafeAllocMemory const &_Alloc)> m_fFree;
 			NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, void *_pMemory, bool _bMove)> m_fConstruct;
 			NFunction::TCFunctionNoAlloc<void (t_CData *_pData)> m_fDestruct;
+
+		private:
+			// Disable copy
+			TCThreadLocalDynamic(TCThreadLocalDynamic const &);
+			TCThreadLocalDynamic &operator = (TCThreadLocalDynamic const &);
+			inline_never t_CData *fp_GetNew();
 		};
 	}
 }

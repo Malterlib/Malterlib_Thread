@@ -197,9 +197,8 @@ namespace NMib::NThread
 
 	namespace NPrivate
 	{
-		class TCCreateHelperDo
+		struct TCCreateHelperDo
 		{
-		public:
 			template <typename tf_CType>
 			static void *fs_CreateHelper(void *_pDest, void *_pSource)
 			{
@@ -217,9 +216,8 @@ namespace NMib::NThread
 			}
 		};
 
-		class TCCreateHelperDoNot
+		struct TCCreateHelperDoNot
 		{
-		public:
 			template <typename tf_CType>
 			static void *fs_CreateHelper(void *_pDest, void *_pSource)
 			{
@@ -588,9 +586,8 @@ namespace NMib::NThread
 	namespace NPrivate
 	{
 		template <typename t_CFunctionType, typename t_CStr, typename t_CCallerObject, typename t_CThreadObject>
-		class TCCallerObjectImp : public t_CCallerObject
+		struct TCCallerObjectImp : public t_CCallerObject
 		{
-		public:
 			t_CFunctionType m_FunctionObject;
 			t_CStr m_Name;
 			TCCallerObjectImp(t_CFunctionType const &_FunctionObject, t_CStr const &_Name)
@@ -660,9 +657,8 @@ namespace NMib::NThread
 		)
 		-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 	{
-		class CCallerObjectImp final : public CCallerObject
+		struct CCallerObjectImp final : public CCallerObject
 		{
-		public:
 			tf_CFunctionType *m_pFunctionObject;
 			t_CStr m_Name;
 			CCallerObjectImp(tf_CFunctionType *_pFunctionObject, t_CStr const &_Name)

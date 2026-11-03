@@ -41,9 +41,8 @@ namespace NMib::NThread
 	// (completion-event pattern), so the signaling side must not touch the
 	// object afterwards and only issues futex wakes, which are safe on stale
 	// addresses. Slow paths are implemented in the Core platform layer.
-	class CSemaphoreAggregate
+	struct CSemaphoreAggregate
 	{
-	public:
 		// Low 32 bits: count (the futex word); high 32 bits: parked waiters
 		NAtomic::TCAtomic<uint64> m_Data;
 		uint32 m_Maximum;
@@ -200,9 +199,8 @@ namespace NMib::NThread
 		}
 	};
 
-	class CEventAutoReset : public CEventAutoResetAggregate
+	struct CEventAutoReset : public CEventAutoResetAggregate
 	{
-	public:
 		CEventAutoReset()
 		{
 			f_Construct();
@@ -226,9 +224,8 @@ namespace NMib::NThread
 	// signal time complete even when a reset lands before they are scheduled,
 	// matching manual-reset event semantics. Slow paths are implemented in the
 	// Core platform layer.
-	class CEventAggregate
+	struct CEventAggregate
 	{
-	public:
 		NAtomic::TCAtomic<uint32> m_State;
 
 		static constexpr uint32 mcp_FlagSignaled = 0x1;
@@ -335,9 +332,8 @@ namespace NMib::NThread
 		void fp_WakeAllSlow();
 	};
 
-	class CEvent : public CEventAggregate
+	struct CEvent : public CEventAggregate
 	{
-	public:
 		CEvent()
 		{
 			f_Construct();
@@ -349,9 +345,8 @@ namespace NMib::NThread
 		}
 	};
 
-	class CSemaphore : public CSemaphoreAggregate
+	struct CSemaphore : public CSemaphoreAggregate
 	{
-	public:
 		CSemaphore(aint _Initial = 0, aint _Max = TCLimitsInt<aint>::mc_Max)
 		{
 			f_Construct(_Initial, _Max);
@@ -363,14 +358,13 @@ namespace NMib::NThread
 		}
 	};
 
-	class CScopeLock;
-	class CScopeUnlock;
-	class CScopeLockRead;
-	class CScopeUnlockRead;
+	struct CScopeLock;
+	struct CScopeUnlock;
+	struct CScopeLockRead;
+	struct CScopeUnlockRead;
 
-	class CNoLock
+	struct CNoLock
 	{
-	public:
 		inline_small void f_Construct()
 		{
 		}
@@ -394,15 +388,8 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CLock>
-	class TCScopeLock
+	struct TCScopeLock
 	{
-		t_CLock &m_Lock;
-		TCScopeLock(TCScopeLock &&_Other);
-		TCScopeLock(TCScopeLock const &_Other);
-		TCScopeLock &operator = (TCScopeLock &&_Other);
-		TCScopeLock &operator = (TCScopeLock const &_Other);
-
-	public:
 		inline_small TCScopeLock(t_CLock &_Lock)
 			: m_Lock(_Lock)
 		{
@@ -413,18 +400,18 @@ namespace NMib::NThread
 		{
 			m_Lock.f_Unlock();
 		}
+
+	private:
+		t_CLock &m_Lock;
+		TCScopeLock(TCScopeLock &&_Other);
+		TCScopeLock(TCScopeLock const &_Other);
+		TCScopeLock &operator = (TCScopeLock &&_Other);
+		TCScopeLock &operator = (TCScopeLock const &_Other);
 	};
 
 	template <typename t_CLock>
-	class TCScopeUnlock
+	struct TCScopeUnlock
 	{
-		t_CLock &m_Lock;
-		TCScopeUnlock(TCScopeUnlock &&_Other);
-		TCScopeUnlock(TCScopeUnlock const &_Other);
-		TCScopeUnlock &operator = (TCScopeUnlock &&_Other);
-		TCScopeUnlock &operator = (TCScopeUnlock const &_Other);
-
-	public:
 		inline_small TCScopeUnlock(t_CLock &_Lock)
 			: m_Lock(_Lock)
 		{
@@ -435,18 +422,18 @@ namespace NMib::NThread
 		{
 			m_Lock.f_Lock();
 		}
+
+	private:
+		t_CLock &m_Lock;
+		TCScopeUnlock(TCScopeUnlock &&_Other);
+		TCScopeUnlock(TCScopeUnlock const &_Other);
+		TCScopeUnlock &operator = (TCScopeUnlock &&_Other);
+		TCScopeUnlock &operator = (TCScopeUnlock const &_Other);
 	};
 
 	template <typename t_CLock>
-	class TCScopeLockRead
+	struct TCScopeLockRead
 	{
-		t_CLock &m_Lock;
-		TCScopeLockRead(TCScopeLockRead &&_Other);
-		TCScopeLockRead(TCScopeLockRead const &_Other);
-		TCScopeLockRead &operator = (TCScopeLockRead &&_Other);
-		TCScopeLockRead &operator = (TCScopeLockRead const &_Other);
-
-	public:
 		inline_small TCScopeLockRead(t_CLock &_Lock)
 			: m_Lock(_Lock)
 		{
@@ -457,15 +444,18 @@ namespace NMib::NThread
 		{
 			m_Lock.f_UnlockRead();
 		}
+
+	private:
+		t_CLock &m_Lock;
+		TCScopeLockRead(TCScopeLockRead &&_Other);
+		TCScopeLockRead(TCScopeLockRead const &_Other);
+		TCScopeLockRead &operator = (TCScopeLockRead &&_Other);
+		TCScopeLockRead &operator = (TCScopeLockRead const &_Other);
 	};
 
 	template <typename t_CLock>
-	class TCScopeLockReadLocked
+	struct TCScopeLockReadLocked
 	{
-		t_CLock &m_Lock;
-		bool m_bWasLocked;
-
-	public:
 		inline_small TCScopeLockReadLocked(t_CLock &_Lock)
 			: m_Lock(_Lock)
 		{
@@ -483,18 +473,15 @@ namespace NMib::NThread
 			if (!m_bWasLocked)
 				m_Lock.f_UnlockRead();
 		}
+
+	private:
+		t_CLock &m_Lock;
+		bool m_bWasLocked;
 	};
 
 	template <typename t_CLock>
-	class TCScopeUnlockRead
+	struct TCScopeUnlockRead
 	{
-		t_CLock &m_Lock;
-		TCScopeUnlockRead(TCScopeUnlockRead &&_Other);
-		TCScopeUnlockRead(TCScopeUnlockRead const &_Other);
-		TCScopeUnlockRead &operator = (TCScopeUnlockRead &&_Other);
-		TCScopeUnlockRead &operator = (TCScopeUnlockRead const &_Other);
-
-	public:
 		inline_small TCScopeUnlockRead(t_CLock &_Lock)
 			: m_Lock(_Lock)
 		{
@@ -505,16 +492,18 @@ namespace NMib::NThread
 		{
 			m_Lock.f_LockRead();
 		}
+
+	private:
+		t_CLock &m_Lock;
+		TCScopeUnlockRead(TCScopeUnlockRead &&_Other);
+		TCScopeUnlockRead(TCScopeUnlockRead const &_Other);
+		TCScopeUnlockRead &operator = (TCScopeUnlockRead &&_Other);
+		TCScopeUnlockRead &operator = (TCScopeUnlockRead const &_Other);
 	};
 
 	template <typename t_CLock>
-	class TCMovableScopeLock
+	struct TCMovableScopeLock
 	{
-		t_CLock *m_pLock;
-		TCMovableScopeLock(TCMovableScopeLock const &_Other);
-		TCMovableScopeLock &operator = (TCMovableScopeLock const &_Other);
-
-	public:
 		inline_small TCMovableScopeLock(t_CLock &_Lock)
 			: m_pLock(&_Lock)
 		{
@@ -559,16 +548,16 @@ namespace NMib::NThread
 		{
 			return m_pLock != nullptr;
 		}
+
+	private:
+		t_CLock *m_pLock;
+		TCMovableScopeLock(TCMovableScopeLock const &_Other);
+		TCMovableScopeLock &operator = (TCMovableScopeLock const &_Other);
 	};
 
 	template <typename t_CLock>
-	class TCMovableScopeUnlock
+	struct TCMovableScopeUnlock
 	{
-		t_CLock *m_pLock;
-		TCMovableScopeUnlock(TCMovableScopeUnlock const &_Other);
-		TCMovableScopeUnlock &operator = (TCMovableScopeUnlock const &_Other);
-
-	public:
 		inline_small TCMovableScopeUnlock(t_CLock &_Lock)
 			: m_pLock(&_Lock)
 		{
@@ -593,16 +582,16 @@ namespace NMib::NThread
 			_Other.m_pLock = nullptr;
 			return *this;
 		}
+
+	private:
+		t_CLock *m_pLock;
+		TCMovableScopeUnlock(TCMovableScopeUnlock const &_Other);
+		TCMovableScopeUnlock &operator = (TCMovableScopeUnlock const &_Other);
 	};
 
 	template <typename t_CLock>
-	class TCMovableScopeLockRead
+	struct TCMovableScopeLockRead
 	{
-		t_CLock *m_pLock;
-		TCMovableScopeLockRead(TCMovableScopeLockRead const &_Other);
-		TCMovableScopeLockRead &operator = (TCMovableScopeLockRead const &_Other);
-
-	public:
 		inline_small TCMovableScopeLockRead(t_CLock &_Lock)
 			: m_pLock(&_Lock)
 		{
@@ -627,16 +616,16 @@ namespace NMib::NThread
 			_Other.m_pLock = nullptr;
 			return *this;
 		}
+
+	private:
+		t_CLock *m_pLock;
+		TCMovableScopeLockRead(TCMovableScopeLockRead const &_Other);
+		TCMovableScopeLockRead &operator = (TCMovableScopeLockRead const &_Other);
 	};
 
 	template <typename t_CLock>
-	class TCMovableScopeUnlockRead
+	struct TCMovableScopeUnlockRead
 	{
-		t_CLock *m_pLock;
-		TCMovableScopeUnlockRead(TCMovableScopeUnlockRead const &_Other);
-		TCMovableScopeUnlockRead &operator = (TCMovableScopeUnlockRead const &_Other);
-
-	public:
 		inline_small TCMovableScopeUnlockRead(t_CLock &_Lock)
 			: m_pLock(&_Lock)
 		{
@@ -661,13 +650,17 @@ namespace NMib::NThread
 			_Other.m_pLock = nullptr;
 			return *this;
 		}
+
+	private:
+		t_CLock *m_pLock;
+		TCMovableScopeUnlockRead(TCMovableScopeUnlockRead const &_Other);
+		TCMovableScopeUnlockRead &operator = (TCMovableScopeUnlockRead const &_Other);
 	};
 
 	using FLock = void (void *_pLock);
 
-	class CLockVirtual
+	struct CLockVirtual
 	{
-	public:
 		virtual void f_Construct(void *_pSemaphore) = 0;
 		virtual void f_Construct() = 0;
 		virtual void f_Destruct() = 0;
@@ -880,9 +873,8 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CEvent>
-	class TCMutualSimpleAggregate
+	struct TCMutualSimpleAggregate
 	{
-	public:
 		inline_never void fp_WaitForIt()
 		{
 			CDisableLazyCheckoutReturnScope DisableLazy;
@@ -947,9 +939,8 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CEvent>
-	class TCMutualSimple : public TCMutualSimpleAggregate<t_CEvent>
+	struct TCMutualSimple : public TCMutualSimpleAggregate<t_CEvent>
 	{
-	public:
 		TCMutualSimple()
 		{
 			TCMutualSimpleAggregate<t_CEvent>::f_Construct();
@@ -987,9 +978,8 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CEvent, bool t_bAllowRecursive>
-	class TCMutualAggregate
+	struct TCMutualAggregate
 	{
-	public:
 		enum
 		{
 			EAtomicBits = sizeof(aint) * 8
@@ -1307,9 +1297,8 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CEvent, umint _nSpins, bool t_bAllowRecursive>
-	class TCMutualSpinAggregate : public TCMutualAggregate<t_CEvent, t_bAllowRecursive>
+	struct TCMutualSpinAggregate : public TCMutualAggregate<t_CEvent, t_bAllowRecursive>
 	{
-	public:
 		constexpr TCMutualSpinAggregate(EAggregateInitialization _Init)
 			: TCMutualAggregate<t_CEvent, t_bAllowRecursive>{_Init}
 		{
@@ -1336,12 +1325,8 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CEvent, bool t_bAllowRecursive>
-	class TCMutual : public TCMutualAggregate<t_CEvent, t_bAllowRecursive>
+	struct TCMutual : public TCMutualAggregate<t_CEvent, t_bAllowRecursive>
 	{
-		TCMutual(TCMutual const &);
-		TCMutual &operator = (TCMutual const &);
-
-	public:
 		TCMutual()
 		{
 			TCMutualAggregate<t_CEvent, t_bAllowRecursive>::f_Construct();
@@ -1351,15 +1336,15 @@ namespace NMib::NThread
 		{
 			TCMutualAggregate<t_CEvent, t_bAllowRecursive>::f_Destruct();
 		}
+
+	private:
+		TCMutual(TCMutual const &);
+		TCMutual &operator = (TCMutual const &);
 	};
 
 	template <typename t_CEvent, umint _nSpins, bool t_bAllowRecursive>
-	class TCMutualSpin : public TCMutualSpinAggregate<t_CEvent, _nSpins, t_bAllowRecursive>
+	struct TCMutualSpin : public TCMutualSpinAggregate<t_CEvent, _nSpins, t_bAllowRecursive>
 	{
-		TCMutualSpin(TCMutualSpin const &);
-		TCMutualSpin &operator = (TCMutualSpin const &);
-
-	public:
 		TCMutualSpin()
 		{
 			TCMutualSpinAggregate<t_CEvent, _nSpins, t_bAllowRecursive>::f_Construct();
@@ -1369,6 +1354,10 @@ namespace NMib::NThread
 		{
 			TCMutualSpinAggregate<t_CEvent, _nSpins, t_bAllowRecursive>::f_Destruct();
 		}
+
+	private:
+		TCMutualSpin(TCMutualSpin const &);
+		TCMutualSpin &operator = (TCMutualSpin const &);
 	};
 
 	using CMutualSimpleAggregate = TCMutualSimpleAggregate<CEventAutoResetAggregate>;
@@ -1386,7 +1375,7 @@ namespace NMib::NThread
 	\***************************************************************************************************/
 
 	template <typename t_CEventAutoreset, typename t_CBase = TCMutualAggregate<t_CEventAutoreset, true>>
-	class TCMutualManyReadAggregate : public t_CBase
+	struct TCMutualManyReadAggregate : public t_CBase
 	{
 	protected:
 		using t_CBase::mcp_AtomicMask;
@@ -1647,12 +1636,8 @@ namespace NMib::NThread
 	};
 
 	template <typename t_CEventAutoreset, typename t_CBase = TCMutualAggregate<t_CEventAutoreset, true>>
-	class TCMutualManyRead : public TCMutualManyReadAggregate<t_CEventAutoreset, t_CBase>
+	struct TCMutualManyRead : public TCMutualManyReadAggregate<t_CEventAutoreset, t_CBase>
 	{
-		TCMutualManyRead(TCMutualManyRead const &);
-		TCMutualManyRead &operator = (TCMutualManyRead const &);
-
-	public:
 		TCMutualManyRead()
 		{
 			TCMutualManyReadAggregate<t_CEventAutoreset, t_CBase>::f_Construct();
@@ -1662,21 +1647,20 @@ namespace NMib::NThread
 		{
 			TCMutualManyReadAggregate<t_CEventAutoreset, t_CBase>::f_Destruct();
 		}
+
+	private:
+		TCMutualManyRead(TCMutualManyRead const &);
+		TCMutualManyRead &operator = (TCMutualManyRead const &);
 	};
 
 	using CMutualManyReadAggregate = TCMutualManyReadAggregate<CEventAutoResetAggregate>;
 	using CMutualManyRead = TCMutualManyRead<CEventAutoResetAggregate>;
 
-	class CScopeUnlock
+	struct CScopeUnlock
 	{
-		void *m_pLock;
-		FLock *m_pLockFunc;
-
-	public:
 		template <typename t_Lock>
-		class TLocker
+		struct TLocker
 		{
-		public:
 			inline_small static void fs_Locker(void *_pLock)
 			{
 				((t_Lock *)_pLock)->f_Lock();
@@ -1695,18 +1679,17 @@ namespace NMib::NThread
 		{
 			m_pLockFunc(m_pLock);
 		}
+
+	private:
+		void *m_pLock;
+		FLock *m_pLockFunc;
 	};
 
-	class CScopeLockRead
+	struct CScopeLockRead
 	{
-		void *m_pLock;
-		FLock *m_pUnlockFunc;
-
-	public:
 		template <typename t_Lock>
-		class TLocker
+		struct TLocker
 		{
-		public:
 			inline_small static void fs_Locker(void *_pLock)
 			{
 				((t_Lock *)_pLock)->f_UnlockRead();
@@ -1725,18 +1708,17 @@ namespace NMib::NThread
 		{
 			m_pUnlockFunc(m_pLock);
 		}
+
+	private:
+		void *m_pLock;
+		FLock *m_pUnlockFunc;
 	};
 
-	class CScopeUnlockRead
+	struct CScopeUnlockRead
 	{
-		void *m_pLock;
-		FLock *m_pLockFunc;
-
-	public:
 		template <typename t_Lock>
-		class TLocker
+		struct TLocker
 		{
-		public:
 			static void fs_Locker(void *_pLock)
 			{
 				((t_Lock *)_pLock)->f_LockRead();
@@ -1755,6 +1737,10 @@ namespace NMib::NThread
 		{
 			m_pLockFunc(m_pLock);
 		}
+
+	private:
+		void *m_pLock;
+		FLock *m_pLockFunc;
 	};
 
 #define DMibLock(d_ToLock) NMib::NThread::TCScopeLock<decltype(d_ToLock)> ScopeLockMutual1(d_ToLock)
@@ -1796,28 +1782,8 @@ namespace NMib::NThread
 		, EThreadState_EventWantQuit = 3
 	};
 
-	class CThread
+	struct CThread
 	{
-	private:
-		align_cacheline mutable CMutual m_Lock;
-		aint m_ReturnValue;
-		void *m_pThread;
-		umint m_ThreadID;
-		umint m_ParentThreadID;
-		void *m_pThreadDestroyContext;
-		bool m_bAutoDestroy;
-		bool m_bLockHeld;
-		CEvent m_ThreadQuitEvent;
-
-		align_cacheline NAtomic::TCAtomic<uint32> m_StateAtomic{EThreadState_None};
-
-		static aint fsp_ThreadMain(void *_pContext);
-		void fp_Cleanup();
-
-		CThread(CThread const &);
-		CThread &operator = (CThread const &);
-
-	public:
 		// This event will be signaled when the thread is requested to quit
 		CEventAutoReset m_EventWantQuit;
 
@@ -1959,44 +1925,30 @@ namespace NMib::NThread
 
 		virtual NStr::CStr f_GetThreadName() = 0;
 		virtual ch8 const *f_GetThreadNameRaw();
+
+	private:
+		align_cacheline mutable CMutual m_Lock;
+		aint m_ReturnValue;
+		void *m_pThread;
+		umint m_ThreadID;
+		umint m_ParentThreadID;
+		void *m_pThreadDestroyContext;
+		bool m_bAutoDestroy;
+		bool m_bLockHeld;
+		CEvent m_ThreadQuitEvent;
+
+		align_cacheline NAtomic::TCAtomic<uint32> m_StateAtomic{EThreadState_None};
+
+		static aint fsp_ThreadMain(void *_pContext);
+		void fp_Cleanup();
+
+		CThread(CThread const &);
+		CThread &operator = (CThread const &);
 	};
 
 	template <typename t_CAllocator, typename t_CStr>
-	class TCThreadObject final : private CThread
+	struct TCThreadObject final : private CThread
 	{
-		TCThreadObject(TCThreadObject const &) = delete;
-		TCThreadObject &operator = (TCThreadObject const &) = delete;
-
-		class CCallerObject
-		{
-		public:
-			virtual ~CCallerObject()
-			{
-			}
-
-			virtual aint f_Call(TCThreadObject *_pThread) = 0;
-			virtual ch8 const *f_GetName() = 0;
-		};
-
-		template <typename tf_ObjectType, typename tf_CAllocator, typename ...tfp_CParams>
-		friend tf_ObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams && ...p_Params);
-
-		NStorage::TCUniquePointer<CCallerObject, t_CAllocator> m_pCallerObject;
-
-		TCThreadObject(NStorage::TCUniquePointer<CCallerObject, t_CAllocator> &&_pCallerObject)
-			: m_pCallerObject(fg_Move(_pCallerObject))
-		{
-		}
-
-		aint f_Main()
-		{
-			return m_pCallerObject->f_Call(this);
-		}
-
-		virtual NStr::CStr f_GetThreadName();
-		virtual ch8 const *f_GetThreadNameRaw();
-
-	public:
 		using CThread::f_Resume;
 		using CThread::f_Stop;
 		using CThread::f_SetPriority;
@@ -2041,6 +1993,38 @@ namespace NMib::NThread
 			)
 			-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 		;
+
+	private:
+		TCThreadObject(TCThreadObject const &) = delete;
+		TCThreadObject &operator = (TCThreadObject const &) = delete;
+
+		struct CCallerObject
+		{
+			virtual ~CCallerObject()
+			{
+			}
+
+			virtual aint f_Call(TCThreadObject *_pThread) = 0;
+			virtual ch8 const *f_GetName() = 0;
+		};
+
+		template <typename tf_ObjectType, typename tf_CAllocator, typename ...tfp_CParams>
+		friend tf_ObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams && ...p_Params);
+
+		NStorage::TCUniquePointer<CCallerObject, t_CAllocator> m_pCallerObject;
+
+		TCThreadObject(NStorage::TCUniquePointer<CCallerObject, t_CAllocator> &&_pCallerObject)
+			: m_pCallerObject(fg_Move(_pCallerObject))
+		{
+		}
+
+		aint f_Main()
+		{
+			return m_pCallerObject->f_Call(this);
+		}
+
+		virtual NStr::CStr f_GetThreadName();
+		virtual ch8 const *f_GetThreadNameRaw();
 	};
 
 	using CThreadObject = TCThreadObject<NMemory::CDefaultAllocator, NStr::CStr>;
@@ -2409,9 +2393,8 @@ namespace NMib::NStorage
 		};
 
 		template <typename t_CType, CSharedPointerOptionUnderlying t_Options>
-		class TCChooseSharedPointerTypeImp<t_CType, t_Options, false>
+		struct TCChooseSharedPointerTypeImp<t_CType, t_Options, false>
 		{
-		public:
 			using CType = TCSharedPointerCounter<t_CType, NTraits::cHasVirtualDestructor<NTraits::TCRemoveQualifiers<t_CType>>, t_Options>;
 		};
 

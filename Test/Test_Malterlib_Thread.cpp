@@ -52,9 +52,8 @@ enum
 
 namespace
 {
-	class CReadWriteContention
+	struct CReadWriteContention
 	{
-	public:
 		aint m_IncValue;
 		aint *m_pIncValue;
 		NMib::NThread::CEventAutoReset m_IncEvent;
@@ -72,9 +71,8 @@ namespace
 		{
 		}
 
-		class CIncThread : public NMib::NThread::CThread
+		struct CIncThread : public NMib::NThread::CThread
 		{
-		public:
 			NMib::NStr::CStr f_GetThreadName()
 			{
 				return "MalterlibCertifier_IncThread";
@@ -135,9 +133,8 @@ namespace
 			}
 		};
 
-		class CReadThread : public NMib::NThread::CThread
+		struct CReadThread : public NMib::NThread::CThread
 		{
-		public:
 			NMib::NStr::CStr f_GetThreadName()
 			{
 				return "MalterlibCertifier_ReadThread";
@@ -362,9 +359,8 @@ namespace
 	umint g_ThreadLocalFastIndex;
 	umint g_ThreadLocalIndex;
 
-	class CThread_Tests : public NMib::NTest::CTest
+	struct CThread_Tests : public NMib::NTest::CTest
 	{
-	public:
 		static void fs_IncNative()
 		{
 			++g_ThreadLocal;
@@ -442,9 +438,8 @@ namespace
 			_Functor();
 		}
 
-		class CTemp
+		struct CTemp
 		{
-		public:
 			CTemp()
 			{
 				m_Value = 0;
@@ -453,9 +448,8 @@ namespace
 			int32 m_Value;
 		};
 
-		class CTemp35
+		struct CTemp35
 		{
-		public:
 			CTemp35()
 			{
 				m_Value = 35;
@@ -1890,11 +1884,12 @@ namespace
 #	if defined(DEnableWin32ThreadTest)
 #		include <windows.h>
 /*
-class CDebugInfo
+struct CDebugInfo
 {
+private:
 	uint16   Type;
 	uint16   CreatorBackTraceIndex;
-	class CWindowsCriticalSection *CriticalSection;
+	struct CWindowsCriticalSection *CriticalSection;
 	LIST_ENTRY ProcessLocksList;
 	uint32 EntryCount;
 	uint32 ContentionCount;
@@ -1904,8 +1899,9 @@ class CDebugInfo
 #define RTL_CRITSECT_TYPE 0 // NOLINT(malterlib-macro-naming)
 #define RTL_RESOURCE_TYPE 1 // NOLINT(malterlib-macro-naming)
 
-class CWindowsCriticalSection
+struct CWindowsCriticalSection
 {
+private:
 	CDebugInfo * DebugInfo;
 
 	//
@@ -1924,14 +1920,12 @@ using CWindowsCriticalSection = CRITICAL_SECTION;
 
 #	endif
 
-class CTestThread : public CMalterlibTest
+struct CTestThread : public CMalterlibTest
 {
-public:
 	static CTestThread *ms_pThis;
 
-	class CThread : public NMib::NThread::CThread
+	struct CThread : public NMib::NThread::CThread
 	{
-	public:
 		NMib::NStr::CStr f_GetThreadName()
 		{
 			return "MalterlibCertifier_TestThread";
@@ -1978,9 +1972,8 @@ public:
 	static NMib::NThread::CMutual m_IncDoneLock;
 	static aint m_IncDone;
 
-	class CIncThread : public NMib::NThread::CThread
+	struct CIncThread : public NMib::NThread::CThread
 	{
-	public:
 		NMib::NStr::CStr f_GetThreadName()
 		{
 			return "MalterlibCertifier_IncThread";
@@ -2037,9 +2030,8 @@ public:
 		}
 	};
 
-	class CReadThread : public NMib::NThread::CThread
+	struct CReadThread : public NMib::NThread::CThread
 	{
-	public:
 		NMib::NStr::CStr f_GetThreadName()
 		{
 			return "MalterlibCertifier_ReadThread";
@@ -2105,9 +2097,8 @@ public:
 	};
 
 	NAtomic::TCAtomic<smint> m_ThreadLocalInstances;
-	class CThreadLocal
+	struct CThreadLocal
 	{
-	public:
 		CTestThread *m_pThread;
 		umint m_TestInherit;
 
@@ -2139,9 +2130,8 @@ public:
 
 	NMib::NThread::TCThreadLocal<CThreadLocal, NMib::NMemory::CAllocator_Heap, true> m_ThreadLocal;
 
-	class CThreadLocalTest : public NMib::NThread::CThread
+	struct CThreadLocalTest : public NMib::NThread::CThread
 	{
-	public:
 		CTestThread *m_pThread;
 		void f_Init(CTestThread *_pThread)
 		{
