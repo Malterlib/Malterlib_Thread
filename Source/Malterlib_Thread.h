@@ -1297,7 +1297,7 @@ namespace NMib::NThread
 		}
 	};
 
-	template <typename t_CEvent, umint _nSpins, bool t_bAllowRecursive>
+	template <typename t_CEvent, umint t_nSpins, bool t_bAllowRecursive>
 	struct TCMutualSpinAggregate : public TCMutualAggregate<t_CEvent, t_bAllowRecursive>
 	{
 		constexpr TCMutualSpinAggregate(EAggregateInitialization _Init)
@@ -1311,12 +1311,12 @@ namespace NMib::NThread
 
 		bool f_TryLock()
 		{
-			return TCMutualAggregate<t_CEvent, t_bAllowRecursive>::f_TryLock(_nSpins);
+			return TCMutualAggregate<t_CEvent, t_bAllowRecursive>::f_TryLock(t_nSpins);
 		}
 
 		void f_Lock()
 		{
-			return TCMutualAggregate<t_CEvent, t_bAllowRecursive>::f_Lock(_nSpins);
+			return TCMutualAggregate<t_CEvent, t_bAllowRecursive>::f_Lock(t_nSpins);
 		}
 
 		void f_LockRead()
@@ -1339,26 +1339,26 @@ namespace NMib::NThread
 		}
 
 	private:
-		TCMutual(TCMutual const &);
-		TCMutual &operator = (TCMutual const &);
+		TCMutual(TCMutual const &_Other);
+		TCMutual &operator = (TCMutual const &_Other);
 	};
 
-	template <typename t_CEvent, umint _nSpins, bool t_bAllowRecursive>
-	struct TCMutualSpin : public TCMutualSpinAggregate<t_CEvent, _nSpins, t_bAllowRecursive>
+	template <typename t_CEvent, umint t_nSpins, bool t_bAllowRecursive>
+	struct TCMutualSpin : public TCMutualSpinAggregate<t_CEvent, t_nSpins, t_bAllowRecursive>
 	{
 		TCMutualSpin()
 		{
-			TCMutualSpinAggregate<t_CEvent, _nSpins, t_bAllowRecursive>::f_Construct();
+			TCMutualSpinAggregate<t_CEvent, t_nSpins, t_bAllowRecursive>::f_Construct();
 		}
 
 		~TCMutualSpin()
 		{
-			TCMutualSpinAggregate<t_CEvent, _nSpins, t_bAllowRecursive>::f_Destruct();
+			TCMutualSpinAggregate<t_CEvent, t_nSpins, t_bAllowRecursive>::f_Destruct();
 		}
 
 	private:
-		TCMutualSpin(TCMutualSpin const &);
-		TCMutualSpin &operator = (TCMutualSpin const &);
+		TCMutualSpin(TCMutualSpin const &_Other);
+		TCMutualSpin &operator = (TCMutualSpin const &_Other);
 	};
 
 	using CMutualSimpleAggregate = TCMutualSimpleAggregate<CEventAutoResetAggregate>;
@@ -1650,8 +1650,8 @@ namespace NMib::NThread
 		}
 
 	private:
-		TCMutualManyRead(TCMutualManyRead const &);
-		TCMutualManyRead &operator = (TCMutualManyRead const &);
+		TCMutualManyRead(TCMutualManyRead const &_Other);
+		TCMutualManyRead &operator = (TCMutualManyRead const &_Other);
 	};
 
 	using CMutualManyReadAggregate = TCMutualManyReadAggregate<CEventAutoResetAggregate>;
@@ -1659,21 +1659,21 @@ namespace NMib::NThread
 
 	struct CScopeUnlock
 	{
-		template <typename t_Lock>
+		template <typename t_CLock>
 		struct TCLocker
 		{
 			inline_small static void fs_Locker(void *_pLock)
 			{
-				((t_Lock *)_pLock)->f_Lock();
+				((t_CLock *)_pLock)->f_Lock();
 			}
 		};
 
-		template <typename t_Lock>
-		inline_small CScopeUnlock(t_Lock &_Lock)
+		template <typename tf_CLock>
+		inline_small CScopeUnlock(tf_CLock &_Lock)
 		{
 			_Lock.f_Unlock();
 			m_pLock = &_Lock;
-			m_pLockFunc = TCLocker<t_Lock>::fs_Locker;
+			m_pLockFunc = TCLocker<tf_CLock>::fs_Locker;
 		}
 
 		inline_small ~CScopeUnlock()
@@ -1688,21 +1688,21 @@ namespace NMib::NThread
 
 	struct CScopeLockRead
 	{
-		template <typename t_Lock>
+		template <typename t_CLock>
 		struct TCLocker
 		{
 			inline_small static void fs_Locker(void *_pLock)
 			{
-				((t_Lock *)_pLock)->f_UnlockRead();
+				((t_CLock *)_pLock)->f_UnlockRead();
 			}
 		};
 
-		template <typename t_Lock>
-		inline_small CScopeLockRead(t_Lock &_Lock)
+		template <typename tf_CLock>
+		inline_small CScopeLockRead(tf_CLock &_Lock)
 		{
 			_Lock.f_LockRead();
 			m_pLock = &_Lock;
-			m_pUnlockFunc = TCLocker<t_Lock>::fs_Locker;
+			m_pUnlockFunc = TCLocker<tf_CLock>::fs_Locker;
 		}
 
 		inline_small ~CScopeLockRead()
@@ -1717,21 +1717,21 @@ namespace NMib::NThread
 
 	struct CScopeUnlockRead
 	{
-		template <typename t_Lock>
+		template <typename t_CLock>
 		struct TCLocker
 		{
 			static void fs_Locker(void *_pLock)
 			{
-				((t_Lock *)_pLock)->f_LockRead();
+				((t_CLock *)_pLock)->f_LockRead();
 			}
 		};
 
-		template <typename t_Lock>
-		CScopeUnlockRead(t_Lock &_Lock)
+		template <typename tf_CLock>
+		CScopeUnlockRead(tf_CLock &_Lock)
 		{
 			_Lock.f_UnlockRead();
 			m_pLock = &_Lock;
-			m_pLockFunc = TCLocker<t_Lock>::fs_Locker;
+			m_pLockFunc = TCLocker<tf_CLock>::fs_Locker;
 		}
 
 		~CScopeUnlockRead()
@@ -1768,8 +1768,8 @@ namespace NMib::NThread
 #	define DUnlockTypedRead(d_Type, d_ToLock) DMibUnlockTypedRead(d_Type, d_ToLock)
 #endif
 
-	template <typename t_tData>
-	t_tData fg_Thread_GetDataLocked(t_tData const &_Data, CMutual &_Lock)
+	template <typename tf_CData>
+	tf_CData fg_Thread_GetDataLocked(tf_CData const &_Data, CMutual &_Lock)
 	{
 		DMibLock(_Lock);
 		return _Data;
@@ -1943,8 +1943,8 @@ namespace NMib::NThread
 		static aint fsp_ThreadMain(void *_pContext);
 		void fp_Cleanup();
 
-		CThread(CThread const &);
-		CThread &operator = (CThread const &);
+		CThread(CThread const &_Other);
+		CThread &operator = (CThread const &_Other);
 	};
 
 	template <typename t_CAllocator, typename t_CStr>
@@ -1996,8 +1996,8 @@ namespace NMib::NThread
 		;
 
 	private:
-		TCThreadObject(TCThreadObject const &) = delete;
-		TCThreadObject &operator = (TCThreadObject const &) = delete;
+		TCThreadObject(TCThreadObject const &_Other) = delete;
+		TCThreadObject &operator = (TCThreadObject const &_Other) = delete;
 
 		struct CCallerObject
 		{
@@ -2009,8 +2009,8 @@ namespace NMib::NThread
 			virtual ch8 const *f_GetName() = 0;
 		};
 
-		template <typename tf_ObjectType, typename tf_CAllocator, typename ...tfp_CParams>
-		friend tf_ObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams && ...p_Params);
+		template <typename tf_CObjectType, typename tf_CAllocator, typename ...tfp_CParams>
+		friend tf_CObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams && ...p_Params);
 
 		NStorage::TCUniquePointer<CCallerObject, t_CAllocator> m_pCallerObject;
 
@@ -2080,24 +2080,24 @@ namespace NMib::NStorage
 			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
-		TCIntrusiveRefCount(TCIntrusiveRefCount const &)
+		TCIntrusiveRefCount(TCIntrusiveRefCount const &_Other)
 			: m_RefCount(0)
 		{
 			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
-		TCIntrusiveRefCount(TCIntrusiveRefCount &&)
+		TCIntrusiveRefCount(TCIntrusiveRefCount &&_Other)
 			: m_RefCount(0)
 		{
 			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
-		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount const &)
+		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount const &_Other)
 		{
 			return *this;
 		}
 
-		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount &&)
+		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount &&_Other)
 		{
 			return *this;
 		}
@@ -2175,26 +2175,26 @@ namespace NMib::NStorage
 			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
-		TCIntrusiveRefCount(TCIntrusiveRefCount const &)
+		TCIntrusiveRefCount(TCIntrusiveRefCount const &_Other)
 			: m_RefCount(0)
 			, m_WeakRefCount(0)
 		{
 			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
-		TCIntrusiveRefCount(TCIntrusiveRefCount &&)
+		TCIntrusiveRefCount(TCIntrusiveRefCount &&_Other)
 			: m_RefCount(0)
 			, m_WeakRefCount(0)
 		{
 			DIfRefCountDebugging(m_Debug.f_Construct());
 		}
 
-		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount const &)
+		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount const &_Other)
 		{
 			return *this;
 		}
 
-		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount &&)
+		TCIntrusiveRefCount &operator = (TCIntrusiveRefCount &&_Other)
 		{
 			return *this;
 		}
@@ -2399,8 +2399,8 @@ namespace NMib::NStorage
 			using CType = TCSharedPointerCounter<t_CType, NTraits::cHasVirtualDestructor<NTraits::TCRemoveQualifiers<t_CType>>, t_Options>;
 		};
 
-		template <typename tf_CType, bool t_bVirtualDestructor, CSharedPointerOptionUnderlying t_Options>
-		tf_CType *fg_GetSharedPointerPointer(TCSharedPointerCounter<tf_CType, t_bVirtualDestructor, t_Options> *_pIn)
+		template <typename tf_CType, bool tf_bVirtualDestructor, CSharedPointerOptionUnderlying tf_Options>
+		tf_CType *fg_GetSharedPointerPointer(TCSharedPointerCounter<tf_CType, tf_bVirtualDestructor, tf_Options> *_pIn)
 		{
 			static_assert(!cHasIntrusiveRefCount<tf_CType>, "Use DMibDefineSharedPointerType to define type");
 			if (_pIn)

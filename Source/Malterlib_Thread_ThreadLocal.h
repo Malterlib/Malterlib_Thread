@@ -174,8 +174,8 @@ namespace NMib
 
 		private:
 			// Disable copy
-			TCThreadLocal(TCThreadLocal const &);
-			TCThreadLocal &operator = (TCThreadLocal const &);
+			TCThreadLocal(TCThreadLocal const &_Other);
+			TCThreadLocal &operator = (TCThreadLocal const &_Other);
 			inline_never t_CData *fp_GetNew();
 		};
 
@@ -226,8 +226,8 @@ namespace NMib
 
 		private:
 			// Disable copy
-			TCThreadLocalDynamic(TCThreadLocalDynamic const &);
-			TCThreadLocalDynamic &operator = (TCThreadLocalDynamic const &);
+			TCThreadLocalDynamic(TCThreadLocalDynamic const &_Other);
+			TCThreadLocalDynamic &operator = (TCThreadLocalDynamic const &_Other);
 			inline_never t_CData *fp_GetNew();
 		};
 	}

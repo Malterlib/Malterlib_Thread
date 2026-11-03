@@ -671,13 +671,13 @@ namespace NMib
 #if DMibEnableSafeCheck > 0
 		namespace
 		{
-			template <umint t_Size>
-			void fg_CopyName(ch8 (&_Dest)[t_Size], ch8 const *_pSource)
+			template <umint tf_Size>
+			void fg_CopyName(ch8 (&_Dest)[tf_Size], ch8 const *_pSource)
 			{
 				umint i = 0;
 				if (_pSource)
 				{
-					for (; _pSource[i] && i + 1 < t_Size; ++i)
+					for (; _pSource[i] && i + 1 < tf_Size; ++i)
 						_Dest[i] = _pSource[i];
 				}
 				_Dest[i] = 0;

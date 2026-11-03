@@ -343,7 +343,7 @@ namespace
 	umint g_LocalArrayIndex = 11;
 #	if defined(DEnableWin32ThreadTest)
 	DWORD g_TlsLocal;
-	LPVOID (WINAPI *pTlsGetValue)(DWORD dwTlsIndex);
+	LPVOID (WINAPI *pTlsGetValue)(DWORD _TlsIndex);
 	DWORD g_FlsLocal;
 	//LPVOID (WINAPI *pFlsGetValue)(DWORD dwFlsIndex);
 #	endif
@@ -419,14 +419,14 @@ namespace
 			++(*pTls);
 		}
 
-		template <typename t_CFunctor>
-		static void fs_CallFunctor(t_CFunctor _Functor)
+		template <typename tf_CFunctor>
+		static void fs_CallFunctor(tf_CFunctor _Functor)
 		{
 			_Functor();
 		}
 
-		template <typename t_CFunctor>
-		static void fs_CallFunctor2(t_CFunctor _Functor)
+		template <typename tf_CFunctor>
+		static void fs_CallFunctor2(tf_CFunctor _Functor)
 		{
 			_Functor();
 			_Functor();
@@ -771,7 +771,7 @@ namespace
 				CEvent FinishThread;
 				auto pThread = CThreadObject::fs_StartThread
 					(
-						[&](CThreadObject *) -> aint
+						[&](CThreadObject *_pThread) -> aint
 						{
 							ThreadID.f_Store(NMib::NSys::fg_Thread_GetCurrentUID(), NMib::NAtomic::gc_MemoryOrder_Release);
 							ThreadReady.f_SetSignaled();
@@ -826,13 +826,13 @@ namespace
 					{
 						auto pThread = CThreadObject::fs_StartThread
 							(
-								[&](CThreadObject *) -> aint
+								[&](CThreadObject *_pThread) -> aint
 								{
 									o_Schedule = fGetSchedule();
 
 									auto pChildThread = CThreadObject::fs_StartThread
 										(
-											[&](CThreadObject *) -> aint
+											[&](CThreadObject *_pChildThread) -> aint
 											{
 												o_ChildSchedule = fGetSchedule();
 												return 0;
@@ -999,7 +999,7 @@ namespace
 					NMib::NAtomic::TCAtomic<umint> nHandoffs{0};
 					auto pHandoffThread = CThreadObject::fs_StartThread
 						(
-							[&](CThreadObject *) -> aint
+							[&](CThreadObject *_pThread) -> aint
 							{
 								while (!bStop.f_Load())
 								{
@@ -1558,7 +1558,7 @@ namespace
 					NMib::NAtomic::TCAtomic<uint32> ExistingThreadResult{NMib::TCLimitsInt<uint32>::mc_Max};
 					auto pExistingThread = NMib::NThread::CThreadObject::fs_StartThread
 						(
-							[&](NMib::NThread::CThreadObject *) -> aint
+							[&](NMib::NThread::CThreadObject *_pThread) -> aint
 							{
 								ExistingThreadReady.f_SetSignaled();
 								RunExistingThreadTest.f_Wait();
@@ -1621,7 +1621,7 @@ namespace
 								LauncherPath
 								, LauncherParameters
 								, ProgramDirectory
-								, [&](NMib::NProcess::CProcessLaunchStateChangeVariant const &_State, fp64)
+								, [&](NMib::NProcess::CProcessLaunchStateChangeVariant const &_State, fp64 _TimeSinceStart)
 								{
 									switch (_State.f_GetTypeID())
 									{
@@ -1675,7 +1675,7 @@ namespace
 					CEvent ReadValue;
 					auto pThread = CThreadObject::fs_StartThread
 						(
-							[&](CThreadObject *) -> aint
+							[&](CThreadObject *_pThread) -> aint
 							{
 								ThreadID.f_Store(NMib::NSys::fg_Thread_GetCurrentUID(), NMib::NAtomic::gc_MemoryOrder_Release);
 								ThreadReady.f_SetSignaled();

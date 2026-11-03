@@ -41,7 +41,7 @@ extern "C"
 		NMib::NThread::CEvent ReadValue;
 		auto pThread = NMib::NThread::CThreadObject::fs_StartThread
 			(
-				[&](NMib::NThread::CThreadObject *) -> aint
+				[&](NMib::NThread::CThreadObject *_pThread) -> aint
 				{
 					ThreadID.f_Store(NMib::NSys::fg_Thread_GetCurrentUID(), NMib::NAtomic::gc_MemoryOrder_Release);
 					ThreadReady.f_SetSignaled();
