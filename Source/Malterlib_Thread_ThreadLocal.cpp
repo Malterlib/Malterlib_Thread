@@ -119,9 +119,44 @@ namespace NMib
 #endif
 		}
 
+		CThreadLocalContext::CStorageIndex::CStorageIndex()
+		{
+		}
+
+		CThreadLocalContext::CStorageIndex::~CStorageIndex()
+		{
+			m_Link.f_Destruct();
+		}
+
+		CThreadLocalContext::CPerThread::CPointer::CPointer()
+			: m_pPtr(nullptr)
+		{
+		}
+
 		CThreadLocalContext::CPerThread::CPointer::~CPointer()
 		{
 			DMibSafeCheck(!m_pPtr, "Pointer must already be deleted");
+		}
+
+		CThreadLocalContext::CPerThread::CPointer::CPointer(CPointer &&_Copy)
+		{
+			// Transfer the pointer
+			m_pPtr = _Copy.m_pPtr;
+			// Set the ptr to null so the original does not get deleted
+			_Copy.m_pPtr = nullptr;
+		}
+
+		CThreadLocalContext::CPerThread::CPerThread(umint _ThreadID, CThreadLocalContext *_pContext)
+			: m_Created(CAllocatorConstructTag(), _pContext->mp_PoolAllocation)
+			, m_CreatedAlwaysCreate(CAllocatorConstructTag(), _pContext->mp_PoolAllocation)
+			, m_ThreadID(_ThreadID)
+			, m_DestroyingID(-1)
+			, m_bOnThreadCreated(false)
+		{
+		}
+
+		CThreadLocalContext::CPerThread::~CPerThread()
+		{
 		}
 
 		void CThreadLocalContext::f_PrepareFork()
@@ -964,5 +999,56 @@ namespace NMib
 	bool CSystem::f_ThreadCreated() const
 	{
 		return NPrivate::g_ThreadLocalContext->f_ThreadCreated();
+	}
+
+	namespace NThread
+	{
+		CThreadLocalInterface::CThreadLocalInterface()
+			: m_Flags(EThreadLocalInterfaceFlag_None)
+		{
+		}
+
+		CThreadLocalInterface::~CThreadLocalInterface()
+		{
+		}
+
+		CThreadLocalInterface::CSafeAllocMemory::CSafeAllocMemory(void *_pMemory, umint _Size)
+			: m_pMemory(_pMemory)
+			, m_Size(_Size)
+		{
+		}
+
+		CThreadLocalInterface::CSafeAlloc::CSafeAlloc(CThreadLocalInterface *_pInterface, CSafeAllocMemory const &_Memory)
+			: m_pInterface(_pInterface)
+			, m_Memory(_Memory)
+		{
+		}
+
+		CThreadLocalInterface::CSafeAlloc::CSafeAlloc(CSafeAlloc &&_Other)
+			: m_pInterface(fg_Exchange(_Other.m_pInterface, nullptr))
+			, m_Memory(_Other.m_Memory)
+		{
+		}
+
+		CThreadLocalInterface::CSafeAlloc &CThreadLocalInterface::CSafeAlloc::operator = (CSafeAlloc &&_Other)
+		{
+			m_pInterface = fg_Exchange(_Other.m_pInterface, nullptr);
+			m_Memory = _Other.m_Memory;
+
+			return *this;
+		}
+
+		CThreadLocalInterface::CSafeAlloc::~CSafeAlloc()
+		{
+			if (!m_pInterface)
+				return;
+
+			m_pInterface->f_FreeData(m_Memory);
+		}
+
+		void CThreadLocalInterface::CSafeAlloc::f_Claim()
+		{
+			m_pInterface = nullptr;
+		}
 	}
 } // Namespace NMib

@@ -74,6 +74,233 @@ namespace NMib::NStorage
 
 namespace NMib::NThread
 {
+	CDisableLazyCheckoutReturnScope::CDisableLazyCheckoutReturnScope()
+	{
+		NMib::NSys::fg_Mem_DisableLazyReturnCheckout();
+	}
+
+	CDisableLazyCheckoutReturnScope::~CDisableLazyCheckoutReturnScope()
+	{
+		NMib::NSys::fg_Mem_EnableLazyReturnCheckout();
+	}
+
+	CSemaphoreAggregate::CSemaphoreAggregate()
+	{
+	}
+
+	void CSemaphoreAggregate::f_PrepareFork()
+	{
+	}
+
+	void CSemaphoreAggregate::f_ForkedChild()
+	{
+		// The lock word is plain memory; waiters do not exist in the child
+		m_Data.f_Store(m_Data.f_Load(NAtomic::gc_MemoryOrder_Relaxed) & mcp_ValueMask, NAtomic::gc_MemoryOrder_Relaxed);
+	}
+
+	void CSemaphoreAggregate::f_ForkedParent()
+	{
+	}
+
+	CEventAutoResetAggregate::CEventAutoResetAggregate()
+	{
+	}
+
+	CEventAutoReset::CEventAutoReset()
+	{
+		f_Construct();
+	}
+
+	CEventAutoReset::~CEventAutoReset()
+	{
+		f_Destruct();
+	}
+
+	CEventAggregate::CEventAggregate()
+	{
+	}
+
+	void CEventAggregate::f_PrepareFork()
+	{
+	}
+
+	void CEventAggregate::f_ForkedChild()
+	{
+		// Waiters do not exist in the child
+		m_State.f_Store(m_State.f_Load(NAtomic::gc_MemoryOrder_Relaxed) & ~mcp_FlagWaiters, NAtomic::gc_MemoryOrder_Relaxed);
+	}
+
+	void CEventAggregate::f_ForkedParent()
+	{
+	}
+
+	CEvent::CEvent()
+	{
+		f_Construct();
+	}
+
+	CEvent::~CEvent()
+	{
+		f_Destruct();
+	}
+
+	CSemaphore::CSemaphore(aint _Initial, aint _Max)
+	{
+		f_Construct(_Initial, _Max);
+	}
+
+	CSemaphore::~CSemaphore()
+	{
+		f_Destruct();
+	}
+
+	bool CNoLock::f_OwnsLock()
+	{
+		return true;
+	}
+
+	inline_always_lto void CLowLevelContendedLockAggregate::f_Lock()
+	{
+		if (!CLowLevelLockAggregate::f_TryLock())
+		{
+			++m_Contention;
+			CLowLevelLockAggregate::f_Lock();
+			--m_Contention;
+		}
+	}
+
+	inline_always_lto void CLowLevelContendedLockAggregate::f_LockNoSanitize()
+	{
+		if (!CLowLevelLockAggregate::f_TryLockNoSanitize())
+		{
+			++m_Contention;
+			CLowLevelLockAggregate::f_LockNoSanitize();
+			--m_Contention;
+		}
+	}
+
+	inline_always_lto bool CLowLevelContendedLockAggregate::f_Contended() const
+	{
+		return m_Contention.f_Load(NAtomic::gc_MemoryOrder_Relaxed) > 0;
+	}
+
+	void CLowLevelContendedLockAggregate::f_ForkedChildUnlocked()
+	{
+		CLowLevelLockAggregate::f_ForkedChildUnlocked();
+		m_Contention = 0;
+	}
+
+	void CLowLevelContendedLockAggregate::f_ForkedChildLocked()
+	{
+		CLowLevelLockAggregate::f_ForkedChildLocked();
+		m_Contention = 0;
+	}
+
+	CLowLevelLock::CLowLevelLock()
+	{
+		f_Construct();
+	}
+
+	CLowLevelLock::~CLowLevelLock()
+	{
+		f_Destruct();
+	}
+
+	CLowLevelContendedLock::CLowLevelContendedLock()
+	{
+		f_Construct();
+	}
+
+	CLowLevelContendedLock::~CLowLevelContendedLock()
+	{
+		f_Destruct();
+	}
+
+	void CLowLevelRecursiveLockAggregate::f_Lock()
+	{
+		umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+
+		if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
+		{
+			++m_nRecurse;
+			return;
+		}
+
+		CLowLevelLockAggregate::f_Lock();
+
+		m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::gc_MemoryOrder_Relaxed);
+		m_nRecurse = 1;
+	}
+
+	void CLowLevelRecursiveLockAggregate::f_LockNoSanitize()
+	{
+		umint CurrentThread = NSys::fg_Thread_GetCurrentUID();
+
+		if (m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == CurrentThread)
+		{
+			++m_nRecurse;
+			return;
+		}
+
+		CLowLevelLockAggregate::f_LockNoSanitize();
+
+		m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::gc_MemoryOrder_Relaxed);
+		m_nRecurse = 1;
+	}
+
+	void CLowLevelRecursiveLockAggregate::f_ForkedChildUnlocked()
+	{
+		CLowLevelLockAggregate::f_ForkedChildUnlocked();
+
+		m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
+		m_nRecurse = 0;
+	}
+
+	void CLowLevelRecursiveLockAggregate::f_ForkedChildLocked()
+	{
+		CLowLevelLockAggregate::f_ForkedChildLocked();
+
+		m_ThreadID.f_Store(NSys::fg_Thread_GetCurrentUID(), NAtomic::gc_MemoryOrder_Relaxed);
+		m_nRecurse = 1;
+	}
+
+	void CLowLevelRecursiveLockAggregate::f_Unlock()
+	{
+		DMibFastCheck(m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
+
+		if ((--m_nRecurse) == 0) [[likely]]
+		{
+			m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
+			CLowLevelLockAggregate::f_Unlock();
+		}
+	}
+
+	void CLowLevelRecursiveLockAggregate::f_UnlockNoSanitize()
+	{
+		DMibFastCheck(m_ThreadID.f_Load(NAtomic::gc_MemoryOrder_Relaxed) == NSys::fg_Thread_GetCurrentUID());
+
+		if ((--m_nRecurse) == 0) [[likely]]
+		{
+			m_ThreadID.f_Store(0, NAtomic::gc_MemoryOrder_Relaxed);
+			CLowLevelLockAggregate::f_UnlockNoSanitize();
+		}
+	}
+
+	CLowLevelRecursiveLock::CLowLevelRecursiveLock()
+	{
+		f_Construct();
+	}
+
+	CLowLevelRecursiveLock::~CLowLevelRecursiveLock()
+	{
+		f_Destruct();
+	}
+
+	CScopeUnlockRead::~CScopeUnlockRead()
+	{
+		mp_fLockFunc(mp_pLock);
+	}
+
 	/***************************************************************************************************\
 	|¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯|
 	| CThread																							|
@@ -189,6 +416,33 @@ namespace NMib::NThread
 		return Return;
 	}
 
+	/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
+	|	Function:			Get the state of the thread								|
+	|																				|
+	|	Returns:			The state of the thread @See(EThreadState)				|
+	|																				|
+	|	Comments:			Longer_description_not_mandatory						|
+	\*_____________________________________________________________________________*/
+	EThreadState CThread::f_GetState() const
+	{
+		return (EThreadState)mp_StateAtomic.f_Load();
+	}
+
+	void *CThread::f_GetThread() const
+	{
+		return mp_pThread;
+	}
+
+	umint CThread::f_GetThreadID() const
+	{
+		return mp_ThreadID;
+	}
+
+	bool CThread::f_CallingFromThread()
+	{
+		return mp_ThreadID == NSys::fg_Thread_GetCurrentUID();
+	}
+
 	void CThread::f_Start(EExecutionPriority _Prio, umint _StackSize, umint _Affinity, EThreadCreateFlag _Flags)
 	{
 		// Make sure that no thread is already running
@@ -295,6 +549,23 @@ namespace NMib::NThread
 		return 0;
 	}
 
+	/*¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯*\
+	|	Function:			Returns the return value for a stopped thread			|
+	|																				|
+	|	Returns:			The return value of the stopped thread					|
+	|																				|
+	|	Comments:			If the thread isn't in the stopped state this function	|
+	|						will throw an exception									|
+	\*_____________________________________________________________________________*/
+	aint CThread::f_GetReturnValue()
+	{
+		DMibLockTyped(CMutual, mp_Lock);
+		if (mp_StateAtomic.f_Load() == EThreadState_Stopped)
+			return mp_ReturnValue;
+
+		DMibError("You are trying to get a return value from a thread that isn't stopped (or has never run)");
+	}
+
 	void CThread::f_Suspend()
 	{
 		DMibLockTyped(CMutual, mp_Lock);
@@ -352,6 +623,11 @@ namespace NMib::NThread
 		mp_Lock.f_Unlock();
 	}
 
+	CThreadSpinWaiter::CThreadSpinWaiter(umint _nYieldsBeforeSleep)
+		: m_nYieldsBeforeSleep(_nYieldsBeforeSleep)
+	{
+	}
+
 	inline_never void CThreadSpinWaiter::f_WaitSlow()
 	{
 		if (m_nWaits < m_nYieldsBeforeSleep)
@@ -405,4 +681,13 @@ namespace NMib::NStorage
 		DMibCheck(RefCount == 0 || RefCount == -1)(RefCount);
 		DIfRefCountDebugging(if (RefCount == 0) m_Debug.f_Destruct());
 	}
+
+#ifdef DCompiler_MSVC_Workaround
+	namespace NPrivate
+	{
+		CSharedPointerCounterVirtualBase::~CSharedPointerCounterVirtualBase()
+		{
+		}
+	}
+#endif
 }

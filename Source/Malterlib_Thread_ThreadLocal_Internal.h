@@ -13,14 +13,8 @@ namespace NMib
 		{
 			struct CStorageIndex
 			{
-				CStorageIndex()
-				{
-				}
-
-				~CStorageIndex()
-				{
-					m_Link.f_Destruct();
-				}
+				CStorageIndex();
+				~CStorageIndex();
 
 				NThread::CThreadLocalInterface *m_pInterface;
 
@@ -41,29 +35,16 @@ namespace NMib
 			{
 				struct CCompare
 				{
-					inline_small umint const &operator () (CPerThread const &_Node) const
-					{
-						return _Node.m_ThreadID;
-					}
+					inline_small umint const &operator () (CPerThread const &_Node) const;
 				};
 
 				NIntrusive::TCAVLLink<> m_Link;
 				struct CPointer
 				{
 					void *m_pPtr;
-					CPointer()
-						: m_pPtr(nullptr)
-					{
-					}
-
+					CPointer();
 					~CPointer();
-					CPointer(CPointer &&_Copy)
-					{
-						// Transfer the pointer
-						m_pPtr = _Copy.m_pPtr;
-						// Set the ptr to null so the original does not get deleted
-						_Copy.m_pPtr = nullptr;
-					}
+					CPointer(CPointer &&_Copy);
 
 				private:
 					CPointer(CPointer const &_Copy);
@@ -82,18 +63,8 @@ namespace NMib
 				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
 				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
 
-				CPerThread(umint _ThreadID, CThreadLocalContext *_pContext)
-					: m_Created(CAllocatorConstructTag(), _pContext->mp_PoolAllocation)
-					, m_CreatedAlwaysCreate(CAllocatorConstructTag(), _pContext->mp_PoolAllocation)
-					, m_ThreadID(_ThreadID)
-					, m_DestroyingID(-1)
-					, m_bOnThreadCreated(false)
-				{
-				}
-
-				~CPerThread()
-				{
-				}
+				CPerThread(umint _ThreadID, CThreadLocalContext *_pContext);
+				~CPerThread();
 
 				NContainer::TCVector<CPointer, NMemory::CAllocator_VirtualNoTracking> m_ThreadLocals;
 				NThread::CMutual m_Lock;
@@ -153,10 +124,11 @@ namespace NMib
 			friend struct NMib::CSystem;
 			friend struct NStorage::TCAggregateSimple<CThreadLocalContext>;
 			CThreadLocalContext();
-
 			~CThreadLocalContext();
 
 			NThread::CMutual mp_LockContext;
 		};
 	}
 };
+
+#include "Malterlib_Thread_ThreadLocal_Internal.hpp"

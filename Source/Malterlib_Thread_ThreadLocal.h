@@ -26,22 +26,12 @@ namespace NMib
 
 		struct CThreadLocalInterface
 		{
-			CThreadLocalInterface()
-				: m_Flags(EThreadLocalInterfaceFlag_None)
-			{
-			}
-
-			virtual ~CThreadLocalInterface()
-			{
-			}
+			CThreadLocalInterface();
+			virtual ~CThreadLocalInterface();
 
 			struct CSafeAllocMemory
 			{
-				CSafeAllocMemory(void *_pMemory, umint _Size)
-					: m_pMemory(_pMemory)
-					, m_Size(_Size)
-				{
-				}
+				CSafeAllocMemory(void *_pMemory, umint _Size);
 
 				void *m_pMemory;
 				umint m_Size;
@@ -49,38 +39,11 @@ namespace NMib
 
 			struct CSafeAlloc
 			{
-				CSafeAlloc(CThreadLocalInterface *_pInterface, CSafeAllocMemory const &_Memory)
-					: m_pInterface(_pInterface)
-					, m_Memory(_Memory)
-				{
-				}
-
-				CSafeAlloc(CSafeAlloc &&_Other)
-					: m_pInterface(fg_Exchange(_Other.m_pInterface, nullptr))
-					, m_Memory(_Other.m_Memory)
-				{
-				}
-
-				CSafeAlloc &operator = (CSafeAlloc &&_Other)
-				{
-					m_pInterface = fg_Exchange(_Other.m_pInterface, nullptr);
-					m_Memory = _Other.m_Memory;
-
-					return *this;
-				}
-
-				~CSafeAlloc()
-				{
-					if (!m_pInterface)
-						return;
-
-					m_pInterface->f_FreeData(m_Memory);
-				}
-
-				void f_Claim()
-				{
-					m_pInterface = nullptr;
-				}
+				CSafeAlloc(CThreadLocalInterface *_pInterface, CSafeAllocMemory const &_Memory);
+				CSafeAlloc(CSafeAlloc &&_Other);
+				CSafeAlloc &operator = (CSafeAlloc &&_Other);
+				~CSafeAlloc();
+				void f_Claim();
 
 				CThreadLocalInterface *m_pInterface;
 				CSafeAllocMemory m_Memory;
