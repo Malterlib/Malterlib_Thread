@@ -124,7 +124,7 @@ namespace NMib
 			void fp_FreePerThread(CPerThread *_pPerThread);
 
 #ifdef DMibPSupportThreadLocalDestructors
-			static void fs_PerThreadDestructor(void *_pPerThread);
+			static void fsp_PerThreadDestructor(void *_pPerThread);
 #endif
 
 		public:

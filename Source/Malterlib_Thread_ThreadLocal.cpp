@@ -29,10 +29,10 @@ namespace NMib
 #if defined(DUseThreadDestroyNotifications)
 			m_iPerThread = NSys::fg_Thread_AllocLocal();
 #elif defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
-			m_iPerThreadDestructor = NSys::fg_Thread_AllocLocalWithDestructor(fs_PerThreadDestructor);
+			m_iPerThreadDestructor = NSys::fg_Thread_AllocLocalWithDestructor(fsp_PerThreadDestructor);
 			m_iPerThread = NSys::fg_Thread_AllocLocal();
 #elif defined(DMibPSupportThreadLocalDestructors)
-			m_iPerThread = NSys::fg_Thread_AllocLocalWithDestructor(fs_PerThreadDestructor);
+			m_iPerThread = NSys::fg_Thread_AllocLocalWithDestructor(fsp_PerThreadDestructor);
 #else
 			m_iPerThread = NSys::fg_Thread_AllocLocal();
 #endif
@@ -156,7 +156,7 @@ namespace NMib
 
 #ifdef DMibPSupportThreadLocalDestructors
 
-		void CThreadLocalContext::fs_PerThreadDestructor(void *_pPerThread)
+		void CThreadLocalContext::fsp_PerThreadDestructor(void *_pPerThread)
 		{
 			CPerThread *pPerThread = (CPerThread *)_pPerThread;
 

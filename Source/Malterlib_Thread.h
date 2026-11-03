@@ -65,16 +65,6 @@ namespace NMib::NThread
 		{
 		}
 
-		// Waiters futex-wait on the count half of m_Data
-		inline_small uint32 volatile *fp_GetFutexWord()
-		{
-#ifdef DMibPLittleEndian
-			return (uint32 volatile *)&m_Data;
-#else
-			return (uint32 volatile *)&m_Data + 1;
-#endif
-		}
-
 		inline_small void f_Construct(aint _Initial = 0, aint _Max = TCLimitsInt<aint>::mc_Max)
 		{
 			m_Data.f_Store((uint64)(uint32)fg_Min<umint>((umint)_Initial, TCLimitsInt<uint32>::mc_Max), NAtomic::gc_MemoryOrder_Relaxed);
@@ -171,6 +161,17 @@ namespace NMib::NThread
 		inline_small void f_ExternalWaiterUnregister()
 		{
 			m_Data.f_FetchSub(mcp_WaiterOne, NAtomic::gc_MemoryOrder_Relaxed);
+		}
+
+	private:
+		// Waiters futex-wait on the count half of m_Data
+		inline_small uint32 volatile *fp_GetFutexWord()
+		{
+#ifdef DMibPLittleEndian
+			return (uint32 volatile *)&m_Data;
+#else
+			return (uint32 volatile *)&m_Data + 1;
+#endif
 		}
 
 		// Implemented in the Core platform layer
@@ -326,6 +327,7 @@ namespace NMib::NThread
 			return (m_State.f_Load(NAtomic::gc_MemoryOrder_Acquire) & mcp_FlagSignaled) != 0;
 		}
 
+	private:
 		// Implemented in the Core platform layer
 		void fp_WaitSlow();
 		bool fp_WaitTimeoutSlow(fp64 _Timeout);
@@ -373,11 +375,11 @@ namespace NMib::NThread
 		{
 		}
 
-		static inline_small void f_Lock()
+		inline_small void f_Lock()
 		{
 		}
 
-		static inline_small void f_Unlock()
+		inline_small void f_Unlock()
 		{
 		}
 
@@ -875,12 +877,6 @@ namespace NMib::NThread
 	template <typename t_CEvent>
 	struct TCMutualSimpleAggregate
 	{
-		inline_never void fp_WaitForIt()
-		{
-			CDisableLazyCheckoutReturnScope DisableLazy;
-			m_Event.f_Wait();
-		}
-
 		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nLocked;
 		t_CEvent m_Event;
 
@@ -935,6 +931,13 @@ namespace NMib::NThread
 		void f_UnlockRead()
 		{
 			f_Unlock();
+		}
+
+	private:
+		inline_never void fp_WaitForIt()
+		{
+			CDisableLazyCheckoutReturnScope DisableLazy;
+			m_Event.f_Wait();
 		}
 	};
 
@@ -1012,18 +1015,6 @@ namespace NMib::NThread
 		void f_ForkedParent()
 		{
 			m_Event.f_ForkedParent();
-		}
-
-		inline_never void fp_WaitForIt()
-		{
-			CDisableLazyCheckoutReturnScope DisableLazy;
-			m_Event.f_Wait();
-		}
-
-		inline_never void fp_SignalIt()
-		{
-			// Someone is waiting
-			m_Event.f_Signal();
 		}
 
 		static umint const mcp_AtomicMask = DMibBitRangeOne(0, mc_AtomicBits - 3, umint(1));
@@ -1290,6 +1281,19 @@ namespace NMib::NThread
 		void f_UnlockRead()
 		{
 			f_Unlock();
+		}
+
+	protected:
+		inline_never void fp_WaitForIt()
+		{
+			CDisableLazyCheckoutReturnScope DisableLazy;
+			m_Event.f_Wait();
+		}
+
+		inline_never void fp_SignalIt()
+		{
+			// Someone is waiting
+			m_Event.f_Signal();
 		}
 	};
 
