@@ -180,15 +180,15 @@ namespace NMib
 			}
 
 			// Loop through all threadContexts and set the length
-			auto Iter = mp_PerThreadByThreadID.f_GetIterator();
+			auto iPerThread = mp_PerThreadByThreadID.f_GetIterator();
 
-			while (Iter)
+			while (iPerThread)
 			{
 				{
-					DMibLock(Iter->m_Lock);
-					Iter->m_ThreadLocals.f_SetLen(mp_iThreadLocalCurrentLen);
+					DMibLock(iPerThread->m_Lock);
+					iPerThread->m_ThreadLocals.f_SetLen(mp_iThreadLocalCurrentLen);
 				}
-				++Iter;
+				++iPerThread;
 			}
 		}
 
@@ -278,10 +278,10 @@ namespace NMib
 
 #ifdef DMibPSupportAlwaysCreatedThreadLocal
 			umint iThreadLocal = pIndex->m_iThreadLocal;
-			auto Iter = mp_PerThreadByThreadID.f_GetIterator();
-			while (Iter)
+			auto iPerThread = mp_PerThreadByThreadID.f_GetIterator();
+			while (iPerThread)
 			{
-				CPerThread *pIter = Iter;
+				CPerThread *pIter = iPerThread;
 				{
 					void *pNewPtr = _Interface.f_CreateData(nullptr, true, pIter->m_ThreadID);
 					if (pNewPtr)
@@ -305,7 +305,7 @@ namespace NMib
 							NSys::fg_Thread_SetLocal(pIter->m_ThreadID, pIndex->m_LocalThreadLocal, pNewPtr);
 					}
 				}
-				++Iter;
+				++iPerThread;
 			}
 #endif
 
@@ -411,10 +411,10 @@ namespace NMib
 			{
 				// Lock for the pool
 				// The thread storage does not exist for this thread, lets create it
-				auto Iter = mp_PerThreadByThreadID.f_GetIterator();
-				while (Iter)
+				auto iPerThread = mp_PerThreadByThreadID.f_GetIterator();
+				while (iPerThread)
 				{
-					CPerThread *pIter = Iter;
+					CPerThread *pIter = iPerThread;
 					DMibLock(pIter->m_Lock);
 
 					DMibFastCheck(pIter->m_ThreadLocals.f_IsPosValid(_pStorageIndex->m_iThreadLocal));
@@ -443,7 +443,7 @@ namespace NMib
 #endif
 					}
 
-					++Iter;
+					++iPerThread;
 				}
 			}
 
@@ -454,12 +454,12 @@ namespace NMib
 				NSys::fg_Thread_FreeLocal(_pStorageIndex->m_LocalThreadLocal);
 		}
 
-		void CThreadLocalContext::f_EnumThreads(NFunction::TCFunction<void (umint _ThreadID)> const &_EnumFunc)
+		void CThreadLocalContext::f_EnumThreads(NFunction::TCFunction<void (umint _ThreadID)> const &_fEnumFunc)
 		{
 			DMibLock(mp_LockContext);
 
 			for (auto iThread = mp_PerThreadByThreadID.f_GetIterator(); iThread; ++iThread)
-				_EnumFunc(iThread->m_ThreadID);
+				_fEnumFunc(iThread->m_ThreadID);
 		}
 
 		void CThreadLocalContext::f_CreateThread(umint _ThreadID, umint _ParentThread)
@@ -487,11 +487,11 @@ namespace NMib
 			CPerThread *pCopyFrom = mp_PerThreadByThreadID.f_FindEqual(_ParentThread);
 
 			{
-				auto Iter = mp_ThreadLocal_DestroyOrder.f_GetIterator();
-				Iter.f_Reverse(mp_ThreadLocal_DestroyOrder);
-				for (; Iter; --Iter)
+				auto iStorageIndex = mp_ThreadLocal_DestroyOrder.f_GetIterator();
+				iStorageIndex.f_Reverse(mp_ThreadLocal_DestroyOrder);
+				for (; iStorageIndex; --iStorageIndex)
 				{
-					CStorageIndex *pIndex = Iter;
+					CStorageIndex *pIndex = iStorageIndex;
 
 					auto iThreadLocal = pIndex->m_iThreadLocal;
 
@@ -951,9 +951,9 @@ namespace NMib
 #endif
 	}
 
-	void CSystem::f_ThreadEnum(NFunction::TCFunction<void (umint _ThreadID)> const &_EnumFunc)
+	void CSystem::f_ThreadEnum(NFunction::TCFunction<void (umint _ThreadID)> const &_fEnumFunc)
 	{
-		return NPrivate::g_ThreadLocalContext->f_EnumThreads(_EnumFunc);
+		return NPrivate::g_ThreadLocalContext->f_EnumThreads(_fEnumFunc);
 	}
 
 	bool CSystem::f_ThreadDestroyed() const

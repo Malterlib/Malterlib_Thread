@@ -169,7 +169,7 @@ namespace NMib
 			inline_small t_CData &operator & ();
 
 			umint m_ThreadLocalLocal;
-			umint m_pStorage; // Index into the thread storage list
+			umint m_Storage; // Index into the thread storage list
 			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
 
 		private:
@@ -218,7 +218,7 @@ namespace NMib
 			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
 
 			umint m_ThreadLocalLocal;
-			umint m_pStorage; // Index into the thread storage list
+			umint m_Storage; // Index into the thread storage list
 			NFunction::TCFunctionNoAlloc<CSafeAllocMemory ()> m_fAlloc;
 			NFunction::TCFunctionNoAlloc<void (CSafeAllocMemory const &_Alloc)> m_fFree;
 			NFunction::TCFunctionNoAlloc<t_CData *(t_CData *_pParent, void *_pMemory, bool _bMove)> m_fConstruct;

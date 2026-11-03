@@ -142,7 +142,7 @@ namespace NMib
 			void f_RestoreThread();
 			void f_Set(CStorageIndex *_pStorageIndex, void *_pValue);
 			void *f_Get(CStorageIndex *_pStorageIndex);
-			void f_EnumThreads(NFunction::TCFunction<void (umint _ThreadID)> const &_EnumFunc);
+			void f_EnumThreads(NFunction::TCFunction<void (umint _ThreadID)> const &_fEnumFunc);
 			bool f_ThreadDestroyed() const;
 			bool f_ThreadCreated();
 			void f_PrepareFork();

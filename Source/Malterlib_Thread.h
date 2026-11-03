@@ -1678,17 +1678,17 @@ namespace NMib::NThread
 		{
 			_Lock.f_Unlock();
 			mp_pLock = &_Lock;
-			mp_pLockFunc = TCLocker<tf_CLock>::fs_Locker;
+			mp_fLockFunc = TCLocker<tf_CLock>::fs_Locker;
 		}
 
 		inline_small ~CScopeUnlock()
 		{
-			mp_pLockFunc(mp_pLock);
+			mp_fLockFunc(mp_pLock);
 		}
 
 	private:
 		void *mp_pLock;
-		FLock *mp_pLockFunc;
+		FLock *mp_fLockFunc;
 	};
 
 	struct CScopeLockRead
@@ -1707,17 +1707,17 @@ namespace NMib::NThread
 		{
 			_Lock.f_LockRead();
 			mp_pLock = &_Lock;
-			mp_pUnlockFunc = TCLocker<tf_CLock>::fs_Locker;
+			mp_fUnlockFunc = TCLocker<tf_CLock>::fs_Locker;
 		}
 
 		inline_small ~CScopeLockRead()
 		{
-			mp_pUnlockFunc(mp_pLock);
+			mp_fUnlockFunc(mp_pLock);
 		}
 
 	private:
 		void *mp_pLock;
-		FLock *mp_pUnlockFunc;
+		FLock *mp_fUnlockFunc;
 	};
 
 	struct CScopeUnlockRead
@@ -1736,17 +1736,17 @@ namespace NMib::NThread
 		{
 			_Lock.f_UnlockRead();
 			mp_pLock = &_Lock;
-			mp_pLockFunc = TCLocker<tf_CLock>::fs_Locker;
+			mp_fLockFunc = TCLocker<tf_CLock>::fs_Locker;
 		}
 
 		~CScopeUnlockRead()
 		{
-			mp_pLockFunc(mp_pLock);
+			mp_fLockFunc(mp_pLock);
 		}
 
 	private:
 		void *mp_pLock;
-		FLock *mp_pLockFunc;
+		FLock *mp_fLockFunc;
 	};
 
 #define DMibLock(d_ToLock) NMib::NThread::TCScopeLock<decltype(d_ToLock)> ScopeLockMutual1(d_ToLock)

@@ -455,11 +455,11 @@ namespace
 		void f_DoTests()
 		{
 #	if defined(DEnableWin32ThreadTest)
-			HMODULE Kernel32 = GetModuleHandle(str_utf16("kernelbase.dll"));
-			if (!Kernel32)
-				Kernel32 = GetModuleHandle(str_utf16("kernel32.dll"));
-			(FARPROC &)g_fTlsGetValue = GetProcAddress(Kernel32, "TlsGetValue");
-			//(FARPROC &)pFlsGetValue = GetProcAddress(Kernel32, "FlsGetValue");
+			HMODULE pKernel32 = GetModuleHandle(str_utf16("kernelbase.dll"));
+			if (!pKernel32)
+				pKernel32 = GetModuleHandle(str_utf16("kernel32.dll"));
+			(FARPROC &)g_fTlsGetValue = GetProcAddress(pKernel32, "TlsGetValue");
+			//(FARPROC &)pFlsGetValue = GetProcAddress(pKernel32, "FlsGetValue");
 #	endif
 
 			DMibTestSuite("TLS Performance")
@@ -501,7 +501,7 @@ namespace
 				CPrefCyclesTimeMeasureMin MalterlibStorageFastTime;
 				CPrefCyclesTimeMeasureMin MalterlibStorageTime;
 
-				auto Native = [&]()
+				auto fNative = [&]()
 					{
 						NativeTime.f_Start();
 						[]() inline_never
@@ -515,7 +515,7 @@ namespace
 						NativeTime.f_Stop();
 					}
 				;
-				auto NativeArray = [&]()
+				auto fNativeArray = [&]()
 					{
 						NativeArrayTime.f_Start();
 						[]() inline_never
@@ -530,7 +530,7 @@ namespace
 					}
 				;
 #	if defined(DEnableWin32ThreadTest)
-				auto Tls = [&]()
+				auto fTls = [&]()
 					{
 						TlsTime.f_Start();
 						for (umint iLoop = 0; iLoop < c_nLoops; ++iLoop)
@@ -541,7 +541,7 @@ namespace
 						TlsTime.f_Stop();
 					}
 				;
-				auto Fls = [&]()
+				auto fFls = [&]()
 					{
 						FlsTime.f_Start();
 						for (umint iLoop = 0; iLoop < c_nLoops; ++iLoop)
@@ -554,7 +554,7 @@ namespace
 				;
 #	endif
 
-				auto Malterlib = [&]()
+				auto fMalterlib = [&]()
 					{
 						MalterlibTime.f_Start();
 						[]() inline_never
@@ -569,7 +569,7 @@ namespace
 					}
 				;
 
-				auto MalterlibFast = [&]()
+				auto fMalterlibFast = [&]()
 					{
 						MalterlibFastTime.f_Start();
 						[]() inline_never
@@ -584,7 +584,7 @@ namespace
 					}
 				;
 
-				auto MalterlibStorageFast = [&]()
+				auto fMalterlibStorageFast = [&]()
 					{
 						MalterlibStorageFastTime.f_Start();
 						[]() inline_never
@@ -599,7 +599,7 @@ namespace
 					}
 				;
 
-				auto MalterlibStorage = [&]()
+				auto fMalterlibStorage = [&]()
 					{
 						MalterlibStorageTime.f_Start();
 						[]() inline_never
@@ -616,44 +616,44 @@ namespace
 
 				for (umint iTest = 0; iTest < c_nTests; ++iTest)
 				{
-					fs_CallFunctor(Malterlib);
-					fs_CallFunctor2(Malterlib);
+					fs_CallFunctor(fMalterlib);
+					fs_CallFunctor2(fMalterlib);
 				}
 				for (umint iTest = 0; iTest < c_nTests; ++iTest)
 				{
-					fs_CallFunctor(MalterlibFast);
-					fs_CallFunctor2(MalterlibFast);
+					fs_CallFunctor(fMalterlibFast);
+					fs_CallFunctor2(fMalterlibFast);
 				}
 				for (umint iTest = 0; iTest < c_nTests; ++iTest)
 				{
-					fs_CallFunctor(MalterlibStorageFast);
-					fs_CallFunctor2(MalterlibStorageFast);
+					fs_CallFunctor(fMalterlibStorageFast);
+					fs_CallFunctor2(fMalterlibStorageFast);
 				}
 				for (umint iTest = 0; iTest < c_nTests; ++iTest)
 				{
-					fs_CallFunctor(MalterlibStorage);
-					fs_CallFunctor2(MalterlibStorage);
+					fs_CallFunctor(fMalterlibStorage);
+					fs_CallFunctor2(fMalterlibStorage);
 				}
 				for (umint iTest = 0; iTest < c_nTests; ++iTest)
 				{
-					fs_CallFunctor(Native);
-					fs_CallFunctor2(Native);
+					fs_CallFunctor(fNative);
+					fs_CallFunctor2(fNative);
 				}
 				for (umint iTest = 0; iTest < c_nTests; ++iTest)
 				{
-					fs_CallFunctor(NativeArray);
-					fs_CallFunctor2(NativeArray);
+					fs_CallFunctor(fNativeArray);
+					fs_CallFunctor2(fNativeArray);
 				}
 #	if defined(DEnableWin32ThreadTest)
 				for (umint iTest = 0; iTest < c_nTests; ++iTest)
 				{
-					fs_CallFunctor(Tls);
-					fs_CallFunctor2(Tls);
+					fs_CallFunctor(fTls);
+					fs_CallFunctor2(fTls);
 				}
 				for (umint iTest = 0; iTest < c_nTests; ++iTest)
 				{
-					fs_CallFunctor(Fls);
-					fs_CallFunctor2(Fls);
+					fs_CallFunctor(fFls);
+					fs_CallFunctor2(fFls);
 				}
 #	endif
 
@@ -1480,10 +1480,10 @@ namespace
 
 					constexpr aint c_nWaiters = 4;
 
-					NMib::NStorage::TCUniquePointer<CThreadObject> pWaiters[c_nWaiters];
+					NMib::NStorage::TCUniquePointer<CThreadObject> Waiters[c_nWaiters];
 					for (umint iWaiter = 0; iWaiter < c_nWaiters; ++iWaiter)
 					{
-						pWaiters[iWaiter] = CThreadObject::fs_StartThread
+						Waiters[iWaiter] = CThreadObject::fs_StartThread
 							(
 								[&](CThreadObject *_pThread) -> aint
 								{
@@ -1503,8 +1503,8 @@ namespace
 
 					for (umint iWaiter = 0; iWaiter < c_nWaiters; ++iWaiter)
 					{
-						pWaiters[iWaiter]->f_Stop();
-						pWaiters[iWaiter].f_Clear();
+						Waiters[iWaiter]->f_Stop();
+						Waiters[iWaiter].f_Clear();
 					}
 
 					DMibTest(DMibExpr(nWoken.f_Load()) == DMibExpr((uint32)c_nWaiters));
@@ -1552,7 +1552,7 @@ namespace
 					NMib::NStr::CStr DllPath = NMib::NStr::CStr("Test_Malterlib_Helper_Thread") + NMib::NFile::CFile::fs_GetDllExtension();
 					DllPath = NMib::NFile::CFile::fs_AppendPath(NMib::NFile::CFile::fs_GetProgramDirectory(), DllPath);
 
-					uint32 (calling_convention_c *pTestFunction)() = nullptr;
+					uint32 (calling_convention_c *fTestFunction)() = nullptr;
 					NMib::NThread::CEvent ExistingThreadReady;
 					NMib::NThread::CEvent RunExistingThreadTest;
 					NMib::NAtomic::TCAtomic<uint32> ExistingThreadResult{NMib::TCLimitsInt<uint32>::mc_Max};
@@ -1562,8 +1562,8 @@ namespace
 							{
 								ExistingThreadReady.f_SetSignaled();
 								RunExistingThreadTest.f_Wait();
-								if (pTestFunction)
-									ExistingThreadResult = pTestFunction();
+								if (fTestFunction)
+									ExistingThreadResult = fTestFunction();
 								return 0;
 							}
 							, "Use dynamically loaded Malterlib from existing thread"
@@ -1584,9 +1584,9 @@ namespace
 					void *pDll = NMib::NSys::fg_LoadLibrary(DllPath);
 					DMibTest(DMibExpr(pDll))(ETest_FailAndStop);
 
-					(void * &)pTestFunction = NMib::NSys::fg_GetLibrarySymbol(pDll, "fg_TestSetAnotherThreadLocal");
-					DMibTest(DMibExpr(pTestFunction))(ETest_FailAndStop);
-					DMibTest(DMibExpr(pTestFunction()) == DMibExpr(uint32(0)));
+					(void * &)fTestFunction = NMib::NSys::fg_GetLibrarySymbol(pDll, "fg_TestSetAnotherThreadLocal");
+					DMibTest(DMibExpr(fTestFunction))(ETest_FailAndStop);
+					DMibTest(DMibExpr(fTestFunction()) == DMibExpr(uint32(0)));
 
 					RunExistingThreadTest.f_SetSignaled();
 					pExistingThread->f_Stop();
@@ -1646,7 +1646,7 @@ namespace
 					pid_t ProcessID = fork();
 					DMibTest(DMibExpr(ProcessID >= 0))(ETest_FailAndStop);
 					if (!ProcessID)
-						_exit((int)pTestFunction());
+						_exit((int)fTestFunction());
 
 					int Status = 0;
 					DMibTest(DMibExpr(waitpid(ProcessID, &Status, 0)) == DMibExpr(ProcessID));
