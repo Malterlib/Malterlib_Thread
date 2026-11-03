@@ -580,7 +580,7 @@ namespace NMib::NThread
 	template <typename t_CAllocator, typename t_CStr>
 	ch8 const *TCThreadObject<t_CAllocator, t_CStr>::f_GetThreadNameRaw()
 	{
-		return m_pCallerObject->f_GetName();
+		return mp_pCallerObject->f_GetName();
 	}
 
 	namespace NPrivate

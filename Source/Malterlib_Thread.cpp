@@ -82,23 +82,23 @@ namespace NMib::NThread
 
 	CThread::CThread()
 	{
-		m_ParentThreadID = 0;
-		m_ReturnValue = 0;
-		m_pThread = nullptr;
-		m_ThreadID = 0;
-		m_pThreadDestroyContext = nullptr;
-		m_bAutoDestroy = false;
-		m_bLockHeld = false;
-		m_ThreadQuitEvent.f_SetSignaled();
+		mp_ParentThreadID = 0;
+		mp_ReturnValue = 0;
+		mp_pThread = nullptr;
+		mp_ThreadID = 0;
+		mp_pThreadDestroyContext = nullptr;
+		mp_bAutoDestroy = false;
+		mp_bLockHeld = false;
+		mp_ThreadQuitEvent.f_SetSignaled();
 	}
 
 	void CThread::fp_Cleanup()
 	{
-		if (m_pThreadDestroyContext)
+		if (mp_pThreadDestroyContext)
 		{
-			NSys::fg_Thread_BlockUntilExit(m_pThreadDestroyContext);
-			NSys::fg_Thread_EndDestroy(m_pThreadDestroyContext);
-			m_pThreadDestroyContext = nullptr;
+			NSys::fg_Thread_BlockUntilExit(mp_pThreadDestroyContext);
+			NSys::fg_Thread_EndDestroy(mp_pThreadDestroyContext);
+			mp_pThreadDestroyContext = nullptr;
 		}
 	}
 
@@ -110,16 +110,16 @@ namespace NMib::NThread
 
 	CThread::~CThread()
 	{
-		DMibLockTyped(CMutual, m_Lock);
-		if (m_StateAtomic.f_Load() > 1)
+		DMibLockTyped(CMutual, mp_Lock);
+		if (mp_StateAtomic.f_Load() > 1)
 		{
-			DMibUnlockTyped(CMutual, m_Lock);
+			DMibUnlockTyped(CMutual, mp_Lock);
 			f_Stop();
 		}
 		fp_Cleanup();
 
-		if (m_bLockHeld)
-			m_Lock.f_Unlock();
+		if (mp_bLockHeld)
+			mp_Lock.f_Unlock();
 	}
 
 	aint CThread::fsp_ThreadMain(void *_pContext)
@@ -141,7 +141,7 @@ namespace NMib::NThread
 
 		// This should be called by the system implementation
 //#ifndef DMibPSupportThreadCreateNotification
-		//fg_GetSys()->f_ThreadLocalCreateThread(NSys::fg_Thread_GetCurrentUID(), pThread->m_ParentThreadID);
+		//fg_GetSys()->f_ThreadLocalCreateThread(NSys::fg_Thread_GetCurrentUID(), pThread->mp_ParentThreadID);
 //#endif
 
 		aint Return = pThread->f_Main();
@@ -150,19 +150,19 @@ namespace NMib::NThread
 		fg_GetSys()->f_ThreadLocalFreeThread();
 #endif
 
-		pThread->m_Lock.f_Lock();
+		pThread->mp_Lock.f_Lock();
 
-		pThread->m_ReturnValue = Return;
-		pThread->m_StateAtomic.f_Exchange(EThreadState_Stopped);
-		pSystemThread = pThread->m_pThread;
-		pThread->m_pThread = nullptr;
-		pThread->m_ThreadID = 0;
+		pThread->mp_ReturnValue = Return;
+		pThread->mp_StateAtomic.f_Exchange(EThreadState_Stopped);
+		pSystemThread = pThread->mp_pThread;
+		pThread->mp_pThread = nullptr;
+		pThread->mp_ThreadID = 0;
 
-		if (pThread->m_bAutoDestroy)
+		if (pThread->mp_bAutoDestroy)
 		{
-			pThread->m_bAutoDestroy = false;
-			void *pThreadDestroyContext = pThread->m_pThreadDestroyContext;
-			pThread->m_pThreadDestroyContext = nullptr;
+			pThread->mp_bAutoDestroy = false;
+			void *pThreadDestroyContext = pThread->mp_pThreadDestroyContext;
+			pThread->mp_pThreadDestroyContext = nullptr;
 
 			NSys::fg_Thread_Destroy(pSystemThread);
 
@@ -172,18 +172,18 @@ namespace NMib::NThread
 				NSys::fg_Thread_EndDestroy(pThreadDestroyContext);
 			}
 
-			pThread->m_bLockHeld = true;
+			pThread->mp_bLockHeld = true;
 			if (!pThread->f_DestroyThread())
 			{
-				pThread->m_bLockHeld = false;
-				pThread->m_Lock.f_Unlock();
+				pThread->mp_bLockHeld = false;
+				pThread->mp_Lock.f_Unlock();
 			}
 		}
 		else
 		{
-			pThread->m_ThreadQuitEvent.f_SetSignaled();
+			pThread->mp_ThreadQuitEvent.f_SetSignaled();
 			NSys::fg_Thread_Destroy(pSystemThread);
-			pThread->m_Lock.f_Unlock();
+			pThread->mp_Lock.f_Unlock();
 		}
 
 		return Return;
@@ -193,14 +193,14 @@ namespace NMib::NThread
 	{
 		// Make sure that no thread is already running
 		{
-			DMibLockTyped(CMutual, m_Lock);
-			if (m_StateAtomic.f_Load() > EThreadState_Stopped)
+			DMibLockTyped(CMutual, mp_Lock);
+			if (mp_StateAtomic.f_Load() > EThreadState_Stopped)
 				DMibError("You cannot start a thread that is already running");
 			fp_Cleanup();
-			m_ThreadQuitEvent.f_ResetSignaled();
-			m_ReturnValue = 0;
-			m_ParentThreadID = NSys::fg_Thread_GetCurrentUID();
-			m_bAutoDestroy = (_Flags & EThreadCreateFlag_AutoDestroy) != EThreadCreateFlag_None;
+			mp_ThreadQuitEvent.f_ResetSignaled();
+			mp_ReturnValue = 0;
+			mp_ParentThreadID = NSys::fg_Thread_GetCurrentUID();
+			mp_bAutoDestroy = (_Flags & EThreadCreateFlag_AutoDestroy) != EThreadCreateFlag_None;
 			NStr::CStr ThreadName;
 			auto *pName = f_GetThreadNameRaw();
 			if (!pName)
@@ -209,9 +209,9 @@ namespace NMib::NThread
 				pName = ThreadName;
 			}
 
-			m_pThread = NSys::fg_Thread_Create(fsp_ThreadMain, this, _Prio, _StackSize, false, pName, _Affinity, m_ThreadID);
-			m_pThreadDestroyContext = NSys::fg_Thread_BeginDestroy(m_pThread);
-			m_StateAtomic.f_Exchange(EThreadState_Running);
+			mp_pThread = NSys::fg_Thread_Create(fsp_ThreadMain, this, _Prio, _StackSize, false, pName, _Affinity, mp_ThreadID);
+			mp_pThreadDestroyContext = NSys::fg_Thread_BeginDestroy(mp_pThread);
+			mp_StateAtomic.f_Exchange(EThreadState_Running);
 		}
 	}
 
@@ -223,35 +223,35 @@ namespace NMib::NThread
 	umint CThread::f_Stop(bool _bBlock)
 	{
 		{
-			m_Lock.f_Lock();
+			mp_Lock.f_Lock();
 
 			auto Unlock = fg_OnScopeExit
 				(
 					[this]
 					{
-						m_Lock.f_Unlock();
+						mp_Lock.f_Unlock();
 					}
 				)
 			;
 
-			switch (m_StateAtomic.f_Load())
+			switch (mp_StateAtomic.f_Load())
 			{
 			case EThreadState_None: return 0;
 			case EThreadState_Stopped:
 				{
-					DMibUnlockTyped(CMutual, m_Lock);
-					if (m_pThreadDestroyContext)
+					DMibUnlockTyped(CMutual, mp_Lock);
+					if (mp_pThreadDestroyContext)
 					{
 						// This is to guard against thread termination
-						NSys::fg_Thread_BlockUntilExit(m_pThreadDestroyContext);
-						NSys::fg_Thread_EndDestroy(m_pThreadDestroyContext);
-						m_pThreadDestroyContext = nullptr;
+						NSys::fg_Thread_BlockUntilExit(mp_pThreadDestroyContext);
+						NSys::fg_Thread_EndDestroy(mp_pThreadDestroyContext);
+						mp_pThreadDestroyContext = nullptr;
 					}
 				}
 				return f_GetReturnValue();
 			case EThreadState_Running:
 				{
-					m_StateAtomic.f_Exchange(EThreadState_EventWantQuit);
+					mp_StateAtomic.f_Exchange(EThreadState_EventWantQuit);
 					m_EventWantQuit.f_Signal();
 				}
 				break;
@@ -259,14 +259,14 @@ namespace NMib::NThread
 
 			if (_bBlock)
 			{
-				bool bAutoDestroy = m_bAutoDestroy;
-				m_bAutoDestroy = false;
-				auto pDestroyContext = m_pThreadDestroyContext;
-				m_pThreadDestroyContext = nullptr;
+				bool bAutoDestroy = mp_bAutoDestroy;
+				mp_bAutoDestroy = false;
+				auto pDestroyContext = mp_pThreadDestroyContext;
+				mp_pThreadDestroyContext = nullptr;
 
 				{
-					DMibUnlockTyped(CMutual, m_Lock);
-					m_ThreadQuitEvent.f_Wait();
+					DMibUnlockTyped(CMutual, mp_Lock);
+					mp_ThreadQuitEvent.f_Wait();
 					if (pDestroyContext)
 					{
 						// This is to guard against thread termination
@@ -280,11 +280,11 @@ namespace NMib::NThread
 				if (bAutoDestroy)
 				{
 					Unlock.f_Clear();
-					m_bLockHeld = true;
+					mp_bLockHeld = true;
 					if (!f_DestroyThread())
 					{
-						m_bLockHeld = false;
-						m_Lock.f_Unlock();
+						mp_bLockHeld = false;
+						mp_Lock.f_Unlock();
 					}
 				}
 
@@ -297,59 +297,59 @@ namespace NMib::NThread
 
 	void CThread::f_Suspend()
 	{
-		DMibLockTyped(CMutual, m_Lock);
-		DMibSafeCheck(m_pThread, "Must be started");
-		NSys::fg_Thread_Suspend(m_pThread);
+		DMibLockTyped(CMutual, mp_Lock);
+		DMibSafeCheck(mp_pThread, "Must be started");
+		NSys::fg_Thread_Suspend(mp_pThread);
 	}
 
 	void CThread::f_Resume()
 	{
-		DMibLockTyped(CMutual, m_Lock);
-		DMibSafeCheck(m_pThread, "Must be started");
-		NSys::fg_Thread_Resume(m_pThread);
+		DMibLockTyped(CMutual, mp_Lock);
+		DMibSafeCheck(mp_pThread, "Must be started");
+		NSys::fg_Thread_Resume(mp_pThread);
 	}
 
 	void CThread::f_SetPriority(EExecutionPriority _Prio)
 	{
-		DMibLockTyped(CMutual, m_Lock);
-		DMibSafeCheck(m_pThread, "Must be started");
-		NSys::fg_Thread_SetPriority(m_pThread, _Prio);
+		DMibLockTyped(CMutual, mp_Lock);
+		DMibSafeCheck(mp_pThread, "Must be started");
+		NSys::fg_Thread_SetPriority(mp_pThread, _Prio);
 	}
 
 	bool CThread::f_TrySetPriority(EExecutionPriority _Prio)
 	{
-		DMibLockTyped(CMutual, m_Lock);
-		DMibSafeCheck(m_pThread, "Must be started");
-		return NSys::fg_Thread_TrySetPriority(m_pThread, _Prio);
+		DMibLockTyped(CMutual, mp_Lock);
+		DMibSafeCheck(mp_pThread, "Must be started");
+		return NSys::fg_Thread_TrySetPriority(mp_pThread, _Prio);
 	}
 
 	void CThread::f_PrepareFork()
 	{
-		m_Lock.f_Lock();
-		m_Lock.f_PrepareFork();
+		mp_Lock.f_Lock();
+		mp_Lock.f_PrepareFork();
 		m_EventWantQuit.f_PrepareFork();
-		m_ThreadQuitEvent.f_PrepareFork();
-		DMibFastCheck(!m_bLockHeld);
+		mp_ThreadQuitEvent.f_PrepareFork();
+		DMibFastCheck(!mp_bLockHeld);
 	}
 
 	void CThread::f_ForkedChild()
 	{
-		DMibFastCheck(!m_bLockHeld);
-		m_pThreadDestroyContext = nullptr;
-		m_StateAtomic.f_Exchange(EThreadState_None);
-		m_ThreadQuitEvent.f_ForkedChild();
+		DMibFastCheck(!mp_bLockHeld);
+		mp_pThreadDestroyContext = nullptr;
+		mp_StateAtomic.f_Exchange(EThreadState_None);
+		mp_ThreadQuitEvent.f_ForkedChild();
 		m_EventWantQuit.f_ForkedChild();
-		m_Lock.f_ForkedChild();
-		m_Lock.f_Unlock();
+		mp_Lock.f_ForkedChild();
+		mp_Lock.f_Unlock();
 	}
 
 	void CThread::f_ForkedParent()
 	{
-		DMibFastCheck(!m_bLockHeld);
-		m_ThreadQuitEvent.f_ForkedParent();
+		DMibFastCheck(!mp_bLockHeld);
+		mp_ThreadQuitEvent.f_ForkedParent();
 		m_EventWantQuit.f_ForkedParent();
-		m_Lock.f_ForkedParent();
-		m_Lock.f_Unlock();
+		mp_Lock.f_ForkedParent();
+		mp_Lock.f_Unlock();
 	}
 
 	inline_never void CThreadSpinWaiter::f_WaitSlow()
