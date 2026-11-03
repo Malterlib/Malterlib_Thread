@@ -13,7 +13,7 @@ namespace NMib::NThread
 	}
 
 	template <typename t_CData>
-	DMibSuppressThreadSanitizer constexpr t_CData TCSequenceLock<t_CData>::f_Load(NAtomic::CMemoryOrder _Order) const
+	DMibSuppressThreadSanitizer constexpr t_CData TCSequenceLock<t_CData>::f_Load(NAtomic::EMemoryOrder _Order) const
 	{
 		while (true)
 		{
@@ -33,7 +33,7 @@ namespace NMib::NThread
 
 	template <typename t_CData>
 	template <typename tf_FFunctor>
-	DMibSuppressThreadSanitizer constexpr void TCSequenceLock<t_CData>::f_Mutate(tf_FFunctor &&_fMutate, NAtomic::CMemoryOrder _Order)
+	DMibSuppressThreadSanitizer constexpr void TCSequenceLock<t_CData>::f_Mutate(tf_FFunctor &&_fMutate, NAtomic::EMemoryOrder _Order)
 	{
 		[[maybe_unused]] auto SequencePreWrite = mp_Sequence.f_FetchAdd(1, fg_Max(_Order, NAtomic::gc_MemoryOrder_AcquireRelease));
 

@@ -45,10 +45,7 @@ using namespace NMib::NThread;
 #		define DLimitOptimizations
 #	endif
 
-enum
-{
-	ECacheLineSize = 64
-};
+constexpr aint gc_CacheLineSize = 64;
 
 namespace
 {
@@ -59,9 +56,9 @@ namespace
 		NMib::NThread::CEventAutoReset m_IncEvent;
 
 		bool m_bDummy0;
-		alignas(ECacheLineSize) NMib::NThread::CMutualManyRead m_IncLock;
-		alignas(ECacheLineSize) NMib::NThread::CMutual m_IncLockMutual;
-		alignas(ECacheLineSize) NMib::NThread::CMutual m_IncDoneLock;
+		alignas(gc_CacheLineSize) NMib::NThread::CMutualManyRead m_IncLock;
+		alignas(gc_CacheLineSize) NMib::NThread::CMutual m_IncLockMutual;
+		alignas(gc_CacheLineSize) NMib::NThread::CMutual m_IncDoneLock;
 		bool m_bDummy1;
 		NMib::NAtomic::TCAtomic<aint> m_ChangingValue;
 		aint m_IncDone;
@@ -216,11 +213,8 @@ namespace
 			}
 		};
 
-		enum
-		{
-			EIncThreads    = 4
-			, EReadThreads = 4
-		};
+		static constexpr aint mc_IncThreads = 4;
+		static constexpr aint mc_ReadThreads = 4;
 
 		void f_DoTest()
 		{
@@ -247,11 +241,11 @@ namespace
 			NMib::NTime::CPrefCyclesTimeMeasureMin Timer;
 
 			{
-				CIncThread IncThreads[EIncThreads];
-				CReadThread ReadThreads[EReadThreads];
-				for (umint i = 0; i < EIncThreads; ++i)
+				CIncThread IncThreads[mc_IncThreads];
+				CReadThread ReadThreads[mc_ReadThreads];
+				for (umint i = 0; i < mc_IncThreads; ++i)
 					IncThreads[i].f_Start(this);
-				for (umint i = 0; i < EReadThreads; ++i)
+				for (umint i = 0; i < mc_ReadThreads; ++i)
 					ReadThreads[i].f_Start(this);
 
 				NMib::NSys::fg_Thread_Sleep(1.0);
@@ -259,7 +253,7 @@ namespace
 				Timer.f_Reset();
 				umint nReads = 0;
 				m_ChangingValue = 1112;
-				m_nTests = 25000 / EIncThreads;
+				m_nTests = 25000 / mc_IncThreads;
 				{
 					{
 						m_IncLock.f_Destruct();
@@ -272,19 +266,19 @@ namespace
 						m_IncDone = 0;
 						{
 							Timer.f_Start();
-							for (umint i = 0; i < EReadThreads; ++i)
+							for (umint i = 0; i < mc_ReadThreads; ++i)
 								ReadThreads[i].m_EventWantQuit.f_Signal();
-							for (umint i = 0; i < EIncThreads; ++i)
+							for (umint i = 0; i < mc_IncThreads; ++i)
 								IncThreads[i].m_EventWantQuit.f_Signal();
 
 							while (1)
 							{
 								m_IncEvent.f_Wait();
 								DMibLock(m_IncDoneLock);
-								if (m_IncDone == (EIncThreads))
+								if (m_IncDone == (mc_IncThreads))
 									break;
 							}
-							for (umint i = 0; i < EReadThreads; ++i)
+							for (umint i = 0; i < mc_ReadThreads; ++i)
 							{
 								nReads += ReadThreads[i].m_nReads.f_Load(NMib::NAtomic::gc_MemoryOrder_Relaxed);
 								ReadThreads[i].m_bStop.f_Exchange(1);
@@ -294,7 +288,7 @@ namespace
 							while (1)
 							{
 								bool bAllStopped = true;
-								for (umint i = 0; i < EReadThreads; ++i)
+								for (umint i = 0; i < mc_ReadThreads; ++i)
 								{
 									if (ReadThreads[i].m_bStop.f_Load())
 										bAllStopped = false;
@@ -307,7 +301,7 @@ namespace
 					}
 				}
 
-				DMibTest(DMibExpr(m_IncValue) == DMibExpr(m_nTests*EIncThreads));
+				DMibTest(DMibExpr(m_IncValue) == DMibExpr(m_nTests*mc_IncThreads));
 
 				NMib::NTime::CPrefCyclesTimeMeasureMin TimerRead = Timer;
 				TimerRead /= nReads;
@@ -1484,13 +1478,10 @@ namespace
 
 					NMib::NAtomic::TCAtomic<uint32> nWoken{0};
 
-					enum
-					{
-						EnWaiters = 4
-					};
+					constexpr aint c_nWaiters = 4;
 
-					NMib::NStorage::TCUniquePointer<CThreadObject> pWaiters[EnWaiters];
-					for (umint i = 0; i < EnWaiters; ++i)
+					NMib::NStorage::TCUniquePointer<CThreadObject> pWaiters[c_nWaiters];
+					for (umint i = 0; i < c_nWaiters; ++i)
 					{
 						pWaiters[i] = CThreadObject::fs_StartThread
 							(
@@ -1510,13 +1501,13 @@ namespace
 					Word.f_Store(1);
 					NMib::NSys::fg_Futex_WakeAll(pWord);
 
-					for (umint i = 0; i < EnWaiters; ++i)
+					for (umint i = 0; i < c_nWaiters; ++i)
 					{
 						pWaiters[i]->f_Stop();
 						pWaiters[i].f_Clear();
 					}
 
-					DMibTest(DMibExpr(nWoken.f_Load()) == DMibExpr((uint32)EnWaiters));
+					DMibTest(DMibExpr(nWoken.f_Load()) == DMibExpr((uint32)c_nWaiters));
 				}
 
 				{
@@ -2185,15 +2176,15 @@ struct CTestThread : public CMalterlibTest
 		{
 			enum
 			{
-				EIncThreads    = 4
-				, EReadThreads = 7
+				mc_IncThreads    = 4
+				, mc_ReadThreads = 7
 			};
 
-			static CIncThread IncThreads[EIncThreads];
-			static CReadThread ReadThreads[EReadThreads];
-			for (umint i = 0; i < EIncThreads; ++i)
+			static CIncThread IncThreads[mc_IncThreads];
+			static CReadThread ReadThreads[mc_ReadThreads];
+			for (umint i = 0; i < mc_IncThreads; ++i)
 				IncThreads[i].f_Start(this);
-			for (umint i = 0; i < EReadThreads; ++i)
+			for (umint i = 0; i < mc_ReadThreads; ++i)
 				ReadThreads[i].f_Start(this);
 
 			NMib::NSys::fg_Thread_Sleep(1.0);
@@ -2212,19 +2203,19 @@ struct CTestThread : public CMalterlibTest
 					m_IncDone = 0;
 					{
 						DMibScopePerfTimeMeasureMin(Timer);
-						for (umint i = 0; i < EReadThreads; ++i)
+						for (umint i = 0; i < mc_ReadThreads; ++i)
 							ReadThreads[i].m_EventWantQuit.f_Signal();
-						for (umint i = 0; i < EIncThreads; ++i)
+						for (umint i = 0; i < mc_IncThreads; ++i)
 							IncThreads[i].m_EventWantQuit.f_Signal();
 
 						while (1)
 						{
 							m_IncEvent.f_Wait();
 							DMibLock(m_IncDoneLock);
-							if (m_IncDone == (EIncThreads))
+							if (m_IncDone == (mc_IncThreads))
 								break;
 						}
-						for (umint i = 0; i < EReadThreads; ++i)
+						for (umint i = 0; i < mc_ReadThreads; ++i)
 						{
 							ReadThreads[i].m_bStop = true;
 							nReads += ReadThreads[i].m_nReads;
@@ -2232,7 +2223,7 @@ struct CTestThread : public CMalterlibTest
 						while (1)
 						{
 							bool bAllStopped = true;
-							for (umint i = 0; i < EReadThreads; ++i)
+							for (umint i = 0; i < mc_ReadThreads; ++i)
 							{
 								if (NMib::fg_Volatile(ReadThreads[i].m_bStop))
 									bAllStopped = false;
@@ -2246,7 +2237,7 @@ struct CTestThread : public CMalterlibTest
 			DMibConOut
 				(
 					"Performance for CMutualManyRead Lock+Unlock from {} threads = {} locks per second IncValue = {}\r\n"
-					, int32(EIncThreads)
+					, int32(mc_IncThreads)
 					, fp64(m_IncValue) / Timer.f_GetTime()
 					, m_IncValue
 				)
@@ -2254,7 +2245,7 @@ struct CTestThread : public CMalterlibTest
 			DMibConOut
 				(
 					"Performance for CMutualManyRead LockRead+UnlockRead from {} threads = {} locks per second nReads = {}\r\n"
-					, int32(EReadThreads)
+					, int32(mc_ReadThreads)
 					, fp64(nReads) / Timer.f_GetTime()
 					, nReads
 				)

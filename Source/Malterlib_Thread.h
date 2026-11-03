@@ -980,10 +980,7 @@ namespace NMib::NThread
 	template <typename t_CEvent, bool t_bAllowRecursive>
 	struct TCMutualAggregate
 	{
-		enum
-		{
-			EAtomicBits = sizeof(aint) * 8
-		};
+		static constexpr aint mc_AtomicBits = sizeof(aint) * 8;
 
 		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nLocked;
 		NAtomic::TCAtomic<umint> m_ThreadID; // On windows this is the thread id, unix the pthread
@@ -1029,7 +1026,7 @@ namespace NMib::NThread
 			m_Event.f_Signal();
 		}
 
-		static umint const mcp_AtomicMask = DMibBitRangeOne(0, EAtomicBits - 3, umint(1));
+		static umint const mcp_AtomicMask = DMibBitRangeOne(0, mc_AtomicBits - 3, umint(1));
 
 	public:
 		constexpr TCMutualAggregate(EAggregateInitialization _Init)
@@ -1659,7 +1656,7 @@ namespace NMib::NThread
 	struct CScopeUnlock
 	{
 		template <typename t_Lock>
-		struct TLocker
+		struct TCLocker
 		{
 			inline_small static void fs_Locker(void *_pLock)
 			{
@@ -1672,7 +1669,7 @@ namespace NMib::NThread
 		{
 			_Lock.f_Unlock();
 			m_pLock = &_Lock;
-			m_pLockFunc = TLocker<t_Lock>::fs_Locker;
+			m_pLockFunc = TCLocker<t_Lock>::fs_Locker;
 		}
 
 		inline_small ~CScopeUnlock()
@@ -1688,7 +1685,7 @@ namespace NMib::NThread
 	struct CScopeLockRead
 	{
 		template <typename t_Lock>
-		struct TLocker
+		struct TCLocker
 		{
 			inline_small static void fs_Locker(void *_pLock)
 			{
@@ -1701,7 +1698,7 @@ namespace NMib::NThread
 		{
 			_Lock.f_LockRead();
 			m_pLock = &_Lock;
-			m_pUnlockFunc = TLocker<t_Lock>::fs_Locker;
+			m_pUnlockFunc = TCLocker<t_Lock>::fs_Locker;
 		}
 
 		inline_small ~CScopeLockRead()
@@ -1717,7 +1714,7 @@ namespace NMib::NThread
 	struct CScopeUnlockRead
 	{
 		template <typename t_Lock>
-		struct TLocker
+		struct TCLocker
 		{
 			static void fs_Locker(void *_pLock)
 			{
@@ -1730,7 +1727,7 @@ namespace NMib::NThread
 		{
 			_Lock.f_UnlockRead();
 			m_pLock = &_Lock;
-			m_pLockFunc = TLocker<t_Lock>::fs_Locker;
+			m_pLockFunc = TCLocker<t_Lock>::fs_Locker;
 		}
 
 		~CScopeUnlockRead()

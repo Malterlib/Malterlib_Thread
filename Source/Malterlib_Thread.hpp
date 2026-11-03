@@ -197,7 +197,7 @@ namespace NMib::NThread
 
 	namespace NPrivate
 	{
-		struct TCCreateHelperDo
+		struct CCreateHelperDo
 		{
 			template <typename tf_CType>
 			static void *fs_CreateHelper(void *_pDest, void *_pSource)
@@ -216,7 +216,7 @@ namespace NMib::NThread
 			}
 		};
 
-		struct TCCreateHelperDoNot
+		struct CCreateHelperDoNot
 		{
 			template <typename tf_CType>
 			static void *fs_CreateHelper(void *_pDest, void *_pSource)
