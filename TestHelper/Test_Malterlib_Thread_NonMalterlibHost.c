@@ -128,7 +128,7 @@ int main(int _nArguments, char **_pArguments)
 #else
 	pthread_mutex_init(&State.m_Mutex, NULL);
 	pthread_cond_init(&State.m_Condition, NULL);
-	pthread_t Thread; // NOLINT(malterlib-conceptual-prefix): pthread_t is a pointer on macOS and an integer on Linux, so no concept prefix fits both.
+	pthread_t Thread;
 	if (pthread_create(&Thread, NULL, &fg_ExistingThread, &State))
 		return 5;
 	pthread_mutex_lock(&State.m_Mutex);
