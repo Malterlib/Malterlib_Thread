@@ -1826,8 +1826,6 @@ namespace NMib::NThread
 		template <typename t_CFunctionType, typename t_CStr, typename t_CCallerObject, typename t_CThreadObject>
 		struct TCCallerObjectImp : public t_CCallerObject
 		{
-			t_CFunctionType m_FunctionObject;
-			t_CStr m_Name;
 			TCCallerObjectImp(t_CFunctionType const &_FunctionObject, t_CStr const &_Name)
 				: m_FunctionObject(_FunctionObject)
 				, m_Name(_Name)
@@ -1849,6 +1847,9 @@ namespace NMib::NThread
 			{
 				return m_Name;
 			}
+
+			t_CFunctionType m_FunctionObject;
+			t_CStr m_Name;
 		};
 	}
 
@@ -1897,8 +1898,6 @@ namespace NMib::NThread
 	{
 		struct CCallerObjectImp final : public CCallerObject
 		{
-			tf_CFunctionType *m_pFunctionObject;
-			t_CStr m_Name;
 			CCallerObjectImp(tf_CFunctionType *_pFunctionObject, t_CStr const &_Name)
 				: m_pFunctionObject(_pFunctionObject)
 				, m_Name(_Name)
@@ -1914,6 +1913,9 @@ namespace NMib::NThread
 			{
 				return m_Name;
 			}
+
+			tf_CFunctionType *m_pFunctionObject;
+			t_CStr m_Name;
 		};
 
 		NStorage::TCUniquePointer<TCThreadObject, t_CAllocator> pThread = fg_Construct

@@ -36,10 +36,6 @@ namespace NMib::NThread
 	// addresses. Slow paths are implemented in the Core platform layer.
 	struct CSemaphoreAggregate
 	{
-		// Low 32 bits: count (the futex word); high 32 bits: parked waiters
-		NAtomic::TCAtomic<uint64> m_Data;
-		uint32 m_Maximum;
-
 		constexpr CSemaphoreAggregate(EAggregateInitialization _Init);
 		constexpr CSemaphoreAggregate(EAggregateInitialization _Init, uint32 _Maximum);
 		CSemaphoreAggregate();
@@ -61,16 +57,20 @@ namespace NMib::NThread
 		inline_small void f_ExternalWaiterRegister();
 		inline_small void f_ExternalWaiterUnregister();
 
-	private:
-		static constexpr uint64 mcp_ValueMask = TCLimitsInt<uint32>::mc_Max;
-		static constexpr uint64 mcp_WaiterOne = uint64(1) << 32;
+		// Low 32 bits: count (the futex word); high 32 bits: parked waiters
+		NAtomic::TCAtomic<uint64> m_Data;
+		uint32 m_Maximum;
 
+	private:
 		inline_small uint32 volatile *fp_GetFutexWord();
 
 		// Implemented in the Core platform layer
 		void fp_WaitSlow();
 		bool fp_WaitTimeoutSlow(fp64 _Timeout);
 		void fp_WakeSlow(uint32 _Delta, uint32 _nWaiters);
+
+		static constexpr uint64 mcp_ValueMask = TCLimitsInt<uint32>::mc_Max;
+		static constexpr uint64 mcp_WaiterOne = uint64(1) << 32;
 	};
 
 	static_assert(sizeof(NAtomic::TCAtomic<uint32>) == sizeof(uint32));
@@ -103,8 +103,6 @@ namespace NMib::NThread
 	// Core platform layer.
 	struct CEventAggregate
 	{
-		NAtomic::TCAtomic<uint32> m_State;
-
 		constexpr CEventAggregate(EAggregateInitialization _Init);
 		CEventAggregate();
 		void f_PrepareFork();
@@ -121,16 +119,18 @@ namespace NMib::NThread
 		/// Whether a waiter is parked on the event, so a test can make the signal race with it.
 		inline_small bool f_HasWaiters() const;
 
-	private:
-		static constexpr uint32 mcp_FlagSignaled = 0x1;
-		static constexpr uint32 mcp_FlagWaiters = 0x2;
-		static constexpr uint32 mcp_GenerationOne = 0x4;
-		static constexpr uint32 mcp_GenerationMask = ~(mcp_FlagSignaled | mcp_FlagWaiters);
+		NAtomic::TCAtomic<uint32> m_State;
 
+	private:
 		// Implemented in the Core platform layer
 		void fp_WaitSlow();
 		bool fp_WaitTimeoutSlow(fp64 _Timeout);
 		void fp_WakeAllSlow();
+
+		static constexpr uint32 mcp_FlagSignaled = 0x1;
+		static constexpr uint32 mcp_FlagWaiters = 0x2;
+		static constexpr uint32 mcp_GenerationOne = 0x4;
+		static constexpr uint32 mcp_GenerationMask = ~(mcp_FlagSignaled | mcp_FlagWaiters);
 	};
 
 	struct CEvent : public CEventAggregate
@@ -166,11 +166,12 @@ namespace NMib::NThread
 		inline_small ~TCScopeLock();
 
 	private:
-		t_CLock &mp_Lock;
 		TCScopeLock(TCScopeLock &&_Other);
 		TCScopeLock(TCScopeLock const &_Other);
 		TCScopeLock &operator = (TCScopeLock &&_Other);
 		TCScopeLock &operator = (TCScopeLock const &_Other);
+
+		t_CLock &mp_Lock;
 	};
 
 	template <typename t_CLock>
@@ -180,11 +181,12 @@ namespace NMib::NThread
 		inline_small ~TCScopeUnlock();
 
 	private:
-		t_CLock &mp_Lock;
 		TCScopeUnlock(TCScopeUnlock &&_Other);
 		TCScopeUnlock(TCScopeUnlock const &_Other);
 		TCScopeUnlock &operator = (TCScopeUnlock &&_Other);
 		TCScopeUnlock &operator = (TCScopeUnlock const &_Other);
+
+		t_CLock &mp_Lock;
 	};
 
 	template <typename t_CLock>
@@ -194,11 +196,12 @@ namespace NMib::NThread
 		inline_small ~TCScopeLockRead();
 
 	private:
-		t_CLock &mp_Lock;
 		TCScopeLockRead(TCScopeLockRead &&_Other);
 		TCScopeLockRead(TCScopeLockRead const &_Other);
 		TCScopeLockRead &operator = (TCScopeLockRead &&_Other);
 		TCScopeLockRead &operator = (TCScopeLockRead const &_Other);
+
+		t_CLock &mp_Lock;
 	};
 
 	template <typename t_CLock>
@@ -219,11 +222,12 @@ namespace NMib::NThread
 		inline_small ~TCScopeUnlockRead();
 
 	private:
-		t_CLock &mp_Lock;
 		TCScopeUnlockRead(TCScopeUnlockRead &&_Other);
 		TCScopeUnlockRead(TCScopeUnlockRead const &_Other);
 		TCScopeUnlockRead &operator = (TCScopeUnlockRead &&_Other);
 		TCScopeUnlockRead &operator = (TCScopeUnlockRead const &_Other);
+
+		t_CLock &mp_Lock;
 	};
 
 	template <typename t_CLock>
@@ -237,9 +241,10 @@ namespace NMib::NThread
 		bool f_IsLocked() const;
 
 	private:
-		t_CLock *mp_pLock;
 		TCMovableScopeLock(TCMovableScopeLock const &_Other);
 		TCMovableScopeLock &operator = (TCMovableScopeLock const &_Other);
+
+		t_CLock *mp_pLock;
 	};
 
 	template <typename t_CLock>
@@ -251,9 +256,10 @@ namespace NMib::NThread
 		inline_small TCMovableScopeUnlock &operator = (TCMovableScopeUnlock &&_Other);
 
 	private:
-		t_CLock *mp_pLock;
 		TCMovableScopeUnlock(TCMovableScopeUnlock const &_Other);
 		TCMovableScopeUnlock &operator = (TCMovableScopeUnlock const &_Other);
+
+		t_CLock *mp_pLock;
 	};
 
 	template <typename t_CLock>
@@ -265,9 +271,10 @@ namespace NMib::NThread
 		inline_small TCMovableScopeLockRead &operator = (TCMovableScopeLockRead &&_Other);
 
 	private:
-		t_CLock *mp_pLock;
 		TCMovableScopeLockRead(TCMovableScopeLockRead const &_Other);
 		TCMovableScopeLockRead &operator = (TCMovableScopeLockRead const &_Other);
+
+		t_CLock *mp_pLock;
 	};
 
 	template <typename t_CLock>
@@ -279,9 +286,10 @@ namespace NMib::NThread
 		inline_small TCMovableScopeUnlockRead &operator = (TCMovableScopeUnlockRead &&_Other);
 
 	private:
-		t_CLock *mp_pLock;
 		TCMovableScopeUnlockRead(TCMovableScopeUnlockRead const &_Other);
 		TCMovableScopeUnlockRead &operator = (TCMovableScopeUnlockRead const &_Other);
+
+		t_CLock *mp_pLock;
 	};
 
 	using FLock = void (void *_pLock);
@@ -305,14 +313,6 @@ namespace NMib::NThread
 		constexpr CLowLevelLockAggregate(EAggregateInitialization _Init);
 		constexpr CLowLevelLockAggregate();
 
-		DMibThreadAtomicsAlignment NAtomic::TCAtomic<CLowLevelLockAggregateLockType> m_Lock;
-
-#if DMibEnableSafeCheck > 0
-		umint m_ThreadID;          // On windows this is the thread id, unix the pthread
-		umint m_AlternateThreadID; // On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
-		umint m_nForked;
-#endif
-
 		void f_ForkedChildUnlocked();
 		void f_ForkedChildLocked();
 		void f_Construct();
@@ -323,6 +323,14 @@ namespace NMib::NThread
 		void f_LockNoSanitize();
 		bool f_TryLockNoSanitize();
 		void f_UnlockNoSanitize();
+
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<CLowLevelLockAggregateLockType> m_Lock;
+
+#if DMibEnableSafeCheck > 0
+		umint m_ThreadID;          // On windows this is the thread id, unix the pthread
+		umint m_AlternateThreadID; // On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
+		umint m_nForked;
+#endif
 	};
 
 	struct CLowLevelContendedLockAggregate : public CLowLevelLockAggregate
@@ -370,9 +378,6 @@ namespace NMib::NThread
 	template <typename t_CEvent>
 	struct TCMutualSimpleAggregate
 	{
-		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nLocked;
-		t_CEvent m_Event;
-
 		constexpr TCMutualSimpleAggregate(EAggregateInitialization _Init);
 		TCMutualSimpleAggregate();
 		void f_Construct();
@@ -381,6 +386,9 @@ namespace NMib::NThread
 		void f_Unlock();
 		void f_LockRead();
 		void f_UnlockRead();
+
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nLocked;
+		t_CEvent m_Event;
 
 	private:
 		inline_never void fp_WaitForIt();
@@ -397,13 +405,13 @@ namespace NMib::NThread
 	// A larger yield budget delays sleeping at the cost of CPU time.
 	struct CThreadSpinWaiter
 	{
-		static constexpr umint mc_DefaultYields = 140;
-
 		explicit CThreadSpinWaiter(umint _nYieldsBeforeSleep = mc_DefaultYields);
 
 		inline_always void f_Wait();
 
 		inline_never void f_WaitSlow();
+
+		static constexpr umint mc_DefaultYields = 140;
 
 		umint m_nWaits = 0;
 		umint m_nYieldsBeforeSleep;
@@ -412,21 +420,12 @@ namespace NMib::NThread
 	template <typename t_CEvent, bool t_bAllowRecursive>
 	struct TCMutualAggregate
 	{
-		static constexpr aint mc_AtomicBits = sizeof(aint) * 8;
-
-		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nLocked;
-		NAtomic::TCAtomic<umint> m_ThreadID; // On windows this is the thread id, unix the pthread
-#if DMibEnableSafeCheck > 0
-		umint m_AlternateThreadID; // On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
-#endif
-		aint m_nRecurse;
-		t_CEvent m_Event;
+		constexpr TCMutualAggregate(EAggregateInitialization _Init);
+		TCMutualAggregate();
 
 		void f_PrepareFork();
 		void f_ForkedChild();
 		void f_ForkedParent();
-		constexpr TCMutualAggregate(EAggregateInitialization _Init);
-		TCMutualAggregate();
 		void f_Construct();
 		void f_Destruct();
 		inline_never bool f_TryLock();
@@ -441,11 +440,21 @@ namespace NMib::NThread
 		void f_LockRead();
 		void f_UnlockRead();
 
-	protected:
-		static constexpr umint mcp_AtomicMask = DMibBitRangeOne(0, mc_AtomicBits - 3, umint(1));
+		static constexpr aint mc_AtomicBits = sizeof(aint) * 8;
 
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nLocked;
+		NAtomic::TCAtomic<umint> m_ThreadID; // On windows this is the thread id, unix the pthread
+#if DMibEnableSafeCheck > 0
+		umint m_AlternateThreadID; // On windows this is also the thread id, on macOS and linux this is the kernel thread id that can be used to match threads in the debugger
+#endif
+		aint m_nRecurse;
+		t_CEvent m_Event;
+
+	protected:
 		inline_never void fp_WaitForIt();
 		inline_never void fp_SignalIt();
+
+		static constexpr umint mcp_AtomicMask = DMibBitRangeOne(0, mc_AtomicBits - 3, umint(1));
 	};
 
 	template <typename t_CEvent, umint t_nSpins, bool t_bAllowRecursive>
@@ -497,24 +506,8 @@ namespace NMib::NThread
 	template <typename t_CEventAutoreset, typename t_CBase = TCMutualAggregate<t_CEventAutoreset, true>>
 	struct TCMutualManyReadAggregate : public t_CBase
 	{
-	protected:
-		using t_CBase::mcp_AtomicMask;
-
-	public:
 		constexpr TCMutualManyReadAggregate(EAggregateInitialization _Init);
 		TCMutualManyReadAggregate();
-
-		// Reader count with writer/reader-waiter flags in the top bits; readers
-		// park directly on this word via NSys::fg_Futex_*
-		DMibThreadAtomicsAlignment NAtomic::TCAtomic<uint32> m_nReading;
-		t_CEventAutoreset m_WriteOkEvent;
-#if DMibEnableSafeCheck > 0
-		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nReadingDebugCheck;
-#endif
-
-		static constexpr uint32 mc_FlagReadingNotAllowed = DMibBitTyped(31, uint32);
-		static constexpr uint32 mc_FlagReadersWaiting = DMibBitTyped(30, uint32);
-		static constexpr uint32 mc_nReadingMask = ~(mc_FlagReadingNotAllowed | mc_FlagReadersWaiting);
 
 		void f_Construct();
 		void f_Destruct();
@@ -527,6 +520,21 @@ namespace NMib::NThread
 		inline_never void f_Lock();
 		inline_never bool f_TryLock();
 		inline_never void f_Unlock();
+
+		static constexpr uint32 mc_FlagReadingNotAllowed = DMibBitTyped(31, uint32);
+		static constexpr uint32 mc_FlagReadersWaiting = DMibBitTyped(30, uint32);
+		static constexpr uint32 mc_nReadingMask = ~(mc_FlagReadingNotAllowed | mc_FlagReadersWaiting);
+
+		// Reader count with writer/reader-waiter flags in the top bits; readers
+		// park directly on this word via NSys::fg_Futex_*
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<uint32> m_nReading;
+		t_CEventAutoreset m_WriteOkEvent;
+#if DMibEnableSafeCheck > 0
+		DMibThreadAtomicsAlignment NAtomic::TCAtomic<umint> m_nReadingDebugCheck;
+#endif
+
+	protected:
+		using t_CBase::mcp_AtomicMask;
 	};
 
 	template <typename t_CEventAutoreset, typename t_CBase = TCMutualAggregate<t_CEventAutoreset, true>>
@@ -631,9 +639,6 @@ namespace NMib::NThread
 
 	struct CThread
 	{
-		// This event will be signaled when the thread is requested to quit
-		CEventAutoReset m_EventWantQuit;
-
 		CThread();
 		virtual ~CThread();
 
@@ -736,7 +741,16 @@ namespace NMib::NThread
 		virtual NStr::CStr f_GetThreadName() = 0;
 		virtual ch8 const *f_GetThreadNameRaw();
 
+		// This event will be signaled when the thread is requested to quit
+		CEventAutoReset m_EventWantQuit;
+
 	private:
+		CThread(CThread const &_Other);
+
+		static aint fsp_ThreadMain(void *_pContext);
+		void fp_Cleanup();
+		CThread &operator = (CThread const &_Other);
+
 		align_cacheline mutable CMutual mp_Lock;
 		aint mp_ReturnValue;
 		void *mp_pThread;
@@ -748,17 +762,13 @@ namespace NMib::NThread
 		CEvent mp_ThreadQuitEvent;
 
 		align_cacheline NAtomic::TCAtomic<uint32> mp_StateAtomic{EThreadState_None};
-
-		static aint fsp_ThreadMain(void *_pContext);
-		void fp_Cleanup();
-
-		CThread(CThread const &_Other);
-		CThread &operator = (CThread const &_Other);
 	};
 
 	template <typename t_CAllocator, typename t_CStr>
 	struct TCThreadObject final : private CThread
 	{
+		~TCThreadObject();
+
 		using CThread::f_Resume;
 		using CThread::f_Stop;
 		using CThread::f_SetPriority;
@@ -766,14 +776,11 @@ namespace NMib::NThread
 		using CThread::f_GetReturnValue;
 		using CThread::f_CallingFromThread;
 		using CThread::f_GetState;
-		using CThread::m_EventWantQuit;
 		using CThread::f_GetThread;
 		using CThread::f_GetThreadID;
 		using CThread::f_PrepareFork;
 		using CThread::f_ForkedParent;
 		using CThread::f_ForkedChild;
-
-		~TCThreadObject();
 
 		template <typename tf_CFunctionType>
 		static auto fs_StartThread
@@ -801,9 +808,11 @@ namespace NMib::NThread
 			-> NStorage::TCUniquePointer<TCThreadObject, t_CAllocator>
 		;
 
+		using CThread::m_EventWantQuit;
+
 	private:
-		TCThreadObject(TCThreadObject const &_Other) = delete;
-		TCThreadObject &operator = (TCThreadObject const &_Other) = delete;
+		template <typename tf_CObjectType, typename tf_CAllocator, typename ...tfp_CParams>
+		friend tf_CObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams && ...p_Params);
 
 		struct CCallerObject
 		{
@@ -813,16 +822,16 @@ namespace NMib::NThread
 			virtual ch8 const *f_GetName() = 0;
 		};
 
-		template <typename tf_CObjectType, typename tf_CAllocator, typename ...tfp_CParams>
-		friend tf_CObjectType *NMib::fg_ConstructObject(tf_CAllocator &&_Allocator, tfp_CParams && ...p_Params);
-
-		NStorage::TCUniquePointer<CCallerObject, t_CAllocator> mp_pCallerObject;
-
+		TCThreadObject(TCThreadObject const &_Other) = delete;
 		TCThreadObject(NStorage::TCUniquePointer<CCallerObject, t_CAllocator> &&_pCallerObject);
+
+		TCThreadObject &operator = (TCThreadObject const &_Other) = delete;
 		aint f_Main();
 
 		virtual NStr::CStr f_GetThreadName();
 		virtual ch8 const *f_GetThreadNameRaw();
+
+		NStorage::TCUniquePointer<CCallerObject, t_CAllocator> mp_pCallerObject;
 	};
 
 	using CThreadObject = TCThreadObject<NMemory::CDefaultAllocator, NStr::CStr>;
@@ -861,8 +870,6 @@ namespace NMib::NStorage
 	template <typename t_CCountType>
 	struct TCIntrusiveRefCount<ESharedPointerOption_None, t_CCountType>
 	{
-		mutable NAtomic::TCAtomic<t_CCountType> m_RefCount; // -1 means no references
-
 		~TCIntrusiveRefCount();
 
 		TCIntrusiveRefCount();
@@ -900,6 +907,8 @@ namespace NMib::NStorage
 
 		t_CCountType f_Get() const;
 
+		mutable NAtomic::TCAtomic<t_CCountType> m_RefCount; // -1 means no references
+
 #if DMibConfig_RefCountDebugging
 #	if DMibConfig_RefCountLeakDebugging
 		static umint ms_Magic;
@@ -912,9 +921,6 @@ namespace NMib::NStorage
 	template <typename t_CCountType>
 	struct TCIntrusiveRefCount<ESharedPointerOption_SupportWeakPointer, t_CCountType>
 	{
-		mutable NAtomic::TCAtomic<t_CCountType> m_RefCount;     // -1 means no references
-		mutable NAtomic::TCAtomic<t_CCountType> m_WeakRefCount; // -1 means no references
-
 		~TCIntrusiveRefCount();
 		TCIntrusiveRefCount();
 		TCIntrusiveRefCount(TCIntrusiveRefCount const &_Other);
@@ -962,6 +968,9 @@ namespace NMib::NStorage
 		NMemory::CCapturedDelete f_WeakGetCapturedDelete() const;
 		t_CCountType f_Get() const;
 		t_CCountType f_WeakGet() const;
+
+		mutable NAtomic::TCAtomic<t_CCountType> m_RefCount;     // -1 means no references
+		mutable NAtomic::TCAtomic<t_CCountType> m_WeakRefCount; // -1 means no references
 
 #if DMibConfig_RefCountDebugging
 #	if DMibConfig_RefCountLeakDebugging
