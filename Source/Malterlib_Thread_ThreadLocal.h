@@ -26,9 +26,6 @@ namespace NMib
 
 		struct CThreadLocalInterface
 		{
-			CThreadLocalInterface();
-			virtual ~CThreadLocalInterface();
-
 			struct CSafeAllocMemory
 			{
 				CSafeAllocMemory(void *_pMemory, umint _Size);
@@ -41,13 +38,16 @@ namespace NMib
 			{
 				CSafeAlloc(CThreadLocalInterface *_pInterface, CSafeAllocMemory const &_Memory);
 				CSafeAlloc(CSafeAlloc &&_Other);
-				CSafeAlloc &operator = (CSafeAlloc &&_Other);
 				~CSafeAlloc();
+				CSafeAlloc &operator = (CSafeAlloc &&_Other);
 				void f_Claim();
 
 				CThreadLocalInterface *m_pInterface;
 				CSafeAllocMemory m_Memory;
 			};
+
+			CThreadLocalInterface();
+			virtual ~CThreadLocalInterface();
 
 			virtual void f_DeleteItem(void *_pItem) = 0;
 			virtual CSafeAlloc f_AllocData() = 0;
@@ -103,6 +103,9 @@ namespace NMib
 		template <typename t_CData, typename t_CAllocator = NMemory::CAllocator_Heap, EThreadLocalFlag t_Flags = EThreadLocalFlag_None>
 		struct TCThreadLocal : private CThreadLocalInterface
 		{
+			TCThreadLocal();
+			~TCThreadLocal();
+
 			void f_DeleteItem(void *_pItem) override;
 			CSafeAlloc f_AllocData() override;
 			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
@@ -113,9 +116,6 @@ namespace NMib
 #if DMibEnableSafeCheck > 0
 			ch8 const *f_GetName() override;
 #endif
-
-			TCThreadLocal();
-			~TCThreadLocal();
 
 			void f_Destroy();
 			void f_ReinitForThread();
@@ -131,9 +131,10 @@ namespace NMib
 			inline_small t_CData *operator -> ();
 			inline_small t_CData &operator & ();
 
+			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
+
 			umint m_ThreadLocalLocal;
 			umint m_Storage; // Index into the thread storage list
-			static constexpr EThreadLocalFlag mc_Flags = t_Flags;
 
 		private:
 			// Disable copy
@@ -145,15 +146,6 @@ namespace NMib
 		template <typename t_CData, EThreadLocalFlag t_Flags = EThreadLocalFlag_None>
 		struct TCThreadLocalDynamic : private CThreadLocalInterface
 		{
-			void f_DeleteItem(void *_pItem) override;
-			CSafeAlloc f_AllocData() override;
-			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
-			void *f_CreateDataCopy(void *_pSource, void *_pMemory) override;
-			void *f_CreateDataMove(void *_pSource, void *_pMemory) override;
-			void *f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID) override;
-#if DMibEnableSafeCheck > 0
-			ch8 const *f_GetName() override;
-#endif
 			TCThreadLocalDynamic
 				(
 					NFunction::TCFunctionNoAlloc<CSafeAllocMemory ()> const &_fAlloc
@@ -163,6 +155,16 @@ namespace NMib
 				)
 			;
 			~TCThreadLocalDynamic();
+
+			void f_DeleteItem(void *_pItem) override;
+			CSafeAlloc f_AllocData() override;
+			void f_FreeData(CSafeAllocMemory const &_Alloc) override;
+			void *f_CreateDataCopy(void *_pSource, void *_pMemory) override;
+			void *f_CreateDataMove(void *_pSource, void *_pMemory) override;
+			void *f_CreateData(void *_pMemory, bool _bInitial, umint _ThreadID) override;
+#if DMibEnableSafeCheck > 0
+			ch8 const *f_GetName() override;
+#endif
 
 			void f_Destroy();
 			void f_ReinitForThread();

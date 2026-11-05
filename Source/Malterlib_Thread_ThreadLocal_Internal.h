@@ -38,17 +38,22 @@ namespace NMib
 					inline_small umint const &operator () (CPerThread const &_Node) const;
 				};
 
-				NIntrusive::TCAVLLink<> m_Link;
 				struct CPointer
 				{
-					void *m_pPtr;
 					CPointer();
 					~CPointer();
 					CPointer(CPointer &&_Copy);
 
+					void *m_pPtr;
+
 				private:
 					CPointer(CPointer const &_Copy);
 				};
+
+				CPerThread(umint _ThreadID, CThreadLocalContext *_pContext);
+				~CPerThread();
+
+				NIntrusive::TCAVLLink<> m_Link;
 
 				umint m_ThreadID;
 				umint m_DestroyingID;
@@ -63,42 +68,10 @@ namespace NMib
 				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_Created;
 				NContainer::TCMap<umint, CAllocation, CSort_Default, NMemory::TCPoolReferenceAllocator<CAllocationPool>> m_CreatedAlwaysCreate;
 
-				CPerThread(umint _ThreadID, CThreadLocalContext *_pContext);
-				~CPerThread();
-
 				NContainer::TCVector<CPointer, NMemory::CAllocator_VirtualNoTracking> m_ThreadLocals;
 				NThread::CMutual m_Lock;
 			};
 
-		private:
-			NIntrusive::TCAVLTree<&CPerThread::m_Link, CPerThread::CCompare> mp_PerThreadByThreadID;
-			NMemory::TCPool<CPerThread, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> mp_PoolPerThread;
-			CAllocationPool mp_PoolAllocation;
-
-#if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
-			umint mp_iPerThreadDestructor = TCLimitsInt<umint>::mc_Max;
-#endif
-			umint mp_iPerThread = TCLimitsInt<umint>::mc_Max;
-
-			umint mp_iThreadLocalCurrentLen = 0;
-
-			NMemory::TCPool<CStorageIndex, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> mp_PoolStorageIndices;
-
-			DMibListLinkD_List(CStorageIndex, m_Link) mp_ThreadLocal_Free; // List of indices that are free
-			DMibListLinkD_List(CStorageIndex, m_Link) mp_ThreadLocal_DestroyOrder;
-
-			void fp_GrowTable();
-			CPerThread *fp_GetPerThreadNew(umint _ThreadID);
-			CPerThread *fp_GetPerThread(umint _ThreadID);
-
-			void fp_RestorePerThread(CPerThread *_pPerThread);
-			void fp_FreePerThread(CPerThread *_pPerThread);
-
-#ifdef DMibPSupportThreadLocalDestructors
-			static void fsp_PerThreadDestructor(void *_pPerThread);
-#endif
-
-		public:
 			CStorageIndex *f_Alloc(NThread::CThreadLocalInterface &_Interface, umint &_ThreadLocalLocal);
 			void f_Free(NThread::CThreadLocalInterface &_Interface, CStorageIndex *_pStorageIndex);
 			void f_ReinitForThread(CStorageIndex *_pStorageIndex);
@@ -125,6 +98,33 @@ namespace NMib
 			friend struct NStorage::TCAggregateSimple<CThreadLocalContext>;
 			CThreadLocalContext();
 			~CThreadLocalContext();
+
+			void fp_GrowTable();
+			CPerThread *fp_GetPerThreadNew(umint _ThreadID);
+			CPerThread *fp_GetPerThread(umint _ThreadID);
+
+			void fp_RestorePerThread(CPerThread *_pPerThread);
+			void fp_FreePerThread(CPerThread *_pPerThread);
+
+#ifdef DMibPSupportThreadLocalDestructors
+			static void fsp_PerThreadDestructor(void *_pPerThread);
+#endif
+
+			NIntrusive::TCAVLTree<&CPerThread::m_Link, CPerThread::CCompare> mp_PerThreadByThreadID;
+			NMemory::TCPool<CPerThread, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> mp_PoolPerThread;
+			CAllocationPool mp_PoolAllocation;
+
+#if defined(DMibPSupportThreadLocalDestructors) && defined(DMibStaticThreadLocals)
+			umint mp_iPerThreadDestructor = TCLimitsInt<umint>::mc_Max;
+#endif
+			umint mp_iPerThread = TCLimitsInt<umint>::mc_Max;
+
+			umint mp_iThreadLocalCurrentLen = 0;
+
+			NMemory::TCPool<CStorageIndex, 128, NThread::CNoLock, NMemory::CPoolType_Freeable, NMemory::CAllocator_VirtualNoTracking> mp_PoolStorageIndices;
+
+			DMibListLinkD_List(CStorageIndex, m_Link) mp_ThreadLocal_Free; // List of indices that are free
+			DMibListLinkD_List(CStorageIndex, m_Link) mp_ThreadLocal_DestroyOrder;
 
 			NThread::CMutual mp_LockContext;
 		};
