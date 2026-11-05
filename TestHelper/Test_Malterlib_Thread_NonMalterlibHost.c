@@ -14,7 +14,7 @@
 #ifdef __APPLE__
 #	include <pthread/introspection.h>
 
-static void fg_HostIntrospectionHook(unsigned int _Event, pthread_t _pThread, void *_pAddress, size_t _Size)
+static void fg_HostIntrospectionHook(unsigned int _Event, pthread_t _Thread, void *_pAddress, size_t _Size)
 {
 }
 
@@ -205,10 +205,10 @@ int main(int _nArguments, char **_pArguments)
 		if (fRemaining && !dladdr((void *)fRemaining, &Info))
 			return 6;
 
-		pthread_t pHookThread;
-		if (pthread_create(&pHookThread, NULL, &fg_AfterUnloadThread, NULL))
+		pthread_t HookThread;
+		if (pthread_create(&HookThread, NULL, &fg_AfterUnloadThread, NULL))
 			return 7;
-		pthread_join(pHookThread, NULL);
+		pthread_join(HookThread, NULL);
 	}
 #endif
 
